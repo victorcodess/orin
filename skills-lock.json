@@ -13,6 +13,12 @@
       "skillPath": "music/SKILL.md",
       "computedHash": "707c1666d77772713841a0b0550ad57ab7ced9646a90cf00b890bdce9c229f25"
     },
+    "nexus-ui": {
+      "source": "victorcodess/nexus-ui",
+      "sourceType": "github",
+      "skillPath": "skills/nexus-ui/SKILL.md",
+      "computedHash": "40537c774f7df72ae30ec3ae99eaf207da754919ded49eeb7e2e284237ec3f06"
+    },
     "setup-api-key": {
       "source": "elevenlabs/skills",
       "sourceType": "github",
