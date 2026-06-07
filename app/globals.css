@@ -96,4 +96,38 @@
   body {
     @apply bg-background text-foreground;
   }
+  code {
+    counter-reset: line;
+  }
+  code .line::before {
+    counter-increment: line;
+    content: counter(line);
+    display: inline-block;
+    width: 1rem;
+    margin-right: 1.25rem;
+    text-align: right;
+    color: #737373;
+    padding-left: 0;
+    font-size: 14px;
+  }
+  code .line {
+    padding-left: 0px !important;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
+
+@source "../node_modules/streamdown/dist/index.js";
+
+@source "../node_modules/@streamdown/code/dist/*.js";
+
+@source "../node_modules/@streamdown/mermaid/dist/*.js";
+
+@source "../node_modules/@streamdown/math/dist/*.js";
+
+@source "../node_modules/@streamdown/cjk/dist/*.js";
