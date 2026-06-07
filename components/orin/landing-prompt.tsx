@@ -36,7 +36,7 @@ export function LandingPrompt() {
         </PromptInputActions>
       </PromptInput>
       <p className="text-xs text-muted-foreground text-center">
-        Chat and voice coming in Phase 1. Foundation is ready.
+        Text chat is live — voice calls coming in Phase 2.
       </p>
     </div>
   );

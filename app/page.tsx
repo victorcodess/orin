@@ -34,6 +34,11 @@ export default function Home() {
           </div>
 
           <LandingPrompt />
+          <div className="flex justify-center">
+            <Button asChild size="lg">
+              <Link href="/chat">Start chatting</Link>
+            </Button>
+          </div>
         </div>
 
         <footer className="w-full flex items-center justify-center border-t text-center text-xs gap-8 py-12 text-muted-foreground">
