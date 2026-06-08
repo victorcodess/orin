@@ -32,6 +32,10 @@ const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+const SIDEBAR_HOVER_PEEK_ZONE = 100
+const SIDEBAR_HOVER_OPEN_ZONE = 12
+const SIDEBAR_PEEK_AMOUNT = "1.0rem"
+const SIDEBAR_SHEET_TRANSITION_MS = 500
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
@@ -165,6 +169,95 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const [hoverMode, setHoverMode] = React.useState<"hidden" | "peek" | "open">(
+    "hidden"
+  )
+  const sheetRef = React.useRef<HTMLDivElement>(null)
+  const suppressHoverPeekRef = React.useRef(false)
+  const isCollapsed = state === "collapsed"
+  const enableHoverPeek =
+    isCollapsed && collapsible === "offcanvas" && side === "left" && !isMobile
+  const [sheetContentMounted, setSheetContentMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setHoverMode("hidden")
+    if (isCollapsed) {
+      suppressHoverPeekRef.current = true
+    } else {
+      suppressHoverPeekRef.current = false
+    }
+  }, [isCollapsed])
+
+  React.useEffect(() => {
+    if (!enableHoverPeek) {
+      setSheetContentMounted(false)
+      return
+    }
+
+    if (hoverMode !== "hidden") {
+      setSheetContentMounted(true)
+      return
+    }
+
+    const timeout = window.setTimeout(() => {
+      setSheetContentMounted(false)
+    }, SIDEBAR_SHEET_TRANSITION_MS)
+
+    return () => window.clearTimeout(timeout)
+  }, [enableHoverPeek, hoverMode])
+
+  React.useEffect(() => {
+    if (!enableHoverPeek) {
+      return
+    }
+
+    function handleMouseMove(event: MouseEvent) {
+      const sheet = sheetRef.current
+      if (!sheet) {
+        return
+      }
+
+      const { clientX, clientY } = event
+
+      if (suppressHoverPeekRef.current) {
+        if (clientX > SIDEBAR_HOVER_PEEK_ZONE) {
+          suppressHoverPeekRef.current = false
+        } else {
+          setHoverMode("hidden")
+          return
+        }
+      }
+
+      const rect = sheet.getBoundingClientRect()
+      const visibleLeft = Math.max(0, rect.left)
+      const isOverVisibleSidebar =
+        rect.right > visibleLeft &&
+        clientX >= visibleLeft &&
+        clientX <= rect.right &&
+        clientY >= rect.top &&
+        clientY <= rect.bottom
+
+      if (isOverVisibleSidebar) {
+        setHoverMode("open")
+        return
+      }
+
+      if (clientX <= SIDEBAR_HOVER_OPEN_ZONE) {
+        setHoverMode("open")
+        return
+      }
+
+      if (clientX <= SIDEBAR_HOVER_PEEK_ZONE) {
+        setHoverMode("peek")
+        return
+      }
+
+      setHoverMode("hidden")
+    }
+
+    document.addEventListener("mousemove", handleMouseMove)
+    return () => document.removeEventListener("mousemove", handleMouseMove)
+  }, [enableHoverPeek])
 
   if (collapsible === "none") {
     return (
@@ -207,50 +300,74 @@ function Sidebar({
   }
 
   return (
-    <div
-      className="group peer hidden text-sidebar-foreground md:block"
-      data-state={state}
-      data-collapsible={state === "collapsed" ? collapsible : ""}
-      data-variant={variant}
-      data-side={side}
-      data-slot="sidebar"
-    >
-      {/* This is what handles the sidebar gap on desktop */}
+    <>
       <div
-        data-slot="sidebar-gap"
-        className={cn(
-          "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
-          "group-data-[collapsible=offcanvas]:w-0",
-          "group-data-[side=right]:rotate-180",
-          variant === "floating" || variant === "inset"
-            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
-            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
-        )}
-      />
-      <div
-        data-slot="sidebar-container"
-        className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
-          side === "left"
-            ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-            : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-          // Adjust the padding for floating and inset variants.
-          variant === "floating" || variant === "inset"
-            ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
-            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
-          className
-        )}
-        {...props}
+        className="group peer hidden text-sidebar-foreground md:block"
+        data-state={state}
+        data-collapsible={isCollapsed ? collapsible : ""}
+        data-variant={variant}
+        data-side={side}
+        data-slot="sidebar"
       >
+        {/* This is what handles the sidebar gap on desktop */}
         <div
-          data-sidebar="sidebar"
-          data-slot="sidebar-inner"
-          className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm"
+          data-slot="sidebar-gap"
+          className={cn(
+            "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+            "group-data-[collapsible=offcanvas]:w-0",
+            "group-data-[side=right]:rotate-180",
+            variant === "floating" || variant === "inset"
+              ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
+              : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
+          )}
+        />
+        <div
+          data-slot="sidebar-container"
+          className={cn(
+            "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+            side === "left"
+              ? "left-0 group-data-[collapsible=offcanvas]:-left-(--sidebar-width)"
+              : "right-0 group-data-[collapsible=offcanvas]:-right-(--sidebar-width)",
+            variant === "floating" || variant === "inset"
+              ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
+              : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+            className
+          )}
+          {...props}
         >
-          {children}
+          <div
+            data-sidebar="sidebar"
+            data-slot="sidebar-inner"
+            className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm"
+          >
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+      {enableHoverPeek && (
+        <div
+          ref={sheetRef}
+          data-slot="sidebar-sheet"
+          data-hover={hoverMode}
+          style={
+            {
+              "--sidebar-peek-amount": SIDEBAR_PEEK_AMOUNT,
+            } as React.CSSProperties
+          }
+          onMouseLeave={() => setHoverMode("hidden")}
+          className={cn(
+            "fixed inset-y-0 z-50 hidden h-svh w-(--sidebar-width) flex-col bg-sidebar p-0 text-sidebar-foreground transition-[left,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none md:flex",
+            hoverMode === "hidden" && "pointer-events-none",
+            hoverMode === "peek" && "shadow-md",
+            hoverMode === "open" && "shadow-lg"
+          )}
+        >
+          {sheetContentMounted && (
+            <div className="flex h-full w-full flex-col">{children}</div>
+          )}
+        </div>
+      )}
+    </>
   )
 }
 

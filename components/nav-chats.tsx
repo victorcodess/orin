@@ -6,6 +6,10 @@ import { Message01Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useState } from "react";
 
 import type { ConversationRow } from "@/lib/ai/conversations";
+import {
+  getCachedConversations,
+  setCachedConversations,
+} from "@/lib/conversations-cache";
 import { debugLog } from "@/lib/debug";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -48,6 +52,7 @@ export function NavChats() {
         const data = (await response.json()) as ConversationRow[];
         debugLog("sidebar", "supabase conversations", data);
         if (!cancelled) {
+          setCachedConversations(pathname, data);
           setConversations(data);
         }
       } catch {
@@ -55,7 +60,12 @@ export function NavChats() {
       }
     }
 
-    void loadConversations();
+    const cached = getCachedConversations(pathname);
+    if (cached) {
+      setConversations(cached);
+    } else {
+      void loadConversations();
+    }
 
     const handleChange = () => {
       void loadConversations();
