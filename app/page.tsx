@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background">
       {/* <BayerDitherBackground shape="circle" pixelSize={5} color="#ffba08" /> */}
-      <nav className="absolute top-8 left-1/2 z-10 h-14 w-100 -translate-x-1/2 rounded-full">
+      <nav className="absolute top-8 left-1/2 z-10 h-14 w-120 -translate-x-1/2 rounded-full">
         <div className="bg-secondary flex h-14 w-full items-center justify-between rounded-full px-3.5">
           <Link href="/" className="flex items-center gap-0.75 pl-2">
             <HugeiconsIcon
@@ -18,9 +18,12 @@ export default function Home() {
             <span className="text-2xl font-semibold tracking-tight">Orin</span>
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* <Button asChild size="sm" variant="ghost">
+              <Link href="/auth/log-in">Log in</Link>
+            </Button> */}
             <Button asChild size="sm" variant="ghost">
-              <Link href="/chat">Sign in</Link>
+              <Link href="/auth/sign-up">Sign up</Link>
             </Button>
 
             {/* <ThemeSwitcher /> */}
