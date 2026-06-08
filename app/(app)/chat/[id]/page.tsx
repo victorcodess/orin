@@ -12,11 +12,13 @@ import { createClient } from "@/lib/supabase/server";
 
 type ChatPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ message?: string }>;
 };
 
-async function ChatPageContent({ params }: ChatPageProps) {
+async function ChatPageContent({ params, searchParams }: ChatPageProps) {
   await connection();
-  const { id } = await params;
+  const [{ id }, { message }] = await Promise.all([params, searchParams]);
+  const initialPrompt = message?.trim() || undefined;
 
   try {
     await verifyConversationAccess(id);
@@ -42,6 +44,7 @@ async function ChatPageContent({ params }: ChatPageProps) {
       conversationId={id}
       assistant={assistant}
       initialMessages={toUIMessages(history)}
+      initialPrompt={initialPrompt}
     />
   );
 }

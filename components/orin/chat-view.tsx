@@ -3,7 +3,8 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
 import { ArrowUp, Square } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -84,14 +85,18 @@ type ChatViewProps = {
   conversationId: string;
   assistant: AssistantConfig;
   initialMessages: UIMessage[];
+  initialPrompt?: string;
 };
 
 export function ChatView({
   conversationId,
   assistant,
   initialMessages,
+  initialPrompt,
 }: ChatViewProps) {
+  const router = useRouter();
   const [input, setInput] = useState("");
+  const sentInitialPrompt = useRef(false);
 
   const transport = useMemo(
     () =>
@@ -116,10 +121,22 @@ export function ChatView({
         conversationId,
         messageCount: messages.length,
       });
+      window.dispatchEvent(new CustomEvent("orin:conversations-changed"));
     },
   });
 
   const isLoading = status === "streaming" || status === "submitted";
+
+  useEffect(() => {
+    const prompt = initialPrompt?.trim();
+    if (!prompt || sentInitialPrompt.current) {
+      return;
+    }
+
+    sentInitialPrompt.current = true;
+    sendMessage({ text: prompt });
+    router.replace(`/chat/${conversationId}`, { scroll: false });
+  }, [conversationId, initialPrompt, router, sendMessage]);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
@@ -157,7 +174,7 @@ export function ChatView({
       (lastMessage.role === "assistant" && !textFromMessage(lastMessage).trim()));
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <Thread className="flex-1 min-h-0">
         <ThreadContent className="items-stretch max-w-3xl mx-auto w-full">
           {visibleMessages.length === 0 ? (

@@ -6,7 +6,10 @@ import {
 } from "ai";
 
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
-import { verifyConversationAccess } from "@/lib/ai/conversations";
+import {
+  maybeUpdateConversationTitle,
+  verifyConversationAccess,
+} from "@/lib/ai/conversations";
 import {
   saveMessage,
   saveMessageIfNew,
@@ -88,6 +91,8 @@ export async function POST(req: Request) {
         content: userText,
         source: "text",
       });
+
+      await maybeUpdateConversationTitle(conversationId, userText);
     }
 
     const modelMessages = await convertToModelMessages(messages);
