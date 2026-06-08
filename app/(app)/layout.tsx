@@ -1,6 +1,14 @@
+import { Suspense } from "react";
+
+import { AppSidebarShell } from "@/components/orin/app-sidebar-shell";
+import { AppSidebarSkeleton } from "@/components/orin/app-sidebar-skeleton";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 export default function AppLayout({
   children,
@@ -8,22 +16,23 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="flex h-16 items-center justify-between border-b px-4">
-        <Link href="/" className="font-semibold">
-          Orin
-        </Link>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/chat">New chat</Link>
-          </Button>
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/auth/login">Sign in</Link>
-          </Button>
-          <ThemeSwitcher />
-        </div>
-      </header>
-      <main className="flex-1">{children}</main>
-    </div>
+    <SidebarProvider>
+      <Suspense fallback={<AppSidebarSkeleton />}>
+        <AppSidebarShell />
+      </Suspense>
+      <SidebarInset className="flex max-h-svh flex-col overflow-hidden">
+        <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
+          <div className="ml-auto">
+            <ThemeSwitcher />
+          </div>
+        </header>
+        <div className="flex h-full max-h-[calc(100vh-64px)] flex-col">{children}</div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
