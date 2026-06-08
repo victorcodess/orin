@@ -160,7 +160,9 @@
     left: calc(-1 * var(--sidebar-width)) !important;
   }
   [data-slot="sidebar-sheet"][data-hover="peek"] {
-    left: calc(-1 * var(--sidebar-width) + var(--sidebar-peek-amount, 2rem)) !important;
+    left: calc(
+      -1 * var(--sidebar-width) + var(--sidebar-peek-amount, 2rem)
+    ) !important;
   }
   [data-slot="sidebar-sheet"][data-hover="open"] {
     left: 0 !important;
