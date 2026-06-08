@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Gloock } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { AppToaster } from "@/components/orin/app-toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,17 +22,25 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+const gloock = Gloock({
+  variable: "--font-gloock",
+  display: "swap",
+  subsets: ["latin"],
+  weight: "400",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.className} antialiased`}
-        suppressHydrationWarning
-      >
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${gloock.variable}`}
+      suppressHydrationWarning
+    >
+      <body className={`${geistSans.className} antialiased`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
