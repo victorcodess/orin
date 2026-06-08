@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp01Icon } from "@hugeicons/core-free-icons";
 import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   PromptInput,
   PromptInputAction,
@@ -95,7 +96,7 @@ export function NewChatView() {
                     className="size-8"
                     disabled={!input.trim() || isSubmitting}
                   >
-                    <ArrowUp className="size-4" />
+                    <HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2} className="size-4 shrink-0" />
                   </Button>
                 </PromptInputAction>
               </PromptInputActionGroup>

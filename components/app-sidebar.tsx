@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { LifeBuoy, Settings2, Sparkles } from "lucide-react";
+import {
+  LifebuoyIcon,
+  Settings02Icon,
+  SparklesIcon,
+} from "@hugeicons/core-free-icons";
 
 import { NavChats } from "@/components/nav-chats";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Sidebar,
   SidebarContent,
@@ -21,12 +26,12 @@ const navSecondary = [
   {
     title: "Settings",
     url: "/protected",
-    icon: Settings2,
+    icon: Settings02Icon,
   },
   {
     title: "Support",
     url: "https://github.com/victorcodess/orin",
-    icon: LifeBuoy,
+    icon: LifebuoyIcon,
   },
 ];
 
@@ -47,7 +52,11 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Sparkles className="size-4" />
+                  <HugeiconsIcon
+                    icon={SparklesIcon}
+                    strokeWidth={2}
+                    className="size-4 shrink-0 text-sidebar-primary-foreground"
+                  />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">Orin</span>

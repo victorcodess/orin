@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Add01Icon } from "@hugeicons/core-free-icons";
 
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SidebarMenuButton,
   SidebarMenuItem,
@@ -20,7 +21,7 @@ export function NewChatButton() {
         isActive={pathname === "/chat"}
       >
         <Link href="/chat">
-          <Plus />
+          <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4 shrink-0" />
           <span>New chat</span>
         </Link>
       </SidebarMenuButton>

@@ -1,5 +1,6 @@
-import { Sparkles } from "lucide-react";
+import { SparklesIcon } from "@hugeicons/core-free-icons";
 
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Sidebar,
   SidebarContent,
@@ -19,7 +20,11 @@ export function AppSidebarSkeleton() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="pointer-events-none">
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <Sparkles className="size-4" />
+                <HugeiconsIcon
+                  icon={SparklesIcon}
+                  strokeWidth={2}
+                  className="size-4 shrink-0 text-sidebar-primary-foreground"
+                />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">Orin</span>

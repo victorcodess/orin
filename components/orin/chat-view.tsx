@@ -2,11 +2,12 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
-import { ArrowUp, Square } from "lucide-react";
+import { ArrowUp01Icon, StopIcon } from "@hugeicons/core-free-icons";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Message,
   MessageContent,
@@ -242,7 +243,7 @@ export function ChatView({
                       className="size-8"
                       onClick={() => stop()}
                     >
-                      <Square className="size-3.5 fill-current" />
+                      <HugeiconsIcon icon={StopIcon} strokeWidth={2} className="size-3.5 shrink-0" />
                     </Button>
                   ) : (
                     <Button
@@ -251,7 +252,7 @@ export function ChatView({
                       className="size-8"
                       disabled={!input.trim()}
                     >
-                      <ArrowUp className="size-4" />
+                      <HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2} className="size-4 shrink-0" />
                     </Button>
                   )}
                 </PromptInputAction>

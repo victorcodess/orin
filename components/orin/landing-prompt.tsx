@@ -1,8 +1,9 @@
 "use client";
 
+import { ArrowUp01Icon, Call02Icon } from "@hugeicons/core-free-icons";
+
 import { Button } from "@/components/ui/button";
-import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
-import { ArrowUp, Phone } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   PromptInput,
   PromptInputAction,
@@ -10,6 +11,7 @@ import {
   PromptInputActions,
   PromptInputTextarea,
 } from "@/components/nexus-ui/prompt-input";
+import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 
 export function LandingPrompt() {
   return (
@@ -22,14 +24,14 @@ export function LandingPrompt() {
           <PromptInputActionGroup>
             <PromptInputAction asChild>
               <Button variant="ghost" size="icon" className="size-8" disabled>
-                <Phone className="size-4" />
+                <HugeiconsIcon icon={Call02Icon} strokeWidth={2} className="size-4 shrink-0" />
               </Button>
             </PromptInputAction>
           </PromptInputActionGroup>
           <PromptInputActionGroup>
             <PromptInputAction asChild>
               <Button size="icon" className="size-8 rounded-full" disabled>
-                <ArrowUp className="size-4" />
+                <HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2} className="size-4 shrink-0" />
               </Button>
             </PromptInputAction>
           </PromptInputActionGroup>

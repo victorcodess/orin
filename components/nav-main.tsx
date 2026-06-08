@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home } from "lucide-react";
+import { Home01Icon } from "@hugeicons/core-free-icons";
 
 import { NewChatButton } from "@/components/orin/new-chat-button";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -28,7 +29,7 @@ export function NavMain() {
             isActive={pathname === "/"}
           >
             <Link href="/">
-              <Home />
+              <HugeiconsIcon icon={Home01Icon} strokeWidth={2} className="size-4 shrink-0" />
               <span>Home</span>
             </Link>
           </SidebarMenuButton>

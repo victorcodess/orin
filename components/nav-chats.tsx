@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare } from "lucide-react";
+import { Message01Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useState } from "react";
 
 import type { ConversationRow } from "@/lib/ai/conversations";
 import { debugLog } from "@/lib/debug";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -75,7 +76,7 @@ export function NavChats() {
         {conversations.length === 0 ? (
           <SidebarMenuItem>
             <SidebarMenuButton disabled className="text-muted-foreground">
-              <MessageSquare />
+              <HugeiconsIcon icon={Message01Icon} strokeWidth={2} className="size-4 shrink-0" />
               <span>No chats yet</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -88,7 +89,7 @@ export function NavChats() {
               <SidebarMenuItem key={conversation.id}>
                 <SidebarMenuButton asChild isActive={isActive}>
                   <Link href={href}>
-                    <MessageSquare />
+                    <HugeiconsIcon icon={Message01Icon} strokeWidth={2} className="size-4 shrink-0" />
                     <span className="truncate">
                       {conversationLabel(conversation)}
                     </span>

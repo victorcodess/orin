@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { TutorialStep } from "./tutorial-step";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 
 export function SignUpUserSteps() {
   return (
@@ -69,7 +70,7 @@ export function SignUpUserSteps() {
             target="_blank"
             className="text-primary/50 hover:text-primary flex items-center text-sm gap-1 mt-4"
           >
-            Redirect URLs Docs <ArrowUpRight size={14} />
+            Redirect URLs Docs <HugeiconsIcon icon={ArrowUpRight01Icon} strokeWidth={2} className="size-3.5 shrink-0" />
           </Link>
         </TutorialStep>
       ) : null}

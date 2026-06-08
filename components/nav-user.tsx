@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ChevronsUpDown,
-  LogIn,
-  LogOut,
-  UserRound,
-} from "lucide-react";
+  Login01Icon,
+  Logout01Icon,
+  UnfoldMoreIcon,
+  UserCircle02Icon,
+} from "@hugeicons/core-free-icons";
 
 import { createClient } from "@/lib/supabase/client";
 
@@ -25,6 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -66,7 +67,7 @@ export function NavUser({ user }: NavUserProps) {
                 <span className="truncate font-medium">{displayName}</span>
                 <span className="truncate text-xs">{displayEmail}</span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+              <HugeiconsIcon icon={UnfoldMoreIcon} strokeWidth={2} className="ml-auto size-4 shrink-0" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -95,7 +96,7 @@ export function NavUser({ user }: NavUserProps) {
                 <>
                   <DropdownMenuItem asChild>
                     <Link href="/protected">
-                      <UserRound />
+                      <HugeiconsIcon icon={UserCircle02Icon} strokeWidth={2} className="size-4 shrink-0" />
                       Account
                     </Link>
                   </DropdownMenuItem>
@@ -106,7 +107,7 @@ export function NavUser({ user }: NavUserProps) {
                       router.push("/auth/login");
                     }}
                   >
-                    <LogOut />
+                    <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} className="size-4 shrink-0" />
                     Log out
                   </DropdownMenuItem>
                 </>
@@ -114,13 +115,13 @@ export function NavUser({ user }: NavUserProps) {
                 <>
                   <DropdownMenuItem asChild>
                     <Link href="/auth/login">
-                      <LogIn />
+                      <HugeiconsIcon icon={Login01Icon} strokeWidth={2} className="size-4 shrink-0" />
                       Sign in
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/auth/sign-up">
-                      <UserRound />
+                      <HugeiconsIcon icon={UserCircle02Icon} strokeWidth={2} className="size-4 shrink-0" />
                       Create account
                     </Link>
                   </DropdownMenuItem>
