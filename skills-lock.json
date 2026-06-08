@@ -7,6 +7,12 @@
       "skillPath": "agents/SKILL.md",
       "computedHash": "dd4f876d0399f8ad626973256e6cbb564a1bdddfd1cb923552d5f3d9f7f13812"
     },
+    "hallmark": {
+      "source": "nutlope/hallmark",
+      "sourceType": "github",
+      "skillPath": "skills/hallmark/SKILL.md",
+      "computedHash": "8a8ecafd613f09e701330b5aa4a591ac539abb2605596df4a2394f03628d1d76"
+    },
     "music": {
       "source": "elevenlabs/skills",
       "sourceType": "github",
