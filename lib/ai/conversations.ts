@@ -1,7 +1,7 @@
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import { saveMessage } from "@/lib/ai/messages";
 import { debugLog } from "@/lib/debug";
-import { getOrCreateSessionId, getSessionId } from "@/lib/session";
+import { getSessionId } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -20,10 +20,16 @@ async function getAuthUserId(): Promise<string | null> {
   return data.user?.id ?? null;
 }
 
-export async function createConversation(): Promise<ConversationRow> {
+export async function createConversation(options?: {
+  skipGreeting?: boolean;
+}): Promise<ConversationRow> {
   const supabase = createAdminClient();
   const userId = await getAuthUserId();
-  const sessionId = userId ? null : await getOrCreateSessionId();
+  const sessionId = userId ? null : await getSessionId();
+
+  if (!userId && !sessionId) {
+    throw new Error("Missing anon session cookie");
+  }
   const config = await getAssistantConfig(userId);
 
   debugLog("conversations", "creating conversation", { userId, sessionId });
@@ -45,12 +51,14 @@ export async function createConversation(): Promise<ConversationRow> {
 
   debugLog("conversations", "created", { id: data.id });
 
-  await saveMessage({
-    conversationId: data.id,
-    role: "assistant",
-    content: config.firstMessage,
-    source: "text",
-  });
+  if (!options?.skipGreeting) {
+    await saveMessage({
+      conversationId: data.id,
+      role: "assistant",
+      content: config.firstMessage,
+      source: "text",
+    });
+  }
 
   return data as ConversationRow;
 }
@@ -71,6 +79,72 @@ export async function getConversation(
   }
 
   return (data as ConversationRow | null) ?? null;
+}
+
+export async function maybeUpdateConversationTitle(
+  conversationId: string,
+  userText: string,
+): Promise<void> {
+  const trimmed = userText.trim();
+  if (!trimmed) {
+    return;
+  }
+
+  const conversation = await getConversation(conversationId);
+  if (!conversation?.title) {
+    return;
+  }
+
+  const config = await getAssistantConfig(conversation.user_id);
+  const defaultTitle = `Chat with ${config.name}`;
+
+  if (conversation.title !== defaultTitle) {
+    return;
+  }
+
+  const title =
+    trimmed.length > 60 ? `${trimmed.slice(0, 57)}...` : trimmed;
+  const supabase = createAdminClient();
+
+  await supabase
+    .from("conversations")
+    .update({
+      title,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", conversationId);
+}
+
+export async function listConversations(limit = 30): Promise<ConversationRow[]> {
+  const supabase = createAdminClient();
+  const userId = await getAuthUserId();
+  const sessionId = userId ? null : await getSessionId();
+
+  let query = supabase
+    .from("conversations")
+    .select("id, user_id, session_id, title, created_at, updated_at")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+
+  if (userId) {
+    query = query.eq("user_id", userId);
+  } else {
+    if (!sessionId) {
+      return [];
+    }
+    query = query.eq("session_id", sessionId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    debugLog("conversations", "list failed", { error });
+    throw error;
+  }
+
+  debugLog("sidebar", "supabase conversations", data ?? []);
+
+  return (data ?? []) as ConversationRow[];
 }
 
 export async function verifyConversationAccess(
