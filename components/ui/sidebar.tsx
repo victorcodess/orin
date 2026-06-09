@@ -35,7 +35,7 @@ const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 const SIDEBAR_HOVER_PEEK_ZONE = 100;
 const SIDEBAR_HOVER_OPEN_ZONE = 12;
-const SIDEBAR_PEEK_AMOUNT = "2rem";
+const SIDEBAR_PEEK_AMOUNT = "1.25rem";
 const SIDEBAR_TRANSITION_MS = 500;
 const SIDEBAR_TRANSITION_CLASS =
   "transition-[left,right,width,margin,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none";
@@ -336,7 +336,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) border-0 p-0 [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -435,12 +435,11 @@ function useMinWidth(px: number) {
 function getTriggerVisible(
   placement: "inset" | "sidebar" | undefined,
   open: boolean,
-  isMd: boolean,
-  isLg: boolean
+  isMd: boolean
 ) {
   if (!placement) return true;
-  if (placement === "inset") return !isLg || !open;
-  return !isMd || !open || isLg;
+  if (placement === "inset") return !isMd || !open;
+  return true;
 }
 
 function SidebarTrigger({
@@ -453,8 +452,7 @@ function SidebarTrigger({
 }) {
   const { toggleSidebar, open } = useSidebar();
   const isMd = useMinWidth(768);
-  const isLg = useMinWidth(1024);
-  const visible = getTriggerVisible(placement, open, isMd, isLg);
+  const visible = getTriggerVisible(placement, open, isMd);
 
   return (
     <AnimatePresence initial={false} mode="popLayout">
@@ -464,7 +462,7 @@ function SidebarTrigger({
           initial={{ opacity: 0 }}
           animate={{
             opacity: 1,
-            transition: { delay: 0.3, duration: 0.15, ease: "easeInOut" },
+            transition: { delay: 0.4, duration: 0.15, ease: "easeInOut" },
           }}
           exit={{
             opacity: 0,
