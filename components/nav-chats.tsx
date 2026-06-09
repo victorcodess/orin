@@ -81,7 +81,7 @@ export function NavChats() {
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Chats</SidebarGroupLabel>
+      <SidebarGroupLabel>Recent</SidebarGroupLabel>
       <SidebarMenu>
         {conversations.length === 0 ? (
           <SidebarMenuItem>

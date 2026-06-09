@@ -9,17 +9,13 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-export default function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <Suspense fallback={<AppSidebarSkeleton />}>
         <AppSidebarShell />
       </Suspense>
-      <SidebarInset className="flex max-h-svh flex-col overflow-hidden bg-background">
+      <SidebarInset className="bg-background flex max-h-svh flex-col overflow-hidden">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator
@@ -27,7 +23,9 @@ export default function AppLayout({
             className="mr-2 data-[orientation=vertical]:h-4"
           />
         </header>
-        <div className="flex h-full max-h-[calc(100vh-64px)] flex-col">{children}</div>
+        <div className="flex h-full max-h-[calc(100vh-64px)] flex-col">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

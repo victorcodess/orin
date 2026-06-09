@@ -71,7 +71,7 @@
   --secondary-foreground: #e7e4e2;
   --muted: #231e1b;
   --muted-foreground: #827873;
-  --accent: #242422;
+  --accent: #0e0a07;
   --accent-foreground: #e7e4e2;
   --destructive: #7f1d1d;
   --destructive-foreground: #fafafa;
@@ -83,12 +83,12 @@
   --chart-3: #00adeb;
   --chart-4: #fb788d;
   --chart-5: #9f85e5;
-  --sidebar: #0e0a07;
+  --sidebar: #1a1512;
   --sidebar-foreground: #c9c3c0;
   --sidebar-primary: #f97015;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #242422;
-  --sidebar-accent-foreground: #2a2927;
+  --sidebar-accent: #0e0a07;
+  --sidebar-accent-foreground: #e7e4e2;
   --sidebar-border: #211c19;
   --sidebar-ring: #f97015;
   /* --font-sans: Manrope, ui-sans-serif, sans-serif, system-ui;
@@ -159,6 +159,9 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  body:has([data-chat-route]) {
+    @apply bg-sidebar;
   }
   h1,
   h2,

@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Home01Icon } from "@hugeicons/core-free-icons";
 
-import { NewChatButton } from "@/components/orin/new-chat-button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -18,10 +16,21 @@ export function NavMain() {
   const pathname = usePathname();
 
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>Orin</SidebarGroupLabel>
+    <SidebarGroup className="mt-2">
+      {/* <SidebarGroupLabel>Orin</SidebarGroupLabel> */}
       <SidebarMenu>
-        <NewChatButton />
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            asChild
+            tooltip="New chat"
+            isActive={pathname === "/chat"}
+          >
+            <Link href="/chat">
+              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4 shrink-0" />
+              <span>New chat</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
         <SidebarMenuItem>
           <SidebarMenuButton
             asChild

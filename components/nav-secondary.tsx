@@ -28,7 +28,7 @@ export function NavSecondary({
 
             return (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild size="sm">
+                <SidebarMenuButton asChild size="default">
                   {isExternal ? (
                     <a href={item.url} target="_blank" rel="noreferrer">
                       <HugeiconsIcon icon={item.icon} strokeWidth={2} className="size-4 shrink-0" />

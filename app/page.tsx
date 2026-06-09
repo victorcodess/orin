@@ -10,8 +10,8 @@ export default function Home() {
     <main className="bg-background relative flex min-h-screen flex-col items-center justify-center overflow-hidden">
       {/* <BayerDitherBackground shape="circle" pixelSize={5} color="#ffba08" /> */}
       <nav className="absolute top-8 left-1/2 z-10 h-14 w-120 -translate-x-1/2 rounded-full">
-        <div className="bg-secondary/50 backdrop-blur-xl flex h-14 w-full items-center justify-between rounded-full px-3.5">
-          <Link href="/" className="flex items-center gap-1.25 pl-2">
+        <div className="bg-secondary/90 backdrop-blur-xl flex h-14 w-full items-center justify-between rounded-full px-2.5">
+          <Link href="/" className="flex items-center gap-1.25 ml-2 bo rder h-7">
             <HugeiconsIcon
               icon={CircleIcon}
               className="size-7 shrink-0 fill-current/90 text-[#f97015]"

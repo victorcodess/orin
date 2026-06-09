@@ -36,7 +36,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                 icon={CircleIcon}
                 className="size-7 shrink-0 fill-current/90 text-[#f97015]"
               />
-              <span className="font-heading text-2xl font-semibold tracking-tighter text-foreground">
+              <span className="font-heading text-foreground text-2xl font-semibold tracking-tighter">
                 Orin
               </span>
             </Link>
