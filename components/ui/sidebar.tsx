@@ -4,6 +4,7 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { PanelLeftIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Slot } from "radix-ui";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -34,8 +35,41 @@ const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 const SIDEBAR_HOVER_PEEK_ZONE = 100;
 const SIDEBAR_HOVER_OPEN_ZONE = 12;
-const SIDEBAR_PEEK_AMOUNT = "1.25rem";
-const SIDEBAR_SHEET_TRANSITION_MS = 500;
+const SIDEBAR_PEEK_AMOUNT = "2rem";
+const SIDEBAR_TRANSITION_MS = 500;
+const SIDEBAR_TRANSITION_CLASS =
+  "transition-[left,right,width,margin,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none";
+
+function isSidebarDropdownOpen(container: HTMLElement | null) {
+  if (!container) {
+    return false;
+  }
+
+  return !!container.querySelector(
+    '[data-slot="dropdown-menu-trigger"][data-state="open"], [data-slot="dropdown-menu-sub-trigger"][data-state="open"]'
+  );
+}
+
+function getSidebarContainerOffset(
+  side: "left" | "right",
+  isCollapsed: boolean,
+  hoverMode: "hidden" | "peek" | "open",
+  enableHoverPeek: boolean
+) {
+  if (!isCollapsed) {
+    return "0px";
+  }
+
+  if (!enableHoverPeek || hoverMode === "hidden") {
+    return "calc(-1 * var(--sidebar-width))";
+  }
+
+  if (hoverMode === "peek") {
+    return "calc(-1 * var(--sidebar-width) + var(--sidebar-peek-amount))";
+  }
+
+  return "0px";
+}
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed";
@@ -173,12 +207,22 @@ function Sidebar({
   const [hoverMode, setHoverMode] = React.useState<"hidden" | "peek" | "open">(
     "hidden"
   );
-  const sheetRef = React.useRef<HTMLDivElement>(null);
+  const [hoverChromeMode, setHoverChromeMode] = React.useState<
+    "hidden" | "peek" | "open"
+  >("hidden");
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const suppressHoverPeekRef = React.useRef(false);
   const isCollapsed = state === "collapsed";
   const enableHoverPeek =
     isCollapsed && collapsible === "offcanvas" && side === "left" && !isMobile;
-  const [sheetContentMounted, setSheetContentMounted] = React.useState(false);
+  const containerOffset = getSidebarContainerOffset(
+    side,
+    isCollapsed,
+    hoverMode,
+    enableHoverPeek
+  );
+  const isHoverOverlay =
+    enableHoverPeek && (hoverChromeMode === "peek" || hoverChromeMode === "open");
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -186,7 +230,9 @@ function Sidebar({
 
   React.useEffect(() => {
     setHoverMode("hidden");
+
     if (isCollapsed) {
+      setHoverChromeMode("hidden");
       suppressHoverPeekRef.current = true;
     } else {
       suppressHoverPeekRef.current = false;
@@ -194,30 +240,29 @@ function Sidebar({
   }, [isCollapsed]);
 
   React.useEffect(() => {
-    if (!enableHoverPeek) {
-      setSheetContentMounted(false);
-      return;
-    }
-
     if (hoverMode !== "hidden") {
-      setSheetContentMounted(true);
+      setHoverChromeMode(hoverMode);
       return;
     }
 
     const timeout = window.setTimeout(() => {
-      setSheetContentMounted(false);
-    }, SIDEBAR_SHEET_TRANSITION_MS);
+      setHoverChromeMode("hidden");
+    }, SIDEBAR_TRANSITION_MS);
 
     return () => window.clearTimeout(timeout);
-  }, [enableHoverPeek, hoverMode]);
+  }, [hoverMode]);
 
   React.useEffect(() => {
     if (!enableHoverPeek) {
       return;
     }
 
+    function setHoverModeIfChanged(next: "hidden" | "peek" | "open") {
+      setHoverMode((current) => (current === next ? current : next));
+    }
+
     function handleMouseMove(event: MouseEvent) {
-      const sheet = sheetRef.current;
+      const sheet = containerRef.current;
       if (!sheet) {
         return;
       }
@@ -228,9 +273,14 @@ function Sidebar({
         if (clientX > SIDEBAR_HOVER_PEEK_ZONE) {
           suppressHoverPeekRef.current = false;
         } else {
-          setHoverMode("hidden");
+          setHoverModeIfChanged("hidden");
           return;
         }
+      }
+
+      if (isSidebarDropdownOpen(sheet)) {
+        setHoverModeIfChanged("open");
+        return;
       }
 
       const rect = sheet.getBoundingClientRect();
@@ -243,21 +293,21 @@ function Sidebar({
         clientY <= rect.bottom;
 
       if (isOverVisibleSidebar) {
-        setHoverMode("open");
+        setHoverModeIfChanged("open");
         return;
       }
 
       if (clientX <= SIDEBAR_HOVER_OPEN_ZONE) {
-        setHoverMode("open");
+        setHoverModeIfChanged("open");
         return;
       }
 
       if (clientX <= SIDEBAR_HOVER_PEEK_ZONE) {
-        setHoverMode("peek");
+        setHoverModeIfChanged("peek");
         return;
       }
 
-      setHoverMode("hidden");
+      setHoverModeIfChanged("hidden");
     }
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -318,7 +368,8 @@ function Sidebar({
         <div
           data-slot="sidebar-gap"
           className={cn(
-            "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+            "relative w-(--sidebar-width) bg-transparent",
+            SIDEBAR_TRANSITION_CLASS,
             "group-data-[collapsible=offcanvas]:w-0",
             "group-data-[side=right]:rotate-180",
             variant === "floating" || variant === "inset"
@@ -327,12 +378,25 @@ function Sidebar({
           )}
         />
         <div
+          ref={containerRef}
           data-slot="sidebar-container"
+          data-hover={enableHoverPeek ? hoverMode : undefined}
+          style={
+            {
+              "--sidebar-peek-amount": SIDEBAR_PEEK_AMOUNT,
+              left: side === "left" ? containerOffset : undefined,
+              right: side === "right" ? containerOffset : undefined,
+            } as React.CSSProperties
+          }
           className={cn(
-            "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
-            side === "left"
-              ? "left-0 group-data-[collapsible=offcanvas]:-left-(--sidebar-width)"
-              : "right-0 group-data-[collapsible=offcanvas]:-right-(--sidebar-width)",
+            "fixed inset-y-0 hidden h-svh w-(--sidebar-width) md:flex",
+            SIDEBAR_TRANSITION_CLASS,
+            (variant === "floating" || variant === "inset") &&
+              "bg-sidebar text-sidebar-foreground",
+            isHoverOverlay && "z-50",
+            !isHoverOverlay && "z-10",
+            // hoverChromeMode === "peek" && "shadow-md",
+            // hoverChromeMode === "open" && "shadow-lg",
             variant === "floating" || variant === "inset"
               ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
               : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
@@ -349,60 +413,88 @@ function Sidebar({
           </div>
         </div>
       </div>
-      {enableHoverPeek && (
-        <div
-          ref={sheetRef}
-          data-slot="sidebar-sheet"
-          data-hover={hoverMode}
-          style={
-            {
-              "--sidebar-peek-amount": SIDEBAR_PEEK_AMOUNT,
-            } as React.CSSProperties
-          }
-          onMouseLeave={() => setHoverMode("hidden")}
-          className={cn(
-            "bg-sidebar text-sidebar-foreground fixed inset-y-0 z-50 hidden h-svh w-(--sidebar-width) flex-col p-0 transition-[left,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none md:flex",
-            hoverMode === "hidden" && "pointer-events-none",
-            hoverMode === "peek" && "shadow-md",
-            hoverMode === "open" && "shadow-lg"
-          )}
-        >
-          {sheetContentMounted && (
-            <div className="flex h-full w-full flex-col">{children}</div>
-          )}
-        </div>
-      )}
     </>
   );
 }
 
+function useMinWidth(px: number) {
+  const [matches, setMatches] = React.useState(false);
+
+  React.useEffect(() => {
+    const mql = window.matchMedia(`(min-width: ${px}px)`);
+    const onChange = () => setMatches(mql.matches);
+
+    onChange();
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, [px]);
+
+  return matches;
+}
+
+function getTriggerVisible(
+  placement: "inset" | "sidebar" | undefined,
+  open: boolean,
+  isMd: boolean,
+  isLg: boolean
+) {
+  if (!placement) return true;
+  if (placement === "inset") return !isLg || !open;
+  return !isMd || !open || isLg;
+}
+
 function SidebarTrigger({
   className,
+  placement,
   onClick,
   ...props
-}: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar();
+}: React.ComponentProps<typeof Button> & {
+  placement?: "inset" | "sidebar";
+}) {
+  const { toggleSidebar, open } = useSidebar();
+  const isMd = useMinWidth(768);
+  const isLg = useMinWidth(1024);
+  const visible = getTriggerVisible(placement, open, isMd, isLg);
 
   return (
-    <Button
-      data-sidebar="trigger"
-      data-slot="sidebar-trigger"
-      variant="ghost"
-      size="icon"
-      className={cn("size-7", className)}
-      onClick={(event) => {
-        onClick?.(event);
-        toggleSidebar();
-      }}
-      {...props}
-    >
-      <HugeiconsIcon
-        icon={PanelLeftIcon}
-        strokeWidth={2}
-        className="size-4 shrink-0"
-      />
-      <span className="sr-only">Toggle Sidebar</span>
-    </Button>
+    <AnimatePresence initial={false} mode="popLayout">
+      {visible ? (
+        <motion.div
+          key={`sidebar-trigger-${placement ?? "default"}`}
+          initial={{ opacity: 0 }}
+          animate={{
+            opacity: 1,
+            transition: { delay: 0.3, duration: 0.15, ease: "easeInOut" },
+          }}
+          exit={{
+            opacity: 0,
+            transition: { duration: 0.05, ease: "easeInOut" },
+          }}
+          className="flex shrink-0"
+        >
+          <Button
+            data-sidebar="trigger"
+            data-slot="sidebar-trigger"
+            data-placement={placement}
+            variant="ghost"
+            size="icon-lg"
+            className={cn("hover:bg-accent hover:dark:bg-muted", className)}
+            onClick={(event) => {
+              onClick?.(event);
+              toggleSidebar();
+            }}
+            {...props}
+          >
+            <HugeiconsIcon
+              icon={PanelLeftIcon}
+              strokeWidth={2}
+              className="size-4.5 shrink-0"
+            />
+            <span className="sr-only">Toggle Sidebar</span>
+          </Button>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 
@@ -437,7 +529,8 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
       data-slot="sidebar-inset"
       className={cn(
         "bg-background relative flex w-full flex-1 flex-col",
-        "md:peer-data-[variant=inset]:sha dow-sm md:peer-data-[variant=inset]:m-3 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-3xl md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-3",
+        "md:peer-data-[variant=inset]:m-3 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-3xl md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-3",
+        "md:peer-data-[variant=inset]:transition-[margin] md:peer-data-[variant=inset]:duration-500 md:peer-data-[variant=inset]:ease-[cubic-bezier(0.32,0.72,0,1)] md:peer-data-[variant=inset]:motion-reduce:transition-none",
         className
       )}
       {...props}

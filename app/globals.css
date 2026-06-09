@@ -196,17 +196,6 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  [data-slot="sidebar-sheet"][data-hover="hidden"] {
-    left: calc(-1 * var(--sidebar-width)) !important;
-  }
-  [data-slot="sidebar-sheet"][data-hover="peek"] {
-    left: calc(
-      -1 * var(--sidebar-width) + var(--sidebar-peek-amount, 2rem)
-    ) !important;
-  }
-  [data-slot="sidebar-sheet"][data-hover="open"] {
-    left: 0 !important;
-  }
 }
 
 @source "../node_modules/streamdown/dist/index.js";
