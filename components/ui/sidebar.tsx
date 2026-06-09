@@ -10,6 +10,7 @@ import { Slot } from "radix-ui";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -136,7 +137,7 @@ function SidebarProvider({
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
-        event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
+        event.key.toLowerCase() === SIDEBAR_KEYBOARD_SHORTCUT &&
         (event.metaKey || event.ctrlKey)
       ) {
         event.preventDefault();
@@ -417,6 +418,18 @@ function Sidebar({
   );
 }
 
+function useSidebarShortcutModifier() {
+  const [modifierKey, setModifierKey] = React.useState("Ctrl");
+
+  React.useEffect(() => {
+    setModifierKey(
+      /Mac|iPhone|iPod|iPad/i.test(navigator.userAgent) ? "⌘" : "Ctrl"
+    );
+  }, []);
+
+  return modifierKey;
+}
+
 function useMinWidth(px: number) {
   const [matches, setMatches] = React.useState(false);
 
@@ -450,9 +463,12 @@ function SidebarTrigger({
 }: React.ComponentProps<typeof Button> & {
   placement?: "inset" | "sidebar";
 }) {
-  const { toggleSidebar, open } = useSidebar();
+  const { toggleSidebar, open, isMobile, openMobile } = useSidebar();
   const isMd = useMinWidth(768);
   const visible = getTriggerVisible(placement, open, isMd);
+  const isOpen = isMobile ? openMobile : open;
+  const modifierKey = useSidebarShortcutModifier();
+  const tooltipLabel = isOpen ? "Close sidebar" : "Open sidebar";
 
   return (
     <AnimatePresence initial={false} mode="popLayout">
@@ -470,26 +486,41 @@ function SidebarTrigger({
           }}
           className="flex shrink-0"
         >
-          <Button
-            data-sidebar="trigger"
-            data-slot="sidebar-trigger"
-            data-placement={placement}
-            variant="ghost"
-            size="icon-lg"
-            className={cn("hover:bg-accent hover:dark:bg-muted", className)}
-            onClick={(event) => {
-              onClick?.(event);
-              toggleSidebar();
-            }}
-            {...props}
-          >
-            <HugeiconsIcon
-              icon={PanelLeftIcon}
-              strokeWidth={2}
-              className="size-4.5 shrink-0"
-            />
-            <span className="sr-only">Toggle Sidebar</span>
-          </Button>
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <Button
+                data-sidebar="trigger"
+                data-slot="sidebar-trigger"
+                data-placement={placement}
+                variant="ghost"
+                size="icon-lg"
+                className={cn("hover:bg-accent hover:dark:bg-muted", className)}
+                onClick={(event) => {
+                  onClick?.(event);
+                  toggleSidebar();
+                }}
+                {...props}
+              >
+                <HugeiconsIcon
+                  icon={PanelLeftIcon}
+                  strokeWidth={2}
+                  className="size-4.5 shrink-0"
+                />
+                <span className="sr-only">{tooltipLabel}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side={placement === "inset" ? "right" : "right"}
+              align="center"
+              className="flex items-center gap-2"
+            >
+              <span>{tooltipLabel}</span>
+              <KbdGroup>
+                <Kbd>{modifierKey}</Kbd>
+                <Kbd>B</Kbd>
+              </KbdGroup>
+            </TooltipContent>
+          </Tooltip>
         </motion.div>
       ) : null}
     </AnimatePresence>

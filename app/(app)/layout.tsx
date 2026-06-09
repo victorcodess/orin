@@ -16,7 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <AppSidebarShell />
       </Suspense>
       <SidebarInset className="bg-background flex max-h-svh flex-col overflow-hidden">
-        <header className="flex h-12 shrink-0 items-center gap-2 px-4">
+        <header className="flex h-14 shrink-0 items-center gap-2 px-4">
           <SidebarTrigger placement="inset" className="-ml-1" />
          
         </header>

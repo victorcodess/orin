@@ -22,7 +22,6 @@ export function NavMain() {
         <SidebarMenuItem>
           <SidebarMenuButton
             asChild
-            tooltip="New chat"
             isActive={pathname === "/chat"}
           >
             <Link href="/chat">
@@ -34,7 +33,6 @@ export function NavMain() {
         <SidebarMenuItem>
           <SidebarMenuButton
             asChild
-            tooltip="Home"
             isActive={pathname === "/"}
           >
             <Link href="/">
