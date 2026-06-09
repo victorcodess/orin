@@ -19,20 +19,20 @@ const ThemeSwitcher = () => {
     return null;
   }
 
-  const iconClassName = "size-4 text-muted-foreground";
+
   const isDark = resolvedTheme === "dark";
 
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size="icon-sm"
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={() => setTheme(isDark ? "light" : "dark")}
     >
       {isDark ? (
-        <HugeiconsIcon icon={Moon02Icon} strokeWidth={2} className={iconClassName} />
+        <HugeiconsIcon icon={Moon02Icon} strokeWidth={2} className={"size-4.5 text-muted-foreground"} />
       ) : (
-        <HugeiconsIcon icon={Sun01Icon} strokeWidth={2} className={iconClassName} />
+        <HugeiconsIcon icon={Sun01Icon} strokeWidth={2} className={"size-5.5 text-muted-foreground"} />
       )}
     </Button>
   );

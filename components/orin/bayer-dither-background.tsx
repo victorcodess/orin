@@ -72,11 +72,7 @@ export function BayerDitherBackground({
     container.appendChild(canvas);
 
     const inkColor = new THREE.Color(
-      color ??
-        readCssColor(
-          "--muted-foreground",
-          resolvedTheme === "dark" ? "#525252" : "#d4d4d4",
-        ),
+      readCssColor("--muted-foreground", "#737373"),
     );
     colorRef.current = inkColor;
 
@@ -159,22 +155,14 @@ export function BayerDitherBackground({
       colorRef.current = null;
       canvas.remove();
     };
-  }, [color, pixelSize, shape, resolvedTheme]);
+  }, [pixelSize, shape]);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    if (!colorRef.current) return;
 
-    container.style.backgroundColor = readCssColor("--background", "#ffffff");
-
-    if (colorRef.current && !color) {
-      colorRef.current.set(
-        readCssColor(
-          "--muted-foreground",
-          resolvedTheme === "dark" ? "#525252" : "#d4d4d4",
-        ),
-      );
-    }
+    colorRef.current.set(
+      color ?? readCssColor("--muted-foreground", "#737373"),
+    );
   }, [color, resolvedTheme]);
 
   return (

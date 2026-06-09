@@ -3,17 +3,18 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { CircleIcon } from "@hugeicons/core-free-icons";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export default function Home() {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background">
+    <main className="bg-background relative flex min-h-screen flex-col items-center justify-center overflow-hidden">
       <BayerDitherBackground shape="circle" pixelSize={5} color="#ffba08" />
       <nav className="absolute top-8 left-1/2 z-10 h-14 w-120 -translate-x-1/2 rounded-full">
         <div className="bg-secondary flex h-14 w-full items-center justify-between rounded-full px-3.5">
-          <Link href="/" className="flex items-center gap-0.75 pl-2">
+          <Link href="/" className="flex items-center gap-1.25 pl-2">
             <HugeiconsIcon
               icon={CircleIcon}
-              className="size-7 shrink-0 fill-current/90"
+              className="size-7 shrink-0 fill-current/90 text-[#f77f00]"
             />
             <span className="text-2xl font-semibold tracking-tight">Orin</span>
           </Link>
@@ -26,7 +27,7 @@ export default function Home() {
               <Link href="/auth/sign-up">Sign up</Link>
             </Button>
 
-            {/* <ThemeSwitcher /> */}
+            <ThemeSwitcher />
 
             {/* <Button asChild size="sm" variant="secondary">
               <Link href="/auth/sign-up">Sign up</Link>
@@ -60,9 +61,26 @@ export default function Home() {
           {/* <span className="text-muted-foreground text-sm">
             © 2026 Orin. All rights reserved.
           </span> */}
-          <Link href="https://x.com/orin__chat" target="_blank" className="hover:text-primary transition-colors underline underline-offset-2">Twitter</Link>
-          <Link href="https://github.com/victorcodess/orin" target="_blank" className="hover:text-primary transition-colors underline underline-offset-2">GitHub</Link>
-          <Link href="/privacy" className="hover:text-primary transition-colors underline underline-offset-2">Privacy</Link>
+          <Link
+            href="https://x.com/orin__chat"
+            target="_blank"
+            className="hover:text-primary underline underline-offset-2 transition-colors"
+          >
+            Twitter
+          </Link>
+          <Link
+            href="https://github.com/victorcodess/orin"
+            target="_blank"
+            className="hover:text-primary underline underline-offset-2 transition-colors"
+          >
+            GitHub
+          </Link>
+          <Link
+            href="/privacy"
+            className="hover:text-primary underline underline-offset-2 transition-colors"
+          >
+            Privacy
+          </Link>
         </div>
         <div className="flex w-full items-center justify-center gap-4">
           <span className="text-muted-foreground text-sm">
@@ -74,7 +92,7 @@ export default function Home() {
             <Link
               href="https://victorwilliams.me"
               target="_blank"
-              className="underline underline-offset-2 hover:text-primary transition-colors"
+              className="hover:text-primary underline underline-offset-2 transition-colors"
             >
               Victor Williams
             </Link>
