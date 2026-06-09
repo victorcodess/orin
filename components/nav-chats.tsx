@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Message01Icon } from "@hugeicons/core-free-icons";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 
 import type { ConversationRow } from "@/lib/ai/conversations";
@@ -20,13 +21,40 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
+const MotionSidebarMenuItem = motion.create(SidebarMenuItem);
+
+const listVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    // transition: {
+    //   staggerChildren: 0.025,
+    //   delayChildren: 0.02,
+    // },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 1 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.1, ease: [0.25, 0.1, 0.25, 1] as const },
+  },
+};
+
 function conversationLabel(conversation: ConversationRow) {
   return conversation.title?.trim() || "Untitled chat";
 }
 
 export function NavChats() {
   const pathname = usePathname();
-  const [conversations, setConversations] = useState<ConversationRow[]>([]);
+  const [conversations, setConversations] = useState<ConversationRow[]>(
+    () => getCachedConversations(pathname) ?? []
+  );
+  const [isLoading, setIsLoading] = useState(
+    () => !getCachedConversations(pathname)
+  );
 
   useEffect(() => {
     debugLog(
@@ -35,17 +63,33 @@ export function NavChats() {
       conversations.map((conversation) => ({
         id: conversation.id,
         title: conversationLabel(conversation),
-      })),
+      }))
     );
   }, [conversations]);
 
   useEffect(() => {
     let cancelled = false;
 
+    const cached = getCachedConversations(pathname);
+    if (cached) {
+      setConversations(cached);
+      setIsLoading(false);
+    } else {
+      setConversations([]);
+      setIsLoading(true);
+    }
+
     async function loadConversations() {
       try {
-        const response = await fetch("/api/conversations", { cache: "no-store" });
-        if (!response.ok || cancelled) {
+        const response = await fetch("/api/conversations", {
+          cache: "no-store",
+        });
+        if (cancelled) {
+          return;
+        }
+
+        if (!response.ok) {
+          setIsLoading(false);
           return;
         }
 
@@ -54,18 +98,16 @@ export function NavChats() {
         if (!cancelled) {
           setCachedConversations(pathname, data);
           setConversations(data);
+          setIsLoading(false);
         }
       } catch {
-        // Keep the last known list if refresh fails.
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     }
 
-    const cached = getCachedConversations(pathname);
-    if (cached) {
-      setConversations(cached);
-    } else {
-      void loadConversations();
-    }
+    void loadConversations();
 
     const handleChange = () => {
       void loadConversations();
@@ -82,34 +124,72 @@ export function NavChats() {
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Recent</SidebarGroupLabel>
-      <SidebarMenu>
-        {conversations.length === 0 ? (
-          <SidebarMenuItem>
-            <SidebarMenuButton disabled className="text-muted-foreground">
-              <HugeiconsIcon icon={Message01Icon} strokeWidth={2} className="size-4 shrink-0" />
-              <span>No chats yet</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+      <AnimatePresence mode="wait" initial={false}>
+        {isLoading ? (
+          <motion.div
+            key="loader"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+          >
+            <SidebarMenu>
+              {Array.from({ length: 5 }, (_, index) => (
+                <SidebarMenuItem key={index}>
+                  <div className="bg-sidebar-accent/60 h-10 max-w-full animate-pulse rounded-full" />
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </motion.div>
         ) : (
-          conversations.map((conversation) => {
-            const href = `/chat/${conversation.id}`;
-            const isActive = pathname === href;
+          <motion.div
+            key="chats"
+            variants={listVariants}
+            initial="hidden"
+            animate="show"
+          >
+            <SidebarMenu>
+              {conversations.length === 0 ? (
+                <MotionSidebarMenuItem variants={itemVariants}>
+                  <SidebarMenuButton disabled className="text-muted-foreground">
+                    <HugeiconsIcon
+                      icon={Message01Icon}
+                      strokeWidth={2}
+                      className="size-4 shrink-0"
+                    />
+                    <span>No chats yet</span>
+                  </SidebarMenuButton>
+                </MotionSidebarMenuItem>
+              ) : (
+                conversations.map((conversation) => {
+                  const href = `/chat/${conversation.id}`;
+                  const isActive = pathname === href;
 
-            return (
-              <SidebarMenuItem key={conversation.id}>
-                <SidebarMenuButton asChild isActive={isActive}>
-                  <Link href={href}>
-                    <HugeiconsIcon icon={Message01Icon} strokeWidth={2} className="size-4 shrink-0" />
-                    <span className="truncate">
-                      {conversationLabel(conversation)}
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })
+                  return (
+                    <MotionSidebarMenuItem
+                      key={conversation.id}
+                      variants={itemVariants}
+                    >
+                      <SidebarMenuButton asChild isActive={isActive}>
+                        <Link href={href}>
+                          <HugeiconsIcon
+                            icon={Message01Icon}
+                            strokeWidth={2}
+                            className="size-4 shrink-0"
+                          />
+                          <span className="truncate">
+                            {conversationLabel(conversation)}
+                          </span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </MotionSidebarMenuItem>
+                  );
+                })
+              )}
+            </SidebarMenu>
+          </motion.div>
         )}
-      </SidebarMenu>
+      </AnimatePresence>
     </SidebarGroup>
   );
 }
