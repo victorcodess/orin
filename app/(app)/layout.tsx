@@ -2,7 +2,7 @@ import { Suspense } from "react";
 
 import { AppSidebarShell } from "@/components/orin/app-sidebar-shell";
 import { AppSidebarSkeleton } from "@/components/orin/app-sidebar-skeleton";
-import { Separator } from "@/components/ui/separator";
+// import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
@@ -16,12 +16,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <AppSidebarShell />
       </Suspense>
       <SidebarInset className="bg-background flex max-h-svh flex-col overflow-hidden">
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
-          />
+        <header className="flex h-12 shrink-0 items-center gap-2 px-4">
+          <SidebarTrigger placement="inset" className="-ml-1" />
+         
         </header>
         <div className="flex h-full max-h-[calc(100vh-64px)] flex-col">
           {children}

@@ -13,6 +13,7 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 
 import { CircleIcon } from "@hugeicons/core-free-icons";
@@ -30,8 +31,11 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     <Sidebar variant="inset" {...props}>
       <SidebarHeader className="mt-1">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <Link href="/" className="flex items-center gap-1.25 pl-3">
+          <SidebarMenuItem className="flex items-center justify-between">
+            <Link
+              href="/"
+              className="ml-1 flex items-center gap-1.25 px-2 hover:opacity-80 transition-opacity"
+            >
               <HugeiconsIcon
                 icon={CircleIcon}
                 className="size-7 shrink-0 fill-current/90 text-[#f97015]"
@@ -40,6 +44,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                 Orin
               </span>
             </Link>
+            <SidebarTrigger placement="sidebar" />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
