@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Gloock } from "next/font/google";
+import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { AppToaster } from "@/components/orin/app-toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  getHeadingFontFamilyVariable,
+  getHeadingFontStylesheetUrl,
+} from "@/lib/fonts/heading-font";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -22,13 +26,6 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const gloock = Gloock({
-  variable: "--font-gloock",
-  display: "swap",
-  subsets: ["latin"],
-  weight: "400",
-});
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,9 +34,23 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${gloock.variable}`}
+      className={geistSans.variable}
+      style={
+        {
+          "--heading-font-family": getHeadingFontFamilyVariable(),
+        } as React.CSSProperties
+      }
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link rel="stylesheet" href={getHeadingFontStylesheetUrl()} />
+      </head>
       <body className={`${geistSans.className} antialiased`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
