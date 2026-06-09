@@ -1,15 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import {
-  LifebuoyIcon,
-  Settings02Icon,
-  SparklesIcon,
-} from "@hugeicons/core-free-icons";
-
+import type { ComponentProps } from "react";
 import { NavChats } from "@/components/nav-chats";
 import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -18,24 +12,12 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const navSecondary = [
-  {
-    title: "Settings",
-    url: "/protected",
-    icon: Settings02Icon,
-  },
-  {
-    title: "Support",
-    url: "https://github.com/victorcodess/orin",
-    icon: LifebuoyIcon,
-  },
-];
+import { CircleIcon } from "@hugeicons/core-free-icons";
 
-type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+type AppSidebarProps = ComponentProps<typeof Sidebar> & {
   user: {
     name: string;
     email: string;
@@ -46,31 +28,25 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
   return (
     <Sidebar variant="inset" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="mt-1">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <HugeiconsIcon
-                    icon={SparklesIcon}
-                    strokeWidth={2}
-                    className="size-4 shrink-0 text-sidebar-primary-foreground"
-                  />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Orin</span>
-                  <span className="truncate text-xs">Your AI companion</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
+            <Link href="/" className="flex items-center gap-1.25 pl-3">
+              <HugeiconsIcon
+                icon={CircleIcon}
+                className="size-7 shrink-0 fill-current/90 text-[#f97015]"
+              />
+              <span className="font-heading text-2xl font-semibold tracking-tighter text-foreground">
+                Orin
+              </span>
+            </Link>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
+
+      <SidebarContent className="">
         <NavMain />
         <NavChats />
-        <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
