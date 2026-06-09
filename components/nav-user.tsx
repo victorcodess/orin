@@ -188,7 +188,7 @@ export function NavUser({ user }: NavUserProps) {
                 {user?.avatar ? (
                   <AvatarImage src={user.avatar} alt={displayName} />
                 ) : null}
-                <AvatarFallback className="rounded-lg">
+                <AvatarFallback className="rounded-full bg-border">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -219,7 +219,7 @@ export function NavUser({ user }: NavUserProps) {
                     {user.avatar ? (
                       <AvatarImage src={user.avatar} alt={displayName} />
                     ) : null}
-                    <AvatarFallback className="rounded-lg">
+                    <AvatarFallback className="rounded-full bg-border">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
@@ -238,7 +238,7 @@ export function NavUser({ user }: NavUserProps) {
               ) : (
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar className="size-9 rounded-full">
-                    <AvatarFallback className="rounded-lg">
+                    <AvatarFallback className="rounded-full bg-border font-medium">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
