@@ -29,10 +29,10 @@ const ThemeSwitcher = () => {
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={() => setTheme(isDark ? "light" : "dark")}
     >
-      {isDark ? (
-        <HugeiconsIcon icon={Moon02Icon} strokeWidth={2} className={"size-4.5 text-muted-foreground"} />
+      {!isDark ? (
+        <HugeiconsIcon icon={Moon02Icon} strokeWidth={2} className={"size-4.5 text-primary/90"} />
       ) : (
-        <HugeiconsIcon icon={Sun01Icon} strokeWidth={2} className={"size-5.5 text-muted-foreground"} />
+        <HugeiconsIcon icon={Sun01Icon} strokeWidth={2} className={"size-5.5 text-primary/90"} />
       )}
     </Button>
   );
