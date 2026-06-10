@@ -227,7 +227,8 @@ function Sidebar({
     enableHoverPeek
   );
   const isHoverOverlay =
-    enableHoverPeek && (hoverChromeMode === "peek" || hoverChromeMode === "open");
+    enableHoverPeek &&
+    (hoverChromeMode === "peek" || hoverChromeMode === "open");
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -595,9 +596,21 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
     <main
       data-slot="sidebar-inset"
       className={cn(
+        // Base layout
         "bg-background relative flex w-full flex-1 flex-col",
-        "md:peer-data-[variant=inset]:m-3 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-3xl md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-3",
-        "md:peer-data-[variant=inset]:transition-[margin] md:peer-data-[variant=inset]:duration-500 md:peer-data-[variant=inset]:ease-[cubic-bezier(0.32,0.72,0,1)] md:peer-data-[variant=inset]:motion-reduce:transition-none",
+
+        // Inset spacing & shape (md+, inset variant)
+        "md:peer-data-[variant=inset]:m-3 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-3xl",
+        "md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-3",
+
+        // Collapsed card chrome — shadow after sidebar finishes closing
+        "md:peer-data-[variant=inset]:peer-data-[state=collapsed]:shadow-xl dark:md:peer-data-[variant=inset]:peer-data-[state=collapsed]:shadow-none md:peer-data-[variant=inset]:peer-data-[state=collapsed]:shadow-sidebar-foreground/5",
+
+        // Transitions: margin moves with sidebar; shadow delayed 500ms on collapse
+        "md:peer-data-[variant=inset]:transition-[margin_500ms_cubic-bezier(0.32,0.72,0,1)_0ms,box-shadow_500ms_cubic-bezier(0.32,0.72,0,1)_0ms]",
+        "md:peer-data-[variant=inset]:peer-data-[state=collapsed]:transition-[margin_500ms_cubic-bezier(0.32,0.72,0,1)_0ms,box-shadow_500ms_cubic-bezier(0.32,0.72,0,1)_500ms]",
+        "md:peer-data-[variant=inset]:motion-reduce:transition-none",
+
         className
       )}
       {...props}
