@@ -6,7 +6,6 @@ import { Slot } from "@radix-ui/react-slot";
 import { mergeRefs } from "@/lib/merge-refs";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea, ScrollViewport } from "@/components/ui/scroll-area";
 import {
   Tooltip,
   TooltipContent,
@@ -120,21 +119,21 @@ const PromptInputTextarea = React.forwardRef<
   );
 
   return (
-    <ScrollArea className="max-h-40">
-      <ScrollViewport>
+    // <ScrollArea className="">
+      // <ScrollViewport>
         <Textarea
           ref={handleTextareaRef}
           aria-label="Message input"
           placeholder="How can I help you today?"
           className={cn(
-            "min-h-14 w-full resize-none border-0 bg-transparent px-4 py-4 text-sm leading-6 font-normal text-primary shadow-none outline-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent",
+            "min-h-14 max-h-40 min-w-0 w-full resize-none border-0 bg-transparent px-4 py-4 text-sm leading-6 font-normal text-primary shadow-none outline-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent",
             className,
           )}
           onKeyDown={handleKeyDown}
           {...props}
         />
-      </ScrollViewport>
-    </ScrollArea>
+      // </ScrollViewport>
+    // </ScrollArea>
   );
 });
 

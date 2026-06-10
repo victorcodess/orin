@@ -14,7 +14,7 @@ import {
   PromptInputTextarea,
 } from "@/components/nexus-ui/prompt-input";
 import { toast } from "@/components/nexus-ui/toaster";
-import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
+import { AssistantConfig, DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 
 export function NewChatView() {
   const assistant = DEFAULT_ASSISTANT;
@@ -63,58 +63,97 @@ export function NewChatView() {
   );
 
   return (
-    <div className="bg -white relative flex h-full min-h-0 flex-1 flex-col items-center justify-center p-4 pb-0 bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_68%,#f97015_290%)]">
-      <div className="absolute top-1/2 left-1/2 -mt-10 flex w-full -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1">
-        <HugeiconsIcon
-          icon={CircleIcon}
-          className="size-12 shrink-0 fill-current/90 text-[#f97015] mb-4"
-        />
-        <p className="text-muted-foreground text-base font-medium text-center">
-          Hey, Victor!
-        </p>
-        <p className="text-foreground font-heading w-full max-w-xs text-center text-3xl leading-tight tracking-tight">
-          {/* {assistant.firstMessage} */}
-          What&apos;s on your mind?
-        </p>
+    <div className="bg -white relative flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] p-4 pb-0 dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]">
+      <div className="absolute top-1/2 left-1/2 -mt-10 flex w-full -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-12">
+        <div className="flex flex-col items-center justify-center gap-1">
+          <HugeiconsIcon
+            icon={CircleIcon}
+            className="mb-4 size-12 shrink-0 fill-current/90 text-[#f97015]"
+          />
+          <p className="text-muted-foreground text-center text-base font-medium">
+            Hey, Victor!
+          </p>
+          <p className="text-foreground font-heading w-full max-w-xs text-center text-3xl leading-tight tracking-tight">
+            {/* {assistant.firstMessage} */}
+            What&apos;s on your mind?
+          </p>
+        </div>
+
+        <div className="w-full max-w-2xl hidden md:block">
+          <ChatInput
+            assistant={assistant}
+            input={input}
+            setInput={setInput}
+            isSubmitting={isSubmitting}
+            handleSubmit={handleSubmit}
+          />
+        </div>
       </div>
 
-      <div className="mt-auto flex w-full max-w-3xl flex-col items-center gap-8 pb-4 text-center">
-        <form
-          className="w-full"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void handleSubmit();
-          }}
-        >
-          <PromptInput onSubmit={(value) => void handleSubmit(value)}>
-            <PromptInputTextarea
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder={`Message ${assistant.name}...`}
-              disabled={isSubmitting}
-            />
-            <PromptInputActions>
-              <PromptInputActionGroup />
-              <PromptInputActionGroup>
-                <PromptInputAction asChild>
-                  <Button
-                    type="submit"
-                    size="icon"
-                    className="size-8"
-                    disabled={!input.trim() || isSubmitting}
-                  >
-                    <HugeiconsIcon
-                      icon={ArrowUp01Icon}
-                      strokeWidth={2}
-                      className="size-4 shrink-0"
-                    />
-                  </Button>
-                </PromptInputAction>
-              </PromptInputActionGroup>
-            </PromptInputActions>
-          </PromptInput>
-        </form>
+      <div className="mt-auto flex w-full max-w-3xl flex-col items-center gap-8 pb-5 text-center md:hidden">
+        <ChatInput
+          assistant={assistant}
+          input={input}
+          setInput={setInput}
+          isSubmitting={isSubmitting}
+          handleSubmit={handleSubmit}
+        />
       </div>
     </div>
+  );
+}
+
+function ChatInput({
+  assistant,
+  input,
+  setInput,
+  isSubmitting,
+  handleSubmit,
+}: {
+  assistant: AssistantConfig;
+  input: string;
+  setInput: (input: string) => void;
+  isSubmitting: boolean;
+  handleSubmit: (value?: string) => void;
+}) {
+  return (
+    <form
+      className="w-full"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void handleSubmit();
+      }}
+    >
+      <PromptInput
+        onSubmit={(value) => void handleSubmit(value)}
+        className="bg-sidebar dark:bg-border/90 shadow-sidebar-foreground/0 dark:shadow-sidebar-border/5 flex-row items-end rounded-4xl border-none shadow-sm backdrop-blur-lg"
+      >
+        <PromptInputTextarea
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          placeholder={`Message ${assistant.name}...`}
+          disabled={isSubmitting}
+          className="text-foreground min-h-0 flex-1 pt-2.5 pb-3.25 text-base! leading-7! font-medium px-6"
+        />
+        <PromptInputActions className="absolute right-0 w-fit shrink-0 py-2.5 px-2.5">
+          <PromptInputActionGroup>
+            <PromptInputAction asChild>
+              <Button
+                type="submit"
+                size="icon"
+                className="size-8"
+                disabled={!input.trim() || isSubmitting}
+              >
+                <HugeiconsIcon
+                  icon={ArrowUp01Icon}
+                  strokeWidth={2}
+                  className="size-4 shrink-0"
+                />
+              </Button>
+            </PromptInputAction>
+          </PromptInputActionGroup>
+        </PromptInputActions>
+      </PromptInput>
+    </form>
   );
 }

@@ -604,7 +604,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
         "md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-3",
 
         // Collapsed card chrome — shadow after sidebar finishes closing
-        "md:peer-data-[variant=inset]:peer-data-[state=collapsed]:shadow-xl dark:md:peer-data-[variant=inset]:peer-data-[state=collapsed]:shadow-none md:peer-data-[variant=inset]:peer-data-[state=collapsed]:shadow-sidebar-foreground/5",
+        "dark:md:peer-data-[variant=inset]:peer-data-[state=collapsed]:shadow-sidebar-border/5 md:peer-data-[variant=inset]:peer-data-[state=collapsed]:shadow-sidebar-foreground/5 md:peer-data-[variant=inset]:peer-data-[state=collapsed]:shadow-xl",
 
         // Transitions: margin moves with sidebar; shadow delayed 500ms on collapse
         "md:peer-data-[variant=inset]:transition-[margin_500ms_cubic-bezier(0.32,0.72,0,1)_0ms,box-shadow_500ms_cubic-bezier(0.32,0.72,0,1)_0ms]",
