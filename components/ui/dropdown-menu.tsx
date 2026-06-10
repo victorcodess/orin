@@ -7,10 +7,63 @@ import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
+type DropdownMenuDeferCloseContextValue = {
+  deferUntilClose: (action: () => void) => void;
+  runPendingCloseAction: (event: Event) => void;
+};
+
+const DropdownMenuDeferCloseContext =
+  React.createContext<DropdownMenuDeferCloseContextValue | null>(null);
+
+function useDropdownMenuDeferClose() {
+  const context = React.useContext(DropdownMenuDeferCloseContext);
+
+  return React.useCallback(
+    (action: () => void) => {
+      if (context) {
+        context.deferUntilClose(action);
+        return;
+      }
+
+      action();
+    },
+    [context],
+  );
+}
+
 function DropdownMenu({
+  children,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+  const pendingActionRef = React.useRef<(() => void) | null>(null);
+
+  const deferUntilClose = React.useCallback((action: () => void) => {
+    pendingActionRef.current = action;
+  }, []);
+
+  const runPendingCloseAction = React.useCallback((event: Event) => {
+    if (!pendingActionRef.current) {
+      return;
+    }
+
+    event.preventDefault();
+    const action = pendingActionRef.current;
+    pendingActionRef.current = null;
+    action();
+  }, []);
+
+  const contextValue = React.useMemo(
+    () => ({ deferUntilClose, runPendingCloseAction }),
+    [deferUntilClose, runPendingCloseAction],
+  );
+
+  return (
+    <DropdownMenuDeferCloseContext.Provider value={contextValue}>
+      <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props}>
+        {children}
+      </DropdownMenuPrimitive.Root>
+    </DropdownMenuDeferCloseContext.Provider>
+  );
 }
 
 function DropdownMenuPortal({
@@ -35,15 +88,27 @@ function DropdownMenuTrigger({
 function DropdownMenuContent({
   className,
   sideOffset = 4,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  const deferCloseContext = React.useContext(DropdownMenuDeferCloseContext);
+
+  const handleCloseAutoFocus = React.useCallback(
+    (event: Event) => {
+      deferCloseContext?.runPendingCloseAction(event);
+      onCloseAutoFocus?.(event);
+    },
+    [deferCloseContext, onCloseAutoFocus],
+  );
+
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
+        onCloseAutoFocus={handleCloseAutoFocus}
         className={cn(
-          "dark:border-border/80 bg-popover text-popover-foreground data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-3xl border px-1.5 py-1.5 shadow-md/2",
+          "dark:border-border/80 bg-popover text-popover-foreground data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:overflow-hidden data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 no-scrollbar z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-3xl border px-1.5 py-1.5 shadow-md/2",
           className
         )}
         {...props}
@@ -83,6 +148,24 @@ function DropdownMenuItem({
         className
       )}
       {...props}
+    />
+  );
+}
+
+function DropdownMenuDeferredItem({
+  onSelect,
+  ...props
+}: Omit<React.ComponentProps<typeof DropdownMenuItem>, "onSelect"> & {
+  onSelect: () => void;
+}) {
+  const deferUntilClose = useDropdownMenuDeferClose();
+
+  return (
+    <DropdownMenuItem
+      {...props}
+      onSelect={() => {
+        deferUntilClose(onSelect);
+      }}
     />
   );
 }
@@ -247,7 +330,7 @@ function DropdownMenuSubContent({
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
       className={cn(
-        "dark:border-border/80 bg-popover text-popover-foreground data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 z-50 min-w-36 origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-3xl border px-1.5 py-1.5 shadow-md/2",
+        "dark:border-border/80 bg-popover text-popover-foreground data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:overflow-hidden data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 z-50 min-w-36 origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-3xl border px-1.5 py-1.5 shadow-md/2",
         className
       )}
       {...props}
@@ -263,6 +346,7 @@ export {
   DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuItem,
+  DropdownMenuDeferredItem,
   DropdownMenuCheckboxItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -271,4 +355,5 @@ export {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
+  useDropdownMenuDeferClose,
 };
