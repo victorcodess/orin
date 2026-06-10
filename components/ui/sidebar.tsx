@@ -431,9 +431,9 @@ function useSidebarShortcutModifier() {
 }
 
 function useMinWidth(px: number) {
-  const [matches, setMatches] = React.useState(false);
+  const [matches, setMatches] = React.useState<boolean | null>(null);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const mql = window.matchMedia(`(min-width: ${px}px)`);
     const onChange = () => setMatches(mql.matches);
 
@@ -448,10 +448,15 @@ function useMinWidth(px: number) {
 function getTriggerVisible(
   placement: "inset" | "sidebar" | undefined,
   open: boolean,
-  isMd: boolean
+  isMd: boolean | null
 ) {
   if (!placement) return true;
-  if (placement === "inset") return !isMd || !open;
+  if (placement === "inset") {
+    // Before viewport is measured, assume desktop and hide when the sidebar is open
+    // so the inset trigger does not flash on refresh.
+    if (isMd === null) return !open;
+    return !isMd || !open;
+  }
   return true;
 }
 
@@ -486,7 +491,7 @@ function SidebarTrigger({
           }}
           className="flex shrink-0"
         >
-          <Tooltip delayDuration={150}>
+          <Tooltip delayDuration={25000}>
             <TooltipTrigger asChild>
               <Button
                 data-sidebar="trigger"
