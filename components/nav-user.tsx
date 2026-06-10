@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import {
   ArrowRight01Icon,
@@ -42,6 +43,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { User } from "@supabase/supabase-js";
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -51,13 +54,22 @@ import {
 
 const COMMUNITY_URL = "https://github.com/victorcodess/orin";
 
-type NavUserProps = {
-  user: {
-    name: string;
-    email: string;
-    avatar: string;
-  } | null;
+type SidebarUser = {
+  name: string;
+  email: string;
+  avatar: string;
 };
+
+function toSidebarUser(authUser: User): SidebarUser {
+  return {
+    name:
+      (authUser.user_metadata?.full_name as string | undefined) ??
+      authUser.email?.split("@")[0] ??
+      "User",
+    email: authUser.email ?? "",
+    avatar: (authUser.user_metadata?.avatar_url as string | undefined) ?? "",
+  };
+}
 
 function ThemePreferenceMenu() {
   const [mounted, setMounted] = useState(false);
@@ -162,12 +174,30 @@ function ExternalMenuItem({
   );
 }
 
-export function NavUser({ user }: NavUserProps) {
+export function NavUser() {
   const router = useRouter();
   const { isMobile } = useSidebar();
+  const [user, setUser] = useState<SidebarUser | null | undefined>(undefined);
+  const isLoading = user === undefined;
   const displayName = user?.name ?? "Guest";
   const displayEmail = user?.email ?? "Not signed in";
   const initials = displayName.slice(0, 2).toUpperCase();
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    void supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user ? toSidebarUser(data.user) : null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? toSidebarUser(session.user) : null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -176,7 +206,38 @@ export function NavUser({ user }: NavUserProps) {
   }
 
   return (
-    <SidebarMenu>
+    <AnimatePresence mode="wait" initial={false}>
+      {isLoading ? (
+        <motion.div
+          key="loader"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+        >
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" className="pointer-events-none pr-4">
+                <Skeleton className="bg-sidebar-accent/60 size-9 shrink-0 animate-pulse rounded-full" />
+                <div className="grid flex-1 gap-1.5">
+                  <Skeleton className="bg-sidebar-accent/60 h-4 w-24 animate-pulse" />
+                  <Skeleton className="bg-sidebar-accent/60 h-3 w-32 animate-pulse" />
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </motion.div>
+      ) : (
+        <motion.div
+          key="user"
+          initial={{ opacity: 0, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.1,
+            ease: [0.25, 0.1, 0.25, 1] as const,
+          }}
+        >
+          <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -461,6 +522,9 @@ export function NavUser({ user }: NavUserProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
-    </SidebarMenu>
+          </SidebarMenu>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

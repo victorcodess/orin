@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ComponentProps } from "react";
+import { Suspense, type ComponentProps } from "react";
 import { NavChats } from "@/components/nav-chats";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
@@ -18,15 +18,9 @@ import {
 
 import { CircleIcon } from "@hugeicons/core-free-icons";
 
-type AppSidebarProps = ComponentProps<typeof Sidebar> & {
-  user: {
-    name: string;
-    email: string;
-    avatar: string;
-  } | null;
-};
+type AppSidebarProps = ComponentProps<typeof Sidebar>;
 
-export function AppSidebar({ user, ...props }: AppSidebarProps) {
+export function AppSidebar({ ...props }: AppSidebarProps) {
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader className="mt-1">
@@ -50,11 +44,15 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       </SidebarHeader>
 
       <SidebarContent className="">
-        <NavMain />
-        <NavChats />
+        <Suspense fallback={null}>
+          <NavMain />
+        </Suspense>
+        <Suspense fallback={null}>
+          <NavChats />
+        </Suspense>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );

@@ -171,11 +171,11 @@ export function NavChats() {
                     >
                       <SidebarMenuButton asChild isActive={isActive}>
                         <Link href={href}>
-                          <HugeiconsIcon
+                          {/* <HugeiconsIcon
                             icon={Message01Icon}
                             strokeWidth={2}
                             className="size-4 shrink-0"
-                          />
+                          /> */}
                           <span className="truncate">
                             {conversationLabel(conversation)}
                           </span>

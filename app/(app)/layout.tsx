@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 
+import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/orin/app-header";
-import { AppSidebarShell } from "@/components/orin/app-sidebar-shell";
-import { AppSidebarSkeleton } from "@/components/orin/app-sidebar-skeleton";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function AppLayout({
@@ -12,9 +11,7 @@ export default function AppLayout({
 }) {
   return (
     <SidebarProvider>
-      <Suspense fallback={<AppSidebarSkeleton />}>
-        <AppSidebarShell />
-      </Suspense>
+      <AppSidebar />
       <SidebarInset className="bg-background flex max-h-svh flex-col overflow-hidden">
         <Suspense
           fallback={
