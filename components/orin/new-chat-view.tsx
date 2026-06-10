@@ -1,20 +1,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ArrowUp01Icon, CircleIcon } from "@hugeicons/core-free-icons";
 import { useCallback, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { ChatInput } from "@/components/orin/chat-input";
 import {
-  PromptInput,
-  PromptInputAction,
-  PromptInputActionGroup,
-  PromptInputActions,
-  PromptInputTextarea,
-} from "@/components/nexus-ui/prompt-input";
+  Suggestion,
+  SuggestionList,
+  Suggestions,
+} from "@/components/nexus-ui/suggestions";
 import { toast } from "@/components/nexus-ui/toaster";
-import { AssistantConfig, DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
+import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
+
+const NEW_CHAT_SUGGESTIONS = [
+  "I need to get something off my chest",
+  "I have some amazing news to share",
+  "Talk through a decision with me",
+  "Help me reflect on my week",
+] as const;
 
 export function NewChatView() {
   const assistant = DEFAULT_ASSISTANT;
@@ -66,10 +69,10 @@ export function NewChatView() {
     <div className="bg -white relative flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] p-4 pb-0 dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]">
       <div className="absolute top-1/2 left-1/2 -mt-10 flex w-full -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-12">
         <div className="flex flex-col items-center justify-center gap-1">
-          <HugeiconsIcon
+          {/* <HugeiconsIcon
             icon={CircleIcon}
             className="mb-4 size-12 shrink-0 fill-current/90 text-[#f97015]"
-          />
+          /> */}
           <p className="text-muted-foreground text-center text-base font-medium">
             Hey, Victor!
           </p>
@@ -79,7 +82,7 @@ export function NewChatView() {
           </p>
         </div>
 
-        <div className="w-full max-w-2xl hidden md:block">
+        <div className="hidden w-full max-w-2xl flex-col gap-6 md:flex">
           <ChatInput
             assistant={assistant}
             input={input}
@@ -87,6 +90,19 @@ export function NewChatView() {
             isSubmitting={isSubmitting}
             handleSubmit={handleSubmit}
           />
+          <Suggestions onSelect={setInput}>
+            <SuggestionList className="justify-center">
+              {NEW_CHAT_SUGGESTIONS.map((suggestion) => (
+                <Suggestion
+                  key={suggestion}
+                  variant="outline"
+                  className="text-foreground font-medium h-9"
+                >
+                  {suggestion}
+                </Suggestion>
+              ))}
+            </SuggestionList>
+          </Suggestions>
         </div>
       </div>
 
@@ -100,60 +116,5 @@ export function NewChatView() {
         />
       </div>
     </div>
-  );
-}
-
-function ChatInput({
-  assistant,
-  input,
-  setInput,
-  isSubmitting,
-  handleSubmit,
-}: {
-  assistant: AssistantConfig;
-  input: string;
-  setInput: (input: string) => void;
-  isSubmitting: boolean;
-  handleSubmit: (value?: string) => void;
-}) {
-  return (
-    <form
-      className="w-full"
-      onSubmit={(event) => {
-        event.preventDefault();
-        void handleSubmit();
-      }}
-    >
-      <PromptInput
-        onSubmit={(value) => void handleSubmit(value)}
-        className="bg-sidebar dark:bg-border/90 shadow-sidebar-foreground/0 dark:shadow-sidebar-border/5 flex-row items-end rounded-4xl border-none shadow-sm backdrop-blur-lg"
-      >
-        <PromptInputTextarea
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder={`Message ${assistant.name}...`}
-          disabled={isSubmitting}
-          className="text-foreground min-h-0 flex-1 pt-2.5 pb-3.25 text-base! leading-7! font-medium px-6"
-        />
-        <PromptInputActions className="absolute right-0 w-fit shrink-0 py-2.5 px-2.5">
-          <PromptInputActionGroup>
-            <PromptInputAction asChild>
-              <Button
-                type="submit"
-                size="icon"
-                className="size-8"
-                disabled={!input.trim() || isSubmitting}
-              >
-                <HugeiconsIcon
-                  icon={ArrowUp01Icon}
-                  strokeWidth={2}
-                  className="size-4 shrink-0"
-                />
-              </Button>
-            </PromptInputAction>
-          </PromptInputActionGroup>
-        </PromptInputActions>
-      </PromptInput>
-    </form>
   );
 }
