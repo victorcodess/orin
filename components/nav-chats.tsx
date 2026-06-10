@@ -8,10 +8,11 @@ import { useEffect, useState } from "react";
 
 import type { ConversationRow } from "@/lib/ai/conversations";
 import {
-  getCachedConversations,
+  clearConversationsCache,
   setCachedConversations,
 } from "@/lib/conversations-cache";
 import { debugLog } from "@/lib/debug";
+import { createClient } from "@/lib/supabase/client";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SidebarGroup,
@@ -50,10 +51,8 @@ function conversationLabel(conversation: ConversationRow) {
 
 export function NavChats() {
   const pathname = usePathname();
-  const [conversations, setConversations] = useState<ConversationRow[]>(
-    () => getCachedConversations() ?? [],
-  );
-  const [isLoading, setIsLoading] = useState(() => !getCachedConversations());
+  const [conversations, setConversations] = useState<ConversationRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     debugLog(
@@ -68,12 +67,7 @@ export function NavChats() {
 
   useEffect(() => {
     let cancelled = false;
-
-    const cached = getCachedConversations();
-    if (cached) {
-      setConversations(cached);
-      setIsLoading(false);
-    }
+    let activeUserId: string | null | undefined;
 
     async function loadConversations() {
       try {
@@ -103,10 +97,33 @@ export function NavChats() {
       }
     }
 
-    if (!cached) {
+    async function syncForUser(userId: string | null) {
+      if (userId === activeUserId) {
+        return;
+      }
+
+      activeUserId = userId;
+      clearConversationsCache();
+      setConversations([]);
       setIsLoading(true);
-      void loadConversations();
+      await loadConversations();
     }
+
+    const supabase = createClient();
+
+    void supabase.auth.getUser().then(({ data }) => {
+      if (!cancelled) {
+        void syncForUser(data.user?.id ?? null);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!cancelled) {
+        void syncForUser(session?.user?.id ?? null);
+      }
+    });
 
     const handleChange = () => {
       void loadConversations();
@@ -116,6 +133,7 @@ export function NavChats() {
 
     return () => {
       cancelled = true;
+      subscription.unsubscribe();
       window.removeEventListener("orin:conversations-changed", handleChange);
     };
   }, []);
