@@ -65,7 +65,7 @@ export function AppHeader() {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-2 px-4">
       <div className="flex items-center gap-2">
-        <SidebarTrigger placement="inset" className="-ml-1" />
+        <SidebarTrigger placement="inset" />
 
         {conversationId ? (
           <ChatTitle conversationId={conversationId} isLoggedIn={isLoggedIn} />

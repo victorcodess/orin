@@ -4,7 +4,7 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { PanelLeftIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { Slot } from "radix-ui";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -36,8 +36,12 @@ const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 const SIDEBAR_HOVER_PEEK_ZONE = 100;
 const SIDEBAR_HOVER_OPEN_ZONE = 12;
-const SIDEBAR_PEEK_AMOUNT = "1.25rem";
+const SIDEBAR_PEEK_AMOUNT = "1.15rem";
 const SIDEBAR_TRANSITION_MS = 500;
+const SIDEBAR_TRANSITION_EASE = [0.32, 0.72, 0, 1] as const;
+const SIDEBAR_INSET_TRIGGER_WIDTH = "2.5rem";
+const SIDEBAR_INSET_TRIGGER_GAP = "0.5rem";
+const SIDEBAR_INSET_TRIGGER_OFFSET = "0.25rem";
 const SIDEBAR_TRANSITION_CLASS =
   "transition-[left,right,width,margin,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none";
 
@@ -474,62 +478,91 @@ function SidebarTrigger({
   const isOpen = isMobile ? openMobile : open;
   const modifierKey = useSidebarShortcutModifier();
   const tooltipLabel = isOpen ? "Close sidebar" : "Open sidebar";
+  const collapsibleInset = placement === "inset";
+  const insetRevealDelay = 0.4;
+  const insetTransitionDuration = SIDEBAR_TRANSITION_MS / 1000;
 
-  return (
-    <AnimatePresence initial={false} mode="popLayout">
-      {visible ? (
-        <motion.div
-          key={`sidebar-trigger-${placement ?? "default"}`}
-          initial={{ opacity: 0 }}
-          animate={{
-            opacity: 1,
-            transition: { delay: 0.4, duration: 0.15, ease: "easeInOut" },
+  const trigger = (
+    <Tooltip delayDuration={10000}>
+      <TooltipTrigger asChild>
+        <Button
+          data-sidebar="trigger"
+          data-slot="sidebar-trigger"
+          data-placement={placement}
+          variant="ghost"
+          size="icon-lg"
+          className={cn(
+            "hover:bg-accent hover:dark:bg-muted",
+            collapsibleInset ? undefined : className
+          )}
+          tabIndex={collapsibleInset && !visible ? -1 : undefined}
+          aria-hidden={collapsibleInset && !visible ? true : undefined}
+          onClick={(event) => {
+            onClick?.(event);
+            toggleSidebar();
           }}
-          exit={{
-            opacity: 0,
-            transition: { duration: 0.05, ease: "easeInOut" },
-          }}
-          className="flex shrink-0"
+          {...props}
         >
-          <Tooltip delayDuration={25000}>
-            <TooltipTrigger asChild>
-              <Button
-                data-sidebar="trigger"
-                data-slot="sidebar-trigger"
-                data-placement={placement}
-                variant="ghost"
-                size="icon-lg"
-                className={cn("hover:bg-accent hover:dark:bg-muted", className)}
-                onClick={(event) => {
-                  onClick?.(event);
-                  toggleSidebar();
-                }}
-                {...props}
-              >
-                <HugeiconsIcon
-                  icon={PanelLeftIcon}
-                  strokeWidth={2}
-                  className="size-4.5 shrink-0"
-                />
-                <span className="sr-only">{tooltipLabel}</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent
-              side={placement === "inset" ? "right" : "bottom"}
-              align="center"
-              className="flex items-center gap-2"
-            >
-              <span>{tooltipLabel}</span>
-              <KbdGroup>
-                <Kbd>{modifierKey}</Kbd>
-                <Kbd>B</Kbd>
-              </KbdGroup>
-            </TooltipContent>
-          </Tooltip>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
+          <HugeiconsIcon
+            icon={PanelLeftIcon}
+            strokeWidth={2}
+            className="size-4.5 shrink-0"
+          />
+          <span className="sr-only">{tooltipLabel}</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent
+        side={placement === "inset" ? "right" : "bottom"}
+        align="center"
+        className="flex items-center gap-2"
+      >
+        <span>{tooltipLabel}</span>
+        <KbdGroup>
+          <Kbd>{modifierKey}</Kbd>
+          <Kbd>B</Kbd>
+        </KbdGroup>
+      </TooltipContent>
+    </Tooltip>
   );
+
+  if (collapsibleInset) {
+    return (
+      <motion.div
+        className={cn("flex min-w-0 shrink-0 overflow-hidden", className)}
+        initial={false}
+        animate={{
+          width: visible ? SIDEBAR_INSET_TRIGGER_WIDTH : 0,
+          opacity: visible ? 1 : 0,
+          marginLeft: visible ? `-${SIDEBAR_INSET_TRIGGER_OFFSET}` : 0,
+          marginRight: visible ? 0 : `-${SIDEBAR_INSET_TRIGGER_GAP}`,
+        }}
+        transition={{
+          width: {
+            duration: visible ? insetTransitionDuration : 0.35,
+            ease: SIDEBAR_TRANSITION_EASE,
+          },
+          opacity: {
+            duration: 0.15,
+            delay: visible ? insetRevealDelay : 0,
+            ease: "easeInOut",
+          },
+          marginLeft: {
+            duration: visible ? insetTransitionDuration : 0.35,
+            ease: SIDEBAR_TRANSITION_EASE,
+          },
+          marginRight: {
+            duration: visible ? insetTransitionDuration : 0.35,
+            ease: SIDEBAR_TRANSITION_EASE,
+          },
+        }}
+        style={{ pointerEvents: visible ? "auto" : "none" }}
+      >
+        {trigger}
+      </motion.div>
+    );
+  }
+
+  return <div className="flex shrink-0">{trigger}</div>;
 }
 
 function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
