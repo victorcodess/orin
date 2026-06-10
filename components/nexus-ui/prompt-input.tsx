@@ -90,21 +90,44 @@ function PromptInput({
 
 type PromptInputTextareaProps = React.ComponentProps<typeof Textarea>;
 
+function scrollTextareaIfOverflowing(textarea: HTMLTextAreaElement) {
+  if (textarea.scrollHeight > textarea.clientHeight) {
+    textarea.scrollTop = textarea.scrollHeight;
+  }
+}
+
 const PromptInputTextarea = React.forwardRef<
   HTMLTextAreaElement,
   PromptInputTextareaProps
 >(function PromptInputTextarea(
-  { className, "aria-label": _ariaLabel, onKeyDown, ...props },
+  { className, onChange, onInput, value, "aria-label": _ariaLabel, onKeyDown, ...props },
   ref,
 ) {
   const context = React.useContext(PromptInputContext);
   const setTextareaNode = context?.setTextareaNode;
   const onSubmit = context?.onSubmit;
+  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
   const handleTextareaRef = React.useCallback(
     (node: HTMLTextAreaElement | null) => {
+      textareaRef.current = node;
       mergeRefs<HTMLTextAreaElement>(setTextareaNode, ref)(node);
     },
     [setTextareaNode, ref],
+  );
+
+  React.useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      scrollTextareaIfOverflowing(textarea);
+    }
+  }, [value]);
+
+  const handleInput = React.useCallback(
+    (event: React.InputEvent<HTMLTextAreaElement>) => {
+      scrollTextareaIfOverflowing(event.currentTarget);
+      onInput?.(event);
+    },
+    [onInput],
   );
 
   const handleKeyDown = React.useCallback(
@@ -125,8 +148,11 @@ const PromptInputTextarea = React.forwardRef<
           ref={handleTextareaRef}
           aria-label="Message input"
           placeholder="How can I help you today?"
+          value={value}
+          onChange={onChange}
+          onInput={handleInput}
           className={cn(
-            "min-h-14 max-h-40 min-w-0 w-full resize-none border-0 bg-transparent px-4 py-4 text-sm leading-6 font-normal text-primary shadow-none outline-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent",
+            "min-h-14 max-h-40 min-w-0 w-full resize-none overflow-y-auto border-0 bg-transparent px-4 py-4 text-sm leading-6 font-normal text-primary shadow-none outline-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent",
             className,
           )}
           onKeyDown={handleKeyDown}
