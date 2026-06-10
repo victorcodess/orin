@@ -36,6 +36,10 @@
   --sidebar-accent-foreground: #221813;
   --sidebar-border: #dbcfc2;
   --sidebar-ring: #f97015;
+  --scrollbar-size: 6px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: color-mix(in oklab, var(--muted-foreground) 35%, transparent);
+  --scrollbar-thumb-hover: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
   /* --font-sans: Manrope, ui-sans-serif, sans-serif, system-ui;
   --font-serif: Instrument Serif, ui-serif, serif;
   --font-mono: JetBrains Mono, ui-monospace, monospace;  */
@@ -91,6 +95,10 @@
   --sidebar-accent-foreground: #e7e4e2;
   --sidebar-border: #211c19;
   --sidebar-ring: #f97015;
+  --scrollbar-size: 6px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: color-mix(in oklab, var(--muted-foreground) 40%, transparent);
+  --scrollbar-thumb-hover: color-mix(in oklab, var(--muted-foreground) 65%, transparent);
   /* --font-sans: Manrope, ui-sans-serif, sans-serif, system-ui;
   --font-serif: Instrument Serif, ui-serif, serif;
   --font-mono: JetBrains Mono, ui-monospace, monospace; */
@@ -156,12 +164,37 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
   body {
     @apply bg-background text-foreground;
   }
   body:has([data-chat-route]) {
     @apply bg-sidebar;
+  }
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+  *::-webkit-scrollbar {
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+  }
+  *::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
+  *::-webkit-scrollbar-corner {
+    background: transparent;
   }
   h1,
   h2,

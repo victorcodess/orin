@@ -22,7 +22,7 @@ export default function AppLayout({
         >
           <AppHeader />
         </Suspense>
-        <div className="flex h-full max-h-[calc(100vh-64px)] flex-col">
+        <div className="flex h-full max-h-[calc(100vh-80px)] flex-col">
           {children}
         </div>
       </SidebarInset>
