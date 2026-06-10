@@ -51,11 +51,9 @@ function conversationLabel(conversation: ConversationRow) {
 export function NavChats() {
   const pathname = usePathname();
   const [conversations, setConversations] = useState<ConversationRow[]>(
-    () => getCachedConversations(pathname) ?? []
+    () => getCachedConversations() ?? [],
   );
-  const [isLoading, setIsLoading] = useState(
-    () => !getCachedConversations(pathname)
-  );
+  const [isLoading, setIsLoading] = useState(() => !getCachedConversations());
 
   useEffect(() => {
     debugLog(
@@ -71,13 +69,10 @@ export function NavChats() {
   useEffect(() => {
     let cancelled = false;
 
-    const cached = getCachedConversations(pathname);
+    const cached = getCachedConversations();
     if (cached) {
       setConversations(cached);
       setIsLoading(false);
-    } else {
-      setConversations([]);
-      setIsLoading(true);
     }
 
     async function loadConversations() {
@@ -97,7 +92,7 @@ export function NavChats() {
         const data = (await response.json()) as ConversationRow[];
         debugLog("sidebar", "supabase conversations", data);
         if (!cancelled) {
-          setCachedConversations(pathname, data);
+          setCachedConversations(data);
           setConversations(data);
           setIsLoading(false);
         }
@@ -108,7 +103,10 @@ export function NavChats() {
       }
     }
 
-    void loadConversations();
+    if (!cached) {
+      setIsLoading(true);
+      void loadConversations();
+    }
 
     const handleChange = () => {
       void loadConversations();
@@ -120,7 +118,7 @@ export function NavChats() {
       cancelled = true;
       window.removeEventListener("orin:conversations-changed", handleChange);
     };
-  }, [pathname]);
+  }, []);
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">

@@ -510,7 +510,7 @@ function SidebarTrigger({
               </Button>
             </TooltipTrigger>
             <TooltipContent
-              side={placement === "inset" ? "right" : "right"}
+              side={placement === "inset" ? "right" : "bottom"}
               align="center"
               className="flex items-center gap-2"
             >

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BubbleChatTemporaryIcon, Share01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
@@ -13,10 +13,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-type AppHeaderProps = {
-  isLoggedIn: boolean;
-};
+import { createClient } from "@/lib/supabase/client";
 
 function getChatContext(pathname: string) {
   if (pathname === "/chat") {
@@ -31,8 +28,31 @@ function getChatContext(pathname: string) {
   return { isEmptyChat: false, conversationId: null as string | null };
 }
 
-export function AppHeader({ isLoggedIn }: AppHeaderProps) {
+function useIsLoggedIn() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    void supabase.auth.getUser().then(({ data }) => {
+      setIsLoggedIn(Boolean(data.user));
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(Boolean(session?.user));
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  return isLoggedIn;
+}
+
+export function AppHeader() {
   const pathname = usePathname();
+  const isLoggedIn = useIsLoggedIn();
   const { isEmptyChat, conversationId } = useMemo(
     () => getChatContext(pathname),
     [pathname],
