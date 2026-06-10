@@ -113,7 +113,7 @@ export function AppHeader() {
                 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" align="center">
+            <TooltipContent side="left" align="center">
               Temporary chat
             </TooltipContent>
           </Tooltip>
