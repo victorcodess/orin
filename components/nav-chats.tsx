@@ -20,6 +20,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const MotionSidebarMenuItem = motion.create(SidebarMenuItem);
 
@@ -136,7 +137,7 @@ export function NavChats() {
             <SidebarMenu>
               {Array.from({ length: 5 }, (_, index) => (
                 <SidebarMenuItem key={index}>
-                  <div className="bg-sidebar-accent/60 h-10 max-w-full animate-pulse rounded-full" />
+                  <Skeleton className="bg-sidebar-accent/60 h-10 max-w-full animate-pulse rounded-full" />
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
