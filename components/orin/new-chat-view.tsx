@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ArrowUp01Icon } from "@hugeicons/core-free-icons";
+import { ArrowUp01Icon, CircleIcon } from "@hugeicons/core-free-icons";
 import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,7 @@ export function NewChatView() {
 
         window.dispatchEvent(new CustomEvent("orin:conversations-changed"));
         router.push(
-          `/chat/${payload.id}?message=${encodeURIComponent(trimmed)}`,
+          `/chat/${payload.id}?message=${encodeURIComponent(trimmed)}`
         );
       } catch (error) {
         toast.error("Couldn't start a new chat", {
@@ -59,19 +59,26 @@ export function NewChatView() {
         setIsSubmitting(false);
       }
     },
-    [input, isSubmitting, router],
+    [input, isSubmitting, router]
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center p-4">
-      <div className="flex w-full max-w-3xl flex-col items-center gap-8 text-center">
-        <div className="flex flex-col gap-2">
-          <p className="text-lg font-medium text-foreground">{assistant.name}</p>
-          <p className="max-w-md text-sm text-muted-foreground">
-            {assistant.firstMessage}
-          </p>
-        </div>
+    <div className="bg -white relative flex h-full min-h-0 flex-1 flex-col items-center justify-center p-4 pb-0 bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_68%,#f97015_290%)]">
+      <div className="absolute top-1/2 left-1/2 -mt-10 flex w-full -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1">
+        <HugeiconsIcon
+          icon={CircleIcon}
+          className="size-12 shrink-0 fill-current/90 text-[#f97015] mb-4"
+        />
+        <p className="text-muted-foreground text-base font-medium text-center">
+          Hey, Victor!
+        </p>
+        <p className="text-foreground font-heading w-full max-w-xs text-center text-3xl leading-tight tracking-tight">
+          {/* {assistant.firstMessage} */}
+          What&apos;s on your mind?
+        </p>
+      </div>
 
+      <div className="mt-auto flex w-full max-w-3xl flex-col items-center gap-8 pb-4 text-center">
         <form
           className="w-full"
           onSubmit={(event) => {
@@ -96,7 +103,11 @@ export function NewChatView() {
                     className="size-8"
                     disabled={!input.trim() || isSubmitting}
                   >
-                    <HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2} className="size-4 shrink-0" />
+                    <HugeiconsIcon
+                      icon={ArrowUp01Icon}
+                      strokeWidth={2}
+                      className="size-4 shrink-0"
+                    />
                   </Button>
                 </PromptInputAction>
               </PromptInputActionGroup>

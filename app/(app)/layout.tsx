@@ -5,11 +5,7 @@ import { AppHeader } from "@/components/orin/app-header";
 import { AppKeyboardShortcuts } from "@/components/orin/app-keyboard-shortcuts";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
-export default function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -22,7 +18,7 @@ export default function AppLayout({
         >
           <AppHeader />
         </Suspense>
-        <div className="flex h-full max-h-[calc(100vh-80px)] flex-col">
+        <div className="flex h-full max-h-[calc(100vh-0.5px)] flex-col lg:max-h-[calc(100vh-80px)]">
           {children}
         </div>
       </SidebarInset>
