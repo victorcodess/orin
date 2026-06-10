@@ -28,6 +28,7 @@ import {
   ThreadScrollToBottom,
 } from "@/components/nexus-ui/thread";
 import { TextShimmer } from "@/components/nexus-ui/text-shimmer";
+import { isKeyboardShortcutsDialogOpen } from "@/components/orin/app-keyboard-shortcuts";
 import { chatFetch } from "@/lib/ai/chat-fetch";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 
@@ -127,6 +128,24 @@ export function ChatView({
   });
 
   const isLoading = status === "streaming" || status === "submitted";
+
+  useEffect(() => {
+    if (!isLoading) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || isKeyboardShortcutsDialogOpen()) {
+        return;
+      }
+
+      event.preventDefault();
+      stop();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLoading, stop]);
 
   useEffect(() => {
     const prompt = initialPrompt?.trim();
