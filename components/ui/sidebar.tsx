@@ -172,7 +172,7 @@ function SidebarProvider({
 
   return (
     <SidebarContext.Provider value={contextValue}>
-      <TooltipProvider delayDuration={0}>
+      <TooltipProvider>
         <div
           data-slot="sidebar-wrapper"
           style={
@@ -483,7 +483,7 @@ function SidebarTrigger({
   const insetTransitionDuration = SIDEBAR_TRANSITION_MS / 1000;
 
   const trigger = (
-    <Tooltip delayDuration={10000}>
+    <Tooltip>
       <TooltipTrigger asChild>
         <Button
           data-sidebar="trigger"

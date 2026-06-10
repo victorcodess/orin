@@ -72,7 +72,7 @@ function PromptInput({
   );
 
   return (
-    <TooltipProvider delayDuration={100}>
+    <TooltipProvider>
       <PromptInputContext.Provider value={contextValue}>
         <div
           role="group"

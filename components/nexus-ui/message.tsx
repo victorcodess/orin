@@ -276,7 +276,7 @@ function MessageAction({
   }
 
   return (
-    <TooltipProvider delayDuration={200}>
+    <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Comp data-slot="message-action" {...props} />

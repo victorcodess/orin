@@ -74,7 +74,7 @@ export function AppHeader() {
 
       <div className="flex items-center gap-2">
         {showShareAction ? (
-          <Tooltip delayDuration={150}>
+          <Tooltip>
             <TooltipTrigger asChild>
               <span className="inline-flex">
                 <Button
@@ -98,7 +98,7 @@ export function AppHeader() {
           </Tooltip>
         ) : null}
         {showTemporaryChatAction ? (
-          <Tooltip delayDuration={150}>
+          <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
