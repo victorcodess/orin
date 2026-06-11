@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Add01Icon, Home01Icon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Home01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -27,6 +27,16 @@ export function NavMain() {
             <Link href="/chat">
               <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4 shrink-0" />
               <span>New chat</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            asChild
+          >
+            <Link href="/chat">
+              <HugeiconsIcon icon={Search01Icon} strokeWidth={2} className="size-4 shrink-0" />
+              <span>Search chats</span>
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
