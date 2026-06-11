@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const suggestionVariants = cva(
-  "h-8 gap-1.5 rounded-full px-4 text-sm font-normal shadow-none outline-0 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]",
+  "min-h-8 py-2 h-auto gap-1.5 rounded-full px-4 text-sm font-normal shadow-none outline-0 transition-none duration-150 focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]",
   {
     variants: {
       variant: {
@@ -334,7 +334,7 @@ function SuggestionPanelClose({
       data-slot="suggestion-panel-close"
       aria-label="Close suggestions panel"
       className={cn(
-        "flex cursor-pointer items-center justify-center text-muted-foreground hover:text-primary dark:hover:text-primary",
+        "flex cursor-pointer items-center justify-center text-muted-foreground hover:text-primary dark:hover:text-primary transition-all",
         className,
       )}
       onClick={handleClick}

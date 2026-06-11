@@ -4,20 +4,9 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { ChatInput } from "@/components/orin/chat-input";
-import {
-  Suggestion,
-  SuggestionList,
-  Suggestions,
-} from "@/components/nexus-ui/suggestions";
+import { NewChatSuggestions } from "@/components/orin/new-chat-suggestions";
 import { toast } from "@/components/nexus-ui/toaster";
 import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
-
-const NEW_CHAT_SUGGESTIONS = [
-  "I need to get something off my chest",
-  "I have some amazing news to share",
-  "Talk through a decision with me",
-  "Help me reflect on my week",
-] as const;
 
 export function NewChatView() {
   const assistant = DEFAULT_ASSISTANT;
@@ -73,7 +62,7 @@ export function NewChatView() {
             icon={CircleIcon}
             className="mb-4 size-12 shrink-0 fill-current/90 text-[#f97015]"
           /> */}
-          <p className="text-muted-foreground text-center text-sm font-medium md:hidden">
+          <p className="text-muted-foreground text-center text-sm font-medium md:hidden tracking-normal">
             Good morning, Victor!
           </p>
           <h1 className="text-foreground font-heading md:leading-tighter w-full max-w-xs text-center text-2xl leading-tight tracking-tight md:max-w-lg md:text-3xl lg:text-4xl">
@@ -90,23 +79,12 @@ export function NewChatView() {
             isSubmitting={isSubmitting}
             handleSubmit={handleSubmit}
           />
-          <Suggestions onSelect={setInput}>
-            <SuggestionList className="justify-center">
-              {NEW_CHAT_SUGGESTIONS.map((suggestion) => (
-                <Suggestion
-                  key={suggestion}
-                  variant="outline"
-                  className="text-foreground/90 h-9 font-medium"
-                >
-                  {suggestion}
-                </Suggestion>
-              ))}
-            </SuggestionList>
-          </Suggestions>
+          <NewChatSuggestions onSelect={setInput} placement="bottom" />
         </div>
       </div>
 
-      <div className="mt-auto flex w-full max-w-3xl flex-col items-center gap-8 pb-5 text-center md:hidden">
+      <div className="mt-auto flex w-full max-w-3xl flex-col items-center gap-5 pb-5 text-center md:hidden">
+        <NewChatSuggestions onSelect={setInput} placement={"top"} />
         <ChatInput
           assistant={assistant}
           input={input}
