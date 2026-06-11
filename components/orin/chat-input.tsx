@@ -2,7 +2,7 @@
 
 import { ArrowUp01Icon, Mic02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +30,7 @@ export function ChatInput({
   isSubmitting,
   handleSubmit,
 }: ChatInputProps) {
-  const [textareaRef, isMultiline] = useMultilineTextarea();
+  const [textareaRef, isMultiline] = useMultilineTextarea(input);
 
   return (
     <form
@@ -43,17 +43,23 @@ export function ChatInput({
       <PromptInput
         onSubmit={(value) => void handleSubmit(value)}
         className={cn(
-          "bg-sidebar dark:bg-border/90 shadow-sidebar-foreground/0 dark:shadow-sidebar-border/5 flex-col border-none shadow-sm backdrop-blur-lg",
-          isMultiline ? "rounded-3xl" : "rounded-4xl"
+          "bg-sidebar dark:bg-border/90 shadow-sidebar-foreground/0 dark:shadow-sidebar-border/5 border-none shadow-sm backdrop-blur-lg",
+          isMultiline ? "flex-col rounded-3xl" : "flex-row items-end rounded-4xl"
         )}
       >
         <PromptInputTextarea
           ref={textareaRef}
+          rows={isMultiline ? undefined : 1}
           value={input}
           onChange={(event) => setInput(event.target.value)}
           placeholder={`Message ${assistant.name}...`}
           disabled={isSubmitting}
-          className="text-foreground min-h-0 flex-1 bg-white px-6 pt-2.5 pb-3.25 text-base! leading-7! font-[450]"
+          className={cn(
+            "text-foreground w-full shrink-0 px-6 pt-2.5 pb-3.25 text-base! leading-7! font-[450]",
+            isMultiline
+              ? "field-sizing-content min-h-0! max-h-40 flex-1"
+              : "field-sizing-fixed! min-h-0! max-h-none overflow-hidden",
+          )}
         />
         <PromptInputActions
           className={cn(
@@ -99,15 +105,21 @@ export function ChatInput({
   );
 }
 
-function useMultilineTextarea() {
+function useMultilineTextarea(value: string) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [isMultiline, setIsMultiline] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
 
     const sync = () => {
+      // Mobile browsers inflate empty textarea scrollHeight; never treat empty as multiline.
+      if (!value.trim()) {
+        setIsMultiline(false);
+        return;
+      }
+
       const styles = getComputedStyle(el);
       const lineHeight = Number.parseFloat(styles.lineHeight);
       const paddingY =
@@ -120,7 +132,7 @@ function useMultilineTextarea() {
     const observer = new ResizeObserver(sync);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [value]);
 
   return [ref, isMultiline] as const;
 }

@@ -66,20 +66,20 @@ export function NewChatView() {
   );
 
   return (
-    <div className="bg -white relative flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] p-4 pb-0 dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]">
+    <div className="relative flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] p-4 pb-0 dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]">
       <div className="absolute top-1/2 left-1/2 -mt-10 flex w-full -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-12">
-        <div className="flex flex-col items-center justify-center gap-1">
+        <div className="flex flex-col items-center justify-center gap-3 md:gap-2.75">
           {/* <HugeiconsIcon
             icon={CircleIcon}
             className="mb-4 size-12 shrink-0 fill-current/90 text-[#f97015]"
           /> */}
-          <p className="text-muted-foreground text-center text-base font-medium">
-            Hey, Victor!
+          <p className="text-muted-foreground text-center text-sm font-medium md:hidden">
+            Good morning, Victor!
           </p>
-          <p className="text-foreground font-heading w-full max-w-xs text-center text-3xl leading-tight tracking-tight">
+          <h1 className="text-foreground font-heading md:leading-tighter w-full max-w-xs text-center text-2xl leading-tight tracking-tight md:max-w-lg md:text-3xl lg:text-4xl">
             {/* {assistant.firstMessage} */}
             What&apos;s on your mind?
-          </p>
+          </h1>
         </div>
 
         <div className="hidden w-full max-w-2xl flex-col gap-6 md:flex">
@@ -96,7 +96,7 @@ export function NewChatView() {
                 <Suggestion
                   key={suggestion}
                   variant="outline"
-                  className="text-foreground font-medium h-9"
+                  className="text-foreground/90 h-9 font-medium"
                 >
                   {suggestion}
                 </Suggestion>
