@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Add01Icon, Home01Icon, Search01Icon } from "@hugeicons/core-free-icons";
+import {
+  Add01Icon,
+  Home01Icon,
+  Search01Icon,
+} from "@hugeicons/core-free-icons";
 
+import { signalNewChat } from "@/components/orin/new-chat-view";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SidebarGroup,
@@ -20,33 +25,37 @@ export function NavMain() {
       {/* <SidebarGroupLabel>Orin</SidebarGroupLabel> */}
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton
-            asChild
-            isActive={pathname === "/chat"}
-          >
-            <Link href="/chat">
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} className="size-4 shrink-0" />
+          <SidebarMenuButton asChild isActive={pathname === "/chat"}>
+            <Link href="/chat" onClick={signalNewChat}>
+              <HugeiconsIcon
+                icon={Add01Icon}
+                strokeWidth={2}
+                className="size-4 shrink-0"
+              />
               <span>New chat</span>
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
-          <SidebarMenuButton
-            asChild
-          >
+          <SidebarMenuButton asChild>
             <Link href="/chat">
-              <HugeiconsIcon icon={Search01Icon} strokeWidth={2} className="size-4 shrink-0" />
+              <HugeiconsIcon
+                icon={Search01Icon}
+                strokeWidth={2}
+                className="size-4 shrink-0"
+              />
               <span>Search chats</span>
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
-          <SidebarMenuButton
-            asChild
-            isActive={pathname === "/"}
-          >
+          <SidebarMenuButton asChild isActive={pathname === "/"}>
             <Link href="/">
-              <HugeiconsIcon icon={Home01Icon} strokeWidth={2} className="size-4 shrink-0" />
+              <HugeiconsIcon
+                icon={Home01Icon}
+                strokeWidth={2}
+                className="size-4 shrink-0"
+              />
               <span>Home</span>
             </Link>
           </SidebarMenuButton>

@@ -1,18 +1,62 @@
 "use client";
 
+import {
+  motion,
+  useAnimationControls,
+  useReducedMotion,
+} from "motion/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 
 import { ChatInput } from "@/components/orin/chat-input";
 import { NewChatSuggestions } from "@/components/orin/new-chat-suggestions";
 import { toast } from "@/components/nexus-ui/toaster";
 import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 
+const EASE = [0.25, 0.1, 0.25, 1] as const;
+const NEW_CHAT = "orin:new-chat";
+
+export function signalNewChat() {
+  window.dispatchEvent(new CustomEvent(NEW_CHAT));
+}
+
 export function NewChatView() {
   const assistant = DEFAULT_ASSISTANT;
   const router = useRouter();
+  const reduceMotion = useReducedMotion();
+  const controls = useAnimationControls();
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [replay, setReplay] = useState(0);
+
+  const play = useCallback(() => {
+    controls.set("hidden");
+    void controls.start("show");
+  }, [controls]);
+
+  useLayoutEffect(() => {
+    play();
+  }, [play]);
+
+  useEffect(() => {
+    const onNewChat = () => {
+      setInput("");
+      setIsSubmitting(false);
+      setReplay((n) => n + 1);
+      play();
+    };
+
+    window.addEventListener(NEW_CHAT, onNewChat);
+    return () => window.removeEventListener(NEW_CHAT, onNewChat);
+  }, [play]);
+
+  const fade = {
+    hidden: { opacity: reduceMotion ? 1 : 0 },
+    show: {
+      opacity: 1,
+      transition: { duration: reduceMotion ? 0 : 0.35, ease: EASE },
+    },
+  };
 
   const handleSubmit = useCallback(
     async (value?: string) => {
@@ -41,7 +85,7 @@ export function NewChatView() {
 
         window.dispatchEvent(new CustomEvent("orin:conversations-changed"));
         router.push(
-          `/chat/${payload.id}?message=${encodeURIComponent(trimmed)}`
+          `/chat/${payload.id}?message=${encodeURIComponent(trimmed)}`,
         );
       } catch (error) {
         toast.error("Couldn't start a new chat", {
@@ -51,48 +95,44 @@ export function NewChatView() {
         setIsSubmitting(false);
       }
     },
-    [input, isSubmitting, router]
+    [input, isSubmitting, router],
   );
 
+  const chatInputProps = {
+    assistant,
+    input,
+    setInput,
+    isSubmitting,
+    handleSubmit,
+  };
+
   return (
-    <div className="relative flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] p-4 pb-0 dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]">
+    <motion.div
+      className="relative flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] p-4 pb-0 dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]"
+      initial={false}
+      animate={controls}
+      variants={fade}
+    >
       <div className="absolute top-1/2 left-1/2 -mt-10 flex w-full -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-12">
         <div className="flex flex-col items-center justify-center gap-3 md:gap-2.75">
-          {/* <HugeiconsIcon
-            icon={CircleIcon}
-            className="mb-4 size-12 shrink-0 fill-current/90 text-[#f97015]"
-          /> */}
-          <p className="text-muted-foreground text-center text-sm font-medium md:hidden tracking-normal">
+          <p className="text-muted-foreground text-center text-sm font-medium tracking-normal md:hidden">
             Good morning, Victor!
           </p>
           <h1 className="text-foreground font-heading md:leading-tighter w-full max-w-xs text-center text-2xl leading-tight tracking-tight md:max-w-lg md:text-3xl lg:text-4xl">
-            {/* {assistant.firstMessage} */}
             What&apos;s on your mind?
           </h1>
         </div>
 
         <div className="hidden w-full max-w-2xl flex-col gap-6 md:flex">
-          <ChatInput
-            assistant={assistant}
-            input={input}
-            setInput={setInput}
-            isSubmitting={isSubmitting}
-            handleSubmit={handleSubmit}
-          />
-          <NewChatSuggestions onSelect={setInput} placement="bottom" />
+          <ChatInput {...chatInputProps} />
+          <NewChatSuggestions key={`d-${replay}`} onSelect={setInput} placement="bottom" />
         </div>
       </div>
 
       <div className="mt-auto flex w-full max-w-3xl flex-col items-center gap-5 pb-5 text-center md:hidden">
-        <NewChatSuggestions onSelect={setInput} placement={"top"} />
-        <ChatInput
-          assistant={assistant}
-          input={input}
-          setInput={setInput}
-          isSubmitting={isSubmitting}
-          handleSubmit={handleSubmit}
-        />
+        <NewChatSuggestions key={`m-${replay}`} onSelect={setInput} placement="top" />
+        <ChatInput {...chatInputProps} />
       </div>
-    </div>
+    </motion.div>
   );
 }
