@@ -170,6 +170,9 @@
   body {
     @apply bg-background text-foreground;
   }
+  ::selection {
+    @apply bg-primary text-popover;
+  }
   body:has([data-chat-route]) {
     @apply md:bg-sidebar;
   }
