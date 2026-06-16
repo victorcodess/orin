@@ -2,8 +2,8 @@ import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { ChatView } from "@/components/orin/chat-view";
-import { ChatLoading } from "@/components/orin/chat-loading";
+import { ChatView } from "@/components/chat/chat-view";
+import { ChatLoading } from "@/components/chat/chat-loading";
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import { verifyConversationAccess } from "@/lib/ai/conversations";
 import { loadHistory, toUIMessages } from "@/lib/ai/messages";

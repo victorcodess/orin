@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 
-import { AppSidebar } from "@/components/app-sidebar";
-import { AppHeader } from "@/components/orin/app-header";
-import { AppKeyboardShortcuts } from "@/components/orin/app-keyboard-shortcuts";
+import { AppSidebar } from "@/components/shell/app-sidebar";
+import { AppHeader } from "@/components/shell/app-header";
+import { AppKeyboardShortcuts } from "@/components/shell/app-keyboard-shortcuts";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { KeyboardShortcutsDialog } from "@/components/orin/keyboard-shortcuts-dialog";
+import { KeyboardShortcutsDialog } from "@/components/shell/keyboard-shortcuts-dialog";
 import {
   hasPrimaryModifier,
   KEYBOARD_SHORTCUTS_OPEN_EVENT,

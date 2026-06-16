@@ -8,8 +8,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 
-import { ChatInput } from "@/components/orin/chat-input";
-import { NewChatSuggestions } from "@/components/orin/new-chat-suggestions";
+import { ChatInput } from "@/components/chat/chat-input";
+import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
 import { toast } from "@/components/nexus-ui/toaster";
 import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 

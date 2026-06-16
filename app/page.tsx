@@ -1,9 +1,9 @@
-// import { BayerDitherBackground } from "@/components/orin/bayer-dither-background";
+// import { BayerDitherBackground } from "@/components/shared/bayer-dither-background";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { CircleIcon } from "@hugeicons/core-free-icons";
-import { ThemeSwitcher } from "@/components/theme-switcher";
+import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 
 export default function Home() {
   return (

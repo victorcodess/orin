@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { Suspense, type ComponentProps } from "react";
-import { NavChats } from "@/components/nav-chats";
-import { NavMain } from "@/components/nav-main";
-import { NavUser } from "@/components/nav-user";
+import { NavChats } from "@/components/shell/nav-chats";
+import { NavMain } from "@/components/shell/nav-main";
+import { NavUser } from "@/components/shell/nav-user";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Sidebar,

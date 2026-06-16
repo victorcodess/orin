@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BubbleChatTemporaryIcon, Share01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
-import { ChatTitle } from "@/components/orin/chat-title";
+import { ChatTitle } from "@/components/chat/chat-title";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {

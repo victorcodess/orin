@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
-import { AppToaster } from "@/components/orin/app-toaster";
+import { AppToaster } from "@/components/shell/app-toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   getHeadingFontFamilyVariable,

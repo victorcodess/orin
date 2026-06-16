@@ -8,7 +8,7 @@ import {
   Search01Icon,
 } from "@hugeicons/core-free-icons";
 
-import { signalNewChat } from "@/components/orin/new-chat-view";
+import { signalNewChat } from "@/components/chat/new-chat-view";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SidebarGroup,
