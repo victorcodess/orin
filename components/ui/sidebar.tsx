@@ -483,35 +483,40 @@ function SidebarTrigger({
   const insetRevealDelay = 0.4;
   const insetTransitionDuration = SIDEBAR_TRANSITION_MS / 1000;
 
-  const trigger = (
+  const button = (
+    <Button
+      data-sidebar="trigger"
+      data-slot="sidebar-trigger"
+      data-placement={placement}
+      variant="ghost"
+      size="icon-lg"
+      className={cn(
+        "hover:bg-accent hover:dark:bg-muted",
+        collapsibleInset ? undefined : className
+      )}
+      tabIndex={collapsibleInset && !visible ? -1 : undefined}
+      aria-hidden={collapsibleInset && !visible ? true : undefined}
+      aria-label={tooltipLabel}
+      onClick={(event) => {
+        onClick?.(event);
+        toggleSidebar();
+      }}
+      {...props}
+    >
+      <HugeiconsIcon
+        icon={PanelLeftIcon}
+        strokeWidth={2}
+        className="size-4.5 shrink-0"
+      />
+      <span className="sr-only">{tooltipLabel}</span>
+    </Button>
+  );
+
+  const trigger = isMobile ? (
+    button
+  ) : (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          data-sidebar="trigger"
-          data-slot="sidebar-trigger"
-          data-placement={placement}
-          variant="ghost"
-          size="icon-lg"
-          className={cn(
-            "hover:bg-accent hover:dark:bg-muted",
-            collapsibleInset ? undefined : className
-          )}
-          tabIndex={collapsibleInset && !visible ? -1 : undefined}
-          aria-hidden={collapsibleInset && !visible ? true : undefined}
-          onClick={(event) => {
-            onClick?.(event);
-            toggleSidebar();
-          }}
-          {...props}
-        >
-          <HugeiconsIcon
-            icon={PanelLeftIcon}
-            strokeWidth={2}
-            className="size-4.5 shrink-0"
-          />
-          <span className="sr-only">{tooltipLabel}</span>
-        </Button>
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent
         side={placement === "inset" ? "right" : "bottom"}
         align="center"
