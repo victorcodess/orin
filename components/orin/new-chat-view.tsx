@@ -108,17 +108,17 @@ export function NewChatView() {
 
   return (
     <motion.div
-      className="relative flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] p-4 pb-0 dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]"
+      className="relative flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] p-4 pb-0 dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_60%,#f97015_280%)] md:dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]"
       initial={false}
       animate={controls}
       variants={fade}
     >
-      <div className="absolute top-1/2 left-1/2 -mt-10 flex w-full -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-12">
+      <div className="absolute top-[calc(50%-138px)] md:top-[calc(50%-103.5px)] left-1/2 -mt-10 flex w-full -translate-x-1/2 flex-col items-center justify-center gap-12 px-10 md:px-20">
         <div className="flex flex-col items-center justify-center gap-3 md:gap-2.75">
           <p className="text-muted-foreground text-center text-sm font-medium tracking-normal md:hidden">
             Good morning, Victor!
           </p>
-          <h1 className="text-foreground font-heading md:leading-tighter w-full max-w-xs text-center text-2xl leading-tight tracking-tight md:max-w-lg md:text-3xl lg:text-4xl">
+          <h1 className="text-foreground font-heading md:leading-tighter w-full max-w-xs text-center text-[27px] leading-tight tracking-tight md:max-w-lg md:text-3xl lg:text-4xl">
             What&apos;s on your mind?
           </h1>
         </div>

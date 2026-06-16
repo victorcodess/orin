@@ -171,7 +171,7 @@
     @apply bg-background text-foreground;
   }
   body:has([data-chat-route]) {
-    @apply bg-sidebar;
+    @apply md:bg-sidebar;
   }
   html {
     scrollbar-width: thin;
