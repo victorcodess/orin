@@ -2,7 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { BubbleChatTemporaryIcon, Share01Icon } from "@hugeicons/core-free-icons";
+import {
+  BubbleChatTemporaryIcon,
+  Share01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 import { ChatTitle } from "@/components/chat/chat-title";
@@ -55,7 +58,7 @@ export function AppHeader() {
   const isLoggedIn = useIsLoggedIn();
   const { isEmptyChat, conversationId } = useMemo(
     () => getChatContext(pathname),
-    [pathname],
+    [pathname]
   );
   const isActiveChat = Boolean(conversationId);
 
@@ -63,7 +66,7 @@ export function AppHeader() {
   const showShareAction = isActiveChat;
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-2 px-4">
+    <header className="to-background from-background/0 flex h-16 pb-2 shrink-0 items-center justify-between gap-2 bg-linear-to-t to-25% px-4 absolute inset-x-0 top-0 z-20">
       <div className="flex items-center gap-2">
         <SidebarTrigger placement="inset" />
 

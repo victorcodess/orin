@@ -10,12 +10,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <AppKeyboardShortcuts />
-      <SidebarInset className="bg-background flex max-h-svh flex-col overflow-hidden">
+      <SidebarInset className="bg-background relative flex max-h-svh flex-col overflow-hidden">
         <Suspense
           fallback={
             <header className="flex h-14 shrink-0 items-center gap-2 px-4" />
           }
         >
+          <div className="h-10 w-full"></div>
           <AppHeader />
         </Suspense>
         <div className="flex h-full max-h-[calc(100vh-0.5px)] flex-col lg:max-h-[calc(100vh-80px)]">
