@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { Streamdown } from "streamdown";
+// import useMeasure from "react-use-measure";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
@@ -22,7 +23,7 @@ import { cn } from "@/lib/utils";
 const streamdownPlugins = { cjk, code, math, mermaid } as const;
 
 const messageMarkdownProseClasses = [
-  "prose max-w-none text-primary font-normal text-sm leading-6.5",
+  "prose max-w-none font-[450] text-[15px] leading-6.75 tracking-[-0.1px]",
   // headings
   "prose-headings:font-[450] prose-headings:leading-5.5 prose-h2:tracking-[-0.45px] prose-headings:mb-4 prose-headings:mt-6 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-h3:leading-4.5 prose-h3:tracking-[-0.4px] prose-h4:text-sm prose-h5:text-xs prose-h6:text-xs",
   // heading links
@@ -64,7 +65,7 @@ const Message = React.forwardRef<HTMLDivElement, MessageProps>(function Message(
     "aria-labelledby": ariaLabelledBy,
     ...props
   },
-  ref,
+  ref
 ) {
   const ariaLabel =
     ariaLabelProp ??
@@ -83,9 +84,9 @@ const Message = React.forwardRef<HTMLDivElement, MessageProps>(function Message(
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
         className={cn(
-          "group/message flex w-full max-w-[90%] items-start gap-2",
+          "group/message flex w-full max-w-[98%] md:max-w-[90%] items-start gap-2",
           from === "user" ? "ms-auto" : "me-auto",
-          className,
+          className
         )}
         {...props}
       >
@@ -107,7 +108,7 @@ function MessageStack({ className, ...props }: MessageStackProps) {
       className={cn(
         "flex w-full flex-col gap-2",
         from === "user" ? "items-end" : "items-start",
-        className,
+        className
       )}
       {...props}
     />
@@ -116,22 +117,55 @@ function MessageStack({ className, ...props }: MessageStackProps) {
 
 type MessageContentProps = React.HTMLAttributes<HTMLDivElement>;
 
-function MessageContent({ className, ...props }: MessageContentProps) {
+function MessageContent({
+  className,
+  children,
+  ...props
+}: MessageContentProps) {
   const ctx = useMessageContext();
   const from = ctx?.from ?? "assistant";
+  // const [ref, bounds] = useMeasure();
+  // const isTall = bounds.height > 46;
 
   return (
     <div
+      // ref={ref}
       data-slot="message-content"
       className={cn(
-        "rounded-2xl text-sm leading-6.5 text-primary",
+        "relative",
         from === "user"
-          ? "w-fit bg-secondary px-4 py-2"
-          : "mb-1 w-full bg-transparent px-2",
-        className,
+          ? "bg-sidebar dark:bg-input w-fit rounded-3xl px-4 py-1.75"
+          : 
+          //  "bg-foreground/5 dark:bg-input /70 w-fit max-w-full px-4 py-1.75 " +
+          //       (isTall ? "rounded-2xl" : "rounded-3xl"),
+
+            "mb-1 w-full bg-transparent px-2",
+        className
       )}
       {...props}
-    />
+    >
+      {children}
+
+      {from === "user" && (
+        <svg
+          width="16"
+          height="16"
+          className={cn("fill-sidebar dark:fill-input absolute top-[-6px]", from === "user" ? "right-0" : "scale-x-[-1] left-0 fill-foreground/5 dark:fill-input")}
+          fill="currentColor"
+          style={{
+            transitionProperty: "scale, fill",
+            transitionDuration: "300ms",
+            transitionTimingFunction: "cubic-bezier(0.31, 0.1, 0.08, 0.96)",
+            transitionDelay: "0ms",
+            willChange: "fill",
+
+          }}
+        >
+          <path d="M-2.70729e-07 6.19355C8 6.19355 12 4.12903 16 6.99382e-07C16 6.70968 16 13.5 10 16L-2.70729e-07 6.19355Z"></path>
+        </svg>
+   
+      )}
+    </div>
   );
 }
 
@@ -142,67 +176,64 @@ function MessageMarkdown({
   components,
   ...props
 }: MessageMarkdownProps) {
-  const mergedComponents = React.useMemo(
-    () => {
-      const defaultComponents = {
-        code: CodeBlock,
-        inlineCode: ({
-          children,
-          className,
-          ...props
-        }: React.HTMLAttributes<HTMLElement>) => (
-          <code
-            className={cn(
-              "rounded-md border-none bg-muted px-1.5 py-0.5 font-mono text-xs font-[450]",
-              className,
-            )}
-            data-slot="message-markdown-inline-code"
-            {...props}
-          >
-            {children}
-          </code>
-        ),
-        table: (props: React.HTMLAttributes<HTMLTableElement>) => (
-          <div
-            data-slot="message-markdown-table-wrap"
-            className={[
-              "my-6 prose-no-margin overflow-hidden rounded-2xl border border-border bg-muted dark:border-accent dark:bg-background",
-              "[&_tbody_tr:first-child_td:first-child]:rounded-ss-xl",
-              "[&_tbody_tr:first-child_td:last-child]:rounded-se-xl",
-              "[&_tbody_tr:last-child_td:first-child]:rounded-es-xl",
-              "[&_tbody_tr:last-child_td:last-child]:rounded-ee-xl",
-            ].join(" ")}
-          >
-            <table
-              data-slot="message-markdown-table"
-              className="w-full border-separate border-spacing-0 border-none bg-muted text-sm dark:bg-background"
-              {...props}
-            />
-          </div>
-        ),
-        th: (props: React.ThHTMLAttributes<HTMLTableCellElement>) => (
-          <th
-            data-slot="message-markdown-th"
-            className="border-none px-5 py-2 text-start text-[13px] font-normal! text-muted-foreground! dark:bg-background"
+  const mergedComponents = React.useMemo(() => {
+    const defaultComponents = {
+      code: CodeBlock,
+      inlineCode: ({
+        children,
+        className,
+        ...props
+      }: React.HTMLAttributes<HTMLElement>) => (
+        <code
+          className={cn(
+            "bg-muted rounded-md border-none px-1.5 py-0.5 font-mono text-xs font-[450]",
+            className
+          )}
+          data-slot="message-markdown-inline-code"
+          {...props}
+        >
+          {children}
+        </code>
+      ),
+      table: (props: React.HTMLAttributes<HTMLTableElement>) => (
+        <div
+          data-slot="message-markdown-table-wrap"
+          className={[
+            "prose-no-margin border-border bg-muted dark:border-accent dark:bg-background my-6 overflow-hidden rounded-2xl border",
+            "[&_tbody_tr:first-child_td:first-child]:rounded-ss-xl",
+            "[&_tbody_tr:first-child_td:last-child]:rounded-se-xl",
+            "[&_tbody_tr:last-child_td:first-child]:rounded-es-xl",
+            "[&_tbody_tr:last-child_td:last-child]:rounded-ee-xl",
+          ].join(" ")}
+        >
+          <table
+            data-slot="message-markdown-table"
+            className="bg-muted dark:bg-background w-full border-separate border-spacing-0 border-none text-sm"
             {...props}
           />
-        ),
-        td: (props: React.TdHTMLAttributes<HTMLTableCellElement>) => (
-          <td
-            data-slot="message-markdown-td"
-            className="border-0 border-accent bg-card px-5 py-3 text-[13px] text-primary dark:bg-card [tr:not(:first-child)_&]:border-t"
-            {...props}
-          />
-        ),
-      };
+        </div>
+      ),
+      th: (props: React.ThHTMLAttributes<HTMLTableCellElement>) => (
+        <th
+          data-slot="message-markdown-th"
+          className="text-muted-foreground! dark:bg-background border-none px-5 py-2 text-start text-[13px] font-normal!"
+          {...props}
+        />
+      ),
+      td: (props: React.TdHTMLAttributes<HTMLTableCellElement>) => (
+        <td
+          data-slot="message-markdown-td"
+          className="border-accent bg-card text-primary dark:bg-card border-0 px-5 py-3 text-[13px] [tr:not(:first-child)_&]:border-t"
+          {...props}
+        />
+      ),
+    };
 
-      return {
-        ...(defaultComponents as object),
-        ...((components ?? {}) as object),
-      };
-    },
-    [components],
-  );
+    return {
+      ...(defaultComponents as object),
+      ...((components ?? {}) as object),
+    };
+  }, [components]);
 
   return (
     <Streamdown
@@ -210,7 +241,7 @@ function MessageMarkdown({
       className={cn(
         ...messageMarkdownProseClasses,
         "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-        className,
+        className
       )}
       components={mergedComponents as MessageMarkdownProps["components"]}
       shikiTheme={["github-light", "github-dark"]}
@@ -232,7 +263,7 @@ function MessageActions({ className, ...props }: MessageActionsProps) {
       className={cn(
         "flex w-full",
         from === "user" ? "justify-end" : "justify-start",
-        className,
+        className
       )}
       {...props}
     />
@@ -269,7 +300,7 @@ function MessageAction({
 }: MessageActionProps) {
   const Comp = asChild ? Slot : "div";
   const { content, side, shortcut } =
-    typeof tooltip === "string" ? { content: tooltip } : tooltip ?? {};
+    typeof tooltip === "string" ? { content: tooltip } : (tooltip ?? {});
 
   if (!content) {
     return <Comp data-slot="message-action" {...props} />;
