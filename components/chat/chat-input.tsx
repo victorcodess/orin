@@ -30,7 +30,7 @@ export function ChatInput({
   isSubmitting,
   handleSubmit,
 }: ChatInputProps) {
-  const [textareaRef, isMultiline] = useMultilineTextarea(input);
+  const [textareaRef, isMultirow, isMultiline] = useResponsiveTextarea(input);
 
   return (
     <form
@@ -44,7 +44,9 @@ export function ChatInput({
         onSubmit={(value) => void handleSubmit(value)}
         className={cn(
           "bg-sidebar dark:bg-border/90 shadow-sidebar-foreground/0 dark:shadow-sidebar-border/5 border-none shadow-sm backdrop-blur-lg",
-          isMultiline ? "flex-col rounded-3xl" : "flex-row items-end rounded-4xl"
+          isMultirow
+            ? "flex-col rounded-3xl"
+            : "flex-row items-end justify-end rounded-4xl"
         )}
       >
         <PromptInputTextarea
@@ -55,18 +57,18 @@ export function ChatInput({
           placeholder={`Message ${assistant.name}...`}
           disabled={isSubmitting}
           className={cn(
-            "text-foreground w-full shrink-0 px-6 pt-3 pb-3 text-base! leading-7! font-[450]",
+            "text-foreground w-full bg-white/50! px-6 pt-3 pb-3 text-base! leading-7! font-[450]",
             isMultiline
-              ? "field-sizing-content min-h-0! max-h-40 flex-1"
-              : "field-sizing-fixed! min-h-0! max-h-none overflow-hidden",
+              ? "field-sizing-content max-h-40 min-h-0! flex-1 shrink-0 overflow-y-auto"
+              : "field-sizing-fixed! max-h-none min-h-0! overflow-hidden"
           )}
         />
         <PromptInputActions
           className={cn(
-            "shrink-0",
-            isMultiline
+            "shrink-0 bg-black/50",
+            isMultirow
               ? "justify-end px-2.25 py-2"
-              : "absolute right-0 bottom-0 w-fit px-2.25 py-2"
+              : "w-fit justify-end px-2.25 py-2"
           )}
         >
           <PromptInputActionGroup>
@@ -105,34 +107,88 @@ export function ChatInput({
   );
 }
 
-function useMultilineTextarea(value: string) {
+function useResponsiveTextarea(value: string) {
   const ref = useRef<HTMLTextAreaElement>(null);
-  const [isMultiline, setIsMultiline] = useState(false);
+  const contextRef = useRef<CanvasRenderingContext2D | null>(null);
+  const [mode, setMode] = useState<"row" | "stack" | "multi">("row");
 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
 
     const sync = () => {
-      // Mobile browsers inflate empty textarea scrollHeight; never treat empty as multiline.
-      if (!value.trim()) {
-        setIsMultiline(false);
+      if (value === "") {
+        setMode("row");
         return;
       }
 
-      const styles = getComputedStyle(el);
-      const lineHeight = Number.parseFloat(styles.lineHeight);
-      const paddingY =
-        Number.parseFloat(styles.paddingTop) +
-        Number.parseFloat(styles.paddingBottom);
-      setIsMultiline(el.scrollHeight > lineHeight + paddingY + 1);
+      const hasHardBreak = value.includes("\n");
+      const wasStacked = mode !== "row";
+      const isMultirow =
+        hasHardBreak ||
+        (wasStacked ? exceedsSingleRowWidth(el, value, contextRef) : wraps(el));
+      const isMultiline = isMultirow && (hasHardBreak || (wasStacked && wraps(el)));
+
+      setMode(isMultiline ? "multi" : isMultirow ? "stack" : "row");
     };
 
     sync();
     const observer = new ResizeObserver(sync);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [value]);
+  }, [mode, value]);
 
-  return [ref, isMultiline] as const;
+  return [ref, mode !== "row", mode === "multi"] as const;
+}
+
+function wraps(textarea: HTMLTextAreaElement) {
+  const styles = getComputedStyle(textarea);
+
+  return textarea.scrollHeight > px(styles.lineHeight) + y(styles) + 1;
+}
+
+function exceedsSingleRowWidth(
+  textarea: HTMLTextAreaElement,
+  value: string,
+  contextRef: { current: CanvasRenderingContext2D | null }
+) {
+  const styles = getComputedStyle(textarea);
+  const context =
+    contextRef.current ??= document.createElement("canvas").getContext("2d");
+  if (!context) {
+    return false;
+  }
+
+  context.font = styles.font;
+  const actions = textarea.nextElementSibling;
+  const buttons = actions?.firstElementChild;
+  const reserved =
+    (buttons instanceof HTMLElement ? buttons.getBoundingClientRect().width : 0) +
+    (actions instanceof HTMLElement ? inlineSize(getComputedStyle(actions)) : 0);
+  const textWidth =
+    context.measureText(value).width +
+    Math.max(value.length - 1, 0) * px(styles.letterSpacing);
+  const rowWidth =
+    (textarea.parentElement?.clientWidth ?? textarea.clientWidth) -
+    reserved -
+    inlineSize(styles);
+
+  return textWidth > rowWidth;
+}
+
+function y(styles: CSSStyleDeclaration) {
+  return px(styles.paddingTop) + px(styles.paddingBottom);
+}
+
+function inlineSize(styles: CSSStyleDeclaration) {
+  return (
+    px(styles.paddingLeft) +
+    px(styles.paddingRight) +
+    px(styles.borderLeftWidth) +
+    px(styles.borderRightWidth)
+  );
+}
+
+function px(value: string) {
+  return Number.parseFloat(value) || 0;
 }
