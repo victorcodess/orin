@@ -2,25 +2,16 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
-import { ArrowUp01Icon, StopIcon } from "@hugeicons/core-free-icons";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { ChatInput } from "@/components/chat/chat-input";
 import {
   Message,
   MessageContent,
   MessageMarkdown,
   MessageStack,
 } from "@/components/nexus-ui/message";
-import {
-  PromptInput,
-  PromptInputAction,
-  PromptInputActionGroup,
-  PromptInputActions,
-  PromptInputTextarea,
-} from "@/components/nexus-ui/prompt-input";
 import { toast } from "@/components/nexus-ui/toaster";
 import {
   Thread,
@@ -44,7 +35,8 @@ function toastChatError(error: Error) {
 
   if (message.includes("OPENAI_API_KEY")) {
     toast.error("OpenAI API key not configured", {
-      description: "Add OPENAI_API_KEY to .env.local and restart the dev server.",
+      description:
+        "Add OPENAI_API_KEY to .env.local and restart the dev server.",
       duration: 8000,
     });
     return;
@@ -107,7 +99,7 @@ export function ChatView({
         body: { conversationId },
         fetch: chatFetch,
       }),
-    [conversationId],
+    [conversationId]
   );
 
   const { messages, sendMessage, status, stop, error, clearError } = useChat({
@@ -182,24 +174,27 @@ export function ChatView({
       sendMessage({ text: trimmed });
       setInput("");
     },
-    [conversationId, input, isLoading, sendMessage],
+    [conversationId, input, isLoading, sendMessage]
   );
 
-  const visibleMessages = messages.filter((message) => message.role !== "system");
+  const visibleMessages = messages.filter(
+    (message) => message.role !== "system"
+  );
   const lastMessage = visibleMessages.at(-1);
   const showTypingLoader =
     isLoading &&
     (!lastMessage ||
       lastMessage.role === "user" ||
-      (lastMessage.role === "assistant" && !textFromMessage(lastMessage).trim()));
+      (lastMessage.role === "assistant" &&
+        !textFromMessage(lastMessage).trim()));
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col">
-      <Thread className="flex-1 min-h-0">
-        <ThreadContent className="items-stretch max-w-3xl mx-auto w-full">
+    <div className="relative flex h-full min-h-0 w-full flex-1 flex-col">
+      <Thread className="min-h-0 flex-1">
+        <ThreadContent className="mx-auto w-full max-w-3xl items-stretch">
           {visibleMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-24 text-center text-muted-foreground">
-              <p className="text-lg font-medium text-foreground">
+            <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-24 text-center">
+              <p className="text-foreground text-lg font-medium">
                 {assistant.name}
               </p>
               <p className="max-w-md text-sm">{assistant.firstMessage}</p>
@@ -213,7 +208,9 @@ export function ChatView({
                 >
                   <MessageStack>
                     <MessageContent>
-                      <MessageMarkdown>{textFromMessage(message)}</MessageMarkdown>
+                      <MessageMarkdown>
+                        {textFromMessage(message)}
+                      </MessageMarkdown>
                     </MessageContent>
                   </MessageStack>
                 </Message>
@@ -222,7 +219,7 @@ export function ChatView({
                 <Message from="assistant" aria-label="Assistant is typing">
                   <MessageStack>
                     <MessageContent>
-                      <TextShimmer className="text-sm text-muted-foreground">
+                      <TextShimmer className="text-muted-foreground text-sm">
                         Thinking...
                       </TextShimmer>
                     </MessageContent>
@@ -232,53 +229,25 @@ export function ChatView({
             </>
           )}
         </ThreadContent>
-        <ThreadScrollToBottom />
+        <ThreadScrollToBottom className="bottom-18 shadow-2xl" />
       </Thread>
 
-      <div className="border-t bg-background p-4">
-        <form
-          className="mx-auto w-full max-w-3xl"
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleSubmit();
-          }}
-        >
-          <PromptInput onSubmit={handleSubmit}>
-            <PromptInputTextarea
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder={`Message ${assistant.name}...`}
-              disabled={isLoading}
-            />
-            <PromptInputActions>
-              <PromptInputActionGroup />
-              <PromptInputActionGroup>
-                <PromptInputAction asChild>
-                  {isLoading ? (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="outline"
-                      className="size-8"
-                      onClick={() => stop()}
-                    >
-                      <HugeiconsIcon icon={StopIcon} strokeWidth={2} className="size-3.5 shrink-0" />
-                    </Button>
-                  ) : (
-                    <Button
-                      type="submit"
-                      size="icon"
-                      className="size-8"
-                      disabled={!input.trim()}
-                    >
-                      <HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2} className="size-4 shrink-0" />
-                    </Button>
-                  )}
-                </PromptInputAction>
-              </PromptInputActionGroup>
-            </PromptInputActions>
-          </PromptInput>
-        </form>
+      <div className="h-[76px] w-full"></div>
+
+      <div className="to-background from-background/30 absolute inset-x-0 bottom-0 flex items-center justify-center bg-linear-to-b to-15% px-4 pt-8 pb-6">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-3">
+          <ChatInput
+            assistant={assistant}
+            input={input}
+            setInput={setInput}
+            isSubmitting={isLoading}
+            handleSubmit={handleSubmit}
+            onStop={stop}
+          />
+          <p className="text-muted-foreground text-xs font-[450]">
+            Orin is an AI assistant and can make mistakes.
+          </p>
+        </div>
       </div>
     </div>
   );

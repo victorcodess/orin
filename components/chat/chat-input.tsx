@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUp01Icon, Mic02Icon } from "@hugeicons/core-free-icons";
+import { ArrowUp01Icon, Mic02Icon, StopIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useLayoutEffect, useRef, useState } from "react";
 
@@ -21,6 +21,7 @@ type ChatInputProps = {
   setInput: (input: string) => void;
   isSubmitting: boolean;
   handleSubmit: (value?: string) => void;
+  onStop?: () => void;
 };
 
 export function ChatInput({
@@ -29,6 +30,7 @@ export function ChatInput({
   setInput,
   isSubmitting,
   handleSubmit,
+  onStop,
 }: ChatInputProps) {
   const [textareaRef, isMultirow, isMultiline] = useResponsiveTextarea(input);
 
@@ -87,18 +89,34 @@ export function ChatInput({
               </Button>
             </PromptInputAction>
             <PromptInputAction asChild>
-              <Button
-                type="submit"
-                size="icon"
-                className="size-9"
-                disabled={!input.trim() || isSubmitting}
-              >
-                <HugeiconsIcon
-                  icon={ArrowUp01Icon}
-                  strokeWidth={2}
-                  className="text-foreground size-4.5 shrink-0"
-                />
-              </Button>
+              {isSubmitting && onStop ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="size-9"
+                  onClick={onStop}
+                >
+                  <HugeiconsIcon
+                    icon={StopIcon}
+                    strokeWidth={2}
+                    className="size-3.5 shrink-0"
+                  />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="size-9"
+                  disabled={!input.trim() || isSubmitting}
+                >
+                  <HugeiconsIcon
+                    icon={ArrowUp01Icon}
+                    strokeWidth={2}
+                    className="text-foreground size-4.5 shrink-0"
+                  />
+                </Button>
+              )}
             </PromptInputAction>
           </PromptInputActionGroup>
         </PromptInputActions>
