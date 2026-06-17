@@ -34,7 +34,7 @@ const ChatComposerContext = createContext<ChatComposerContextValue | null>(null)
 export function ChatComposerProvider({ children }: { children: ReactNode }) {
   const [input, setInput] = useState("");
   const [controls, setControls] = useState<ChatComposerControls | null>(null);
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   const value = useMemo(
     () => ({
       input,

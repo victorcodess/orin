@@ -34,7 +34,6 @@ export function NewChatView() {
   useLayoutEffect(() => {
     setIsVisible(false);
     play();
-    return () => setIsVisible(true);
   }, [play, setIsVisible]);
 
   useEffect(() => {
