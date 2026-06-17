@@ -4,6 +4,7 @@ import { motion, useAnimationControls, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 
+import { useChatComposer } from "@/components/chat/chat-composer";
 import { ChatInput } from "@/components/chat/chat-input";
 import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
 import { toast } from "@/components/nexus-ui/toaster";
@@ -21,7 +22,7 @@ export function NewChatView() {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const controls = useAnimationControls();
-  const [input, setInput] = useState("");
+  const { input, setInput, setIsVisible } = useChatComposer();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replay, setReplay] = useState(0);
 
@@ -31,8 +32,10 @@ export function NewChatView() {
   }, [controls]);
 
   useLayoutEffect(() => {
+    setIsVisible(false);
     play();
-  }, [play]);
+    return () => setIsVisible(true);
+  }, [play, setIsVisible]);
 
   useEffect(() => {
     const onNewChat = () => {
@@ -44,7 +47,7 @@ export function NewChatView() {
 
     window.addEventListener(NEW_CHAT, onNewChat);
     return () => window.removeEventListener(NEW_CHAT, onNewChat);
-  }, [play]);
+  }, [play, setInput]);
 
   const fade = {
     hidden: { opacity: reduceMotion ? 1 : 0 },
@@ -80,6 +83,7 @@ export function NewChatView() {
         }
 
         window.dispatchEvent(new CustomEvent("orin:conversations-changed"));
+        setInput("");
         router.push(
           `/chat/${payload.id}?message=${encodeURIComponent(trimmed)}`
         );
@@ -91,7 +95,7 @@ export function NewChatView() {
         setIsSubmitting(false);
       }
     },
-    [input, isSubmitting, router]
+    [input, isSubmitting, router, setInput]
   );
 
   const chatInputProps = {

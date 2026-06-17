@@ -13,7 +13,7 @@ import {
   type CSSProperties,
 } from "react";
 
-import { ChatInput } from "@/components/chat/chat-input";
+import { useChatComposer } from "@/components/chat/chat-composer";
 import {
   Message,
   MessageContent,
@@ -30,6 +30,7 @@ import { TextShimmer } from "@/components/nexus-ui/text-shimmer";
 import { isKeyboardShortcutsDialogOpen } from "@/components/shell/app-keyboard-shortcuts";
 import { chatFetch } from "@/lib/ai/chat-fetch";
 import type { AssistantConfig } from "@/lib/orin/defaults";
+import { cn } from "@/lib/utils";
 
 function textFromMessage(message: UIMessage) {
   return message.parts
@@ -99,7 +100,7 @@ export function ChatView({
   initialPrompt,
 }: ChatViewProps) {
   const router = useRouter();
-  const [input, setInput] = useState("");
+  const { input, setInput, setControls, setIsVisible } = useChatComposer();
   const sentInitialPrompt = useRef(false);
   const previousUserMessageRef = useRef<HTMLDivElement | null>(null);
   const [previousUserMessageHeight, setPreviousUserMessageHeight] = useState(0);
@@ -186,8 +187,18 @@ export function ChatView({
       sendMessage({ text: trimmed });
       setInput("");
     },
-    [conversationId, input, isLoading, sendMessage]
+    [conversationId, input, isLoading, sendMessage, setInput]
   );
+
+  useLayoutEffect(() => {
+    setIsVisible(true);
+    setControls({
+      assistant,
+      isSubmitting: isLoading,
+      handleSubmit,
+      onStop: stop,
+    });
+  }, [assistant, handleSubmit, isLoading, setControls, setIsVisible, stop]);
 
   const visibleMessages = useMemo(
     () => messages.filter((message) => message.role !== "system"),
@@ -250,10 +261,22 @@ export function ChatView({
     return () => resizeObserver.disconnect();
   }, [previousUserMessageIndex]);
 
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useLayoutEffect(() => {
+    setTimeout(() => {
+      setHasMounted(true);
+    }, 200);
+  }, []);
+
   return (
     <div className="relative flex h-full min-h-0 w-full flex-1 flex-col">
       <Thread
-        className="min-h-0 h-(--orin-thread-height) [--orin-thread-height:calc(100dvh-133px)] md:[--orin-thread-height:calc(100dvh-156px)]"
+        className={cn(
+          "h-(--orin-thread-height) min-h-0 transition-opacity duration-300 [--orin-thread-height:calc(100dvh-133px)] md:[--orin-thread-height:calc(100dvh-156px)]",
+          !hasMounted && "opacity-0"
+        )}
+        initial={"instant"}
         style={
           {
             "--orin-thread-content-gap": "24px",
@@ -326,23 +349,6 @@ export function ChatView({
         <ThreadScrollToBottom className="bottom-18 shadow-2xl" />
       </Thread>
 
-      <div className="h-[76px] w-full shrink-0"></div>
-
-      <div className="to-background from-background/0 absolute inset-x-0 bottom-0 flex items-center justify-center bg-linear-to-b to-15% px-4 pt-8 pb-6">
-        <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-3">
-          <ChatInput
-            assistant={assistant}
-            input={input}
-            setInput={setInput}
-            isSubmitting={isLoading}
-            handleSubmit={handleSubmit}
-            onStop={stop}
-          />
-          <p className="text-muted-foreground text-xs font-[450]">
-            Orin is an AI assistant and can make mistakes.
-          </p>
-        </div>
-      </div>
     </div>
   );
 }
