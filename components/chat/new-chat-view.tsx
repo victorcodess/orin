@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  motion,
-  useAnimationControls,
-  useReducedMotion,
-} from "motion/react";
+import { motion, useAnimationControls, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 
@@ -85,7 +81,7 @@ export function NewChatView() {
 
         window.dispatchEvent(new CustomEvent("orin:conversations-changed"));
         router.push(
-          `/chat/${payload.id}?message=${encodeURIComponent(trimmed)}`,
+          `/chat/${payload.id}?message=${encodeURIComponent(trimmed)}`
         );
       } catch (error) {
         toast.error("Couldn't start a new chat", {
@@ -95,7 +91,7 @@ export function NewChatView() {
         setIsSubmitting(false);
       }
     },
-    [input, isSubmitting, router],
+    [input, isSubmitting, router]
   );
 
   const chatInputProps = {
@@ -108,12 +104,13 @@ export function NewChatView() {
 
   return (
     <motion.div
-      className="relative flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] p-4 pb-0 dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_60%,#f97015_280%)] md:dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]"
+      className="relative flex h-full min-h-0 flex-1 flex-col items-center justify-center p-4 pb-0"
       initial={false}
-      animate={controls}
+      // animate={controls}
       variants={fade}
     >
-      <div className="absolute top-[calc(50%-138px)] md:top-[calc(50%-103.5px)] left-1/2 -mt-10 flex w-full -translate-x-1/2 flex-col items-center justify-center gap-12 px-10 md:px-20">
+      <div className="absolute inset-0 bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_60%,#f97015_280%)] md:dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]" />
+      <div className="absolute top-[calc(50%-138px)] left-1/2 -mt-10 flex w-full -translate-x-1/2 flex-col items-center justify-center gap-12 px-10 md:top-[calc(50%-103.5px)] md:px-20">
         <div className="flex flex-col items-center justify-center gap-3 md:gap-2.75">
           <p className="text-muted-foreground text-center text-sm font-medium tracking-normal md:hidden">
             Good morning, Victor!
@@ -125,12 +122,20 @@ export function NewChatView() {
 
         <div className="hidden w-full max-w-2xl flex-col gap-6 md:flex">
           <ChatInput {...chatInputProps} />
-          <NewChatSuggestions key={`d-${replay}`} onSelect={setInput} placement="bottom" />
+          <NewChatSuggestions
+            key={`d-${replay}`}
+            onSelect={setInput}
+            placement="bottom"
+          />
         </div>
       </div>
 
       <div className="mt-auto flex w-full max-w-3xl flex-col items-center gap-5 pb-5 text-center md:hidden">
-        <NewChatSuggestions key={`m-${replay}`} onSelect={setInput} placement="top" />
+        <NewChatSuggestions
+          key={`m-${replay}`}
+          onSelect={setInput}
+          placement="top"
+        />
         <ChatInput {...chatInputProps} />
       </div>
     </motion.div>

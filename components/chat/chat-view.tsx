@@ -3,7 +3,15 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 
 import { ChatInput } from "@/components/chat/chat-input";
 import {
@@ -29,6 +37,8 @@ function textFromMessage(message: UIMessage) {
     .map((part) => part.text)
     .join("");
 }
+
+const PENDING_ASSISTANT_ID = "__orin-pending-assistant__";
 
 function toastChatError(error: Error) {
   const message = error.message;
@@ -91,6 +101,8 @@ export function ChatView({
   const router = useRouter();
   const [input, setInput] = useState("");
   const sentInitialPrompt = useRef(false);
+  const previousUserMessageRef = useRef<HTMLDivElement | null>(null);
+  const [previousUserMessageHeight, setPreviousUserMessageHeight] = useState(0);
 
   const transport = useMemo(
     () =>
@@ -177,21 +189,80 @@ export function ChatView({
     [conversationId, input, isLoading, sendMessage]
   );
 
-  const visibleMessages = messages.filter(
-    (message) => message.role !== "system"
+  const visibleMessages = useMemo(
+    () => messages.filter((message) => message.role !== "system"),
+    [messages]
   );
   const lastMessage = visibleMessages.at(-1);
-  const showTypingLoader =
-    isLoading &&
-    (!lastMessage ||
-      lastMessage.role === "user" ||
-      (lastMessage.role === "assistant" &&
-        !textFromMessage(lastMessage).trim()));
+  const showPendingAssistant = isLoading && lastMessage?.role === "user";
+  const displayMessages = showPendingAssistant
+    ? [
+        ...visibleMessages,
+        {
+          id: PENDING_ASSISTANT_ID,
+          role: "assistant" as const,
+          parts: [],
+        },
+      ]
+    : visibleMessages;
+  const lastIndex = displayMessages.length - 1;
+  const lastMessageIsAssistant =
+    displayMessages[lastIndex]?.role === "assistant";
+  const previousUserMessageIndex = lastMessageIsAssistant
+    ? displayMessages.findLastIndex(
+        (message, index) => index < lastIndex && message.role === "user"
+      )
+    : -1;
+  const useAssistantMinHeight =
+    lastMessageIsAssistant &&
+    previousUserMessageIndex > -1 &&
+    displayMessages.some(
+      (message, index) => index < lastIndex && message.role === "assistant"
+    );
+
+  const attachPreviousUserMessageRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      previousUserMessageRef.current = node;
+      setPreviousUserMessageHeight(node?.clientHeight ?? 0);
+    },
+    []
+  );
+
+  useLayoutEffect(() => {
+    if (previousUserMessageIndex < 0) {
+      setPreviousUserMessageHeight(0);
+      return;
+    }
+
+    const element = previousUserMessageRef.current;
+    if (!element) {
+      return;
+    }
+
+    const measureHeight = () => {
+      setPreviousUserMessageHeight(element.clientHeight);
+    };
+
+    measureHeight();
+    const resizeObserver = new ResizeObserver(measureHeight);
+    resizeObserver.observe(element);
+
+    return () => resizeObserver.disconnect();
+  }, [previousUserMessageIndex]);
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-1 flex-col">
-      <Thread className="min-h-0 flex-1">
-        <ThreadContent className="mx-auto w-full max-w-3xl items-stretch">
+      <Thread
+        className="min-h-0 h-(--orin-thread-height) [--orin-thread-height:calc(100dvh-133px)] md:[--orin-thread-height:calc(100dvh-156px)]"
+        style={
+          {
+            "--orin-thread-content-gap": "24px",
+            "--orin-thread-content-bottom-padding": "120px",
+            "--orin-min-height-misc": "24px",
+          } as CSSProperties
+        }
+      >
+        <ThreadContent className="mx-auto w-full max-w-3xl items-stretch gap-(--orin-thread-content-gap) pb-(--orin-thread-content-bottom-padding)">
           {visibleMessages.length === 0 ? (
             <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-24 text-center">
               <p className="text-foreground text-lg font-medium">
@@ -201,40 +272,63 @@ export function ChatView({
             </div>
           ) : (
             <>
-              {visibleMessages.map((message) => (
-                <Message
-                  key={message.id}
-                  from={message.role === "user" ? "user" : "assistant"}
-                >
-                  <MessageStack>
-                    <MessageContent>
-                      <MessageMarkdown>
-                        {textFromMessage(message)}
-                      </MessageMarkdown>
-                    </MessageContent>
-                  </MessageStack>
-                </Message>
-              ))}
-              {showTypingLoader ? (
-                <Message from="assistant" aria-label="Assistant is typing">
-                  <MessageStack>
-                    <MessageContent>
-                      <TextShimmer className="text-muted-foreground text-sm">
-                        Thinking...
-                      </TextShimmer>
-                    </MessageContent>
-                  </MessageStack>
-                </Message>
-              ) : null}
+              {displayMessages.map((message, index) => {
+                const isLast = index === lastIndex;
+                const isAssistant = message.role === "assistant";
+                const text = textFromMessage(message);
+                const showTyping =
+                  isAssistant && isLast && isLoading && !text.trim();
+
+                return (
+                  <Message
+                    key={
+                      isAssistant && displayMessages[index - 1]?.role === "user"
+                        ? `${displayMessages[index - 1].id}::assistant`
+                        : message.id
+                    }
+                    ref={
+                      index === previousUserMessageIndex
+                        ? attachPreviousUserMessageRef
+                        : undefined
+                    }
+                    from={message.role === "user" ? "user" : "assistant"}
+                    className={
+                      isLast && useAssistantMinHeight
+                        ? "min-h-[calc(var(--orin-thread-height)-var(--orin-prev-user-height)-var(--orin-thread-content-gap)-var(--orin-thread-content-bottom-padding)-var(--orin-min-height-misc))]"
+                        : undefined
+                    }
+                    style={
+                      isLast && useAssistantMinHeight
+                        ? ({
+                            "--orin-prev-user-height": `${previousUserMessageHeight}px`,
+                          } as CSSProperties)
+                        : undefined
+                    }
+                    aria-label={showTyping ? "Assistant is typing" : undefined}
+                  >
+                    <MessageStack>
+                      <MessageContent>
+                        {showTyping ? (
+                          <TextShimmer className="text-muted-foreground text-sm">
+                            Thinking...
+                          </TextShimmer>
+                        ) : (
+                          <MessageMarkdown>{text}</MessageMarkdown>
+                        )}
+                      </MessageContent>
+                    </MessageStack>
+                  </Message>
+                );
+              })}
             </>
           )}
         </ThreadContent>
         <ThreadScrollToBottom className="bottom-18 shadow-2xl" />
       </Thread>
 
-      <div className="h-[76px] w-full"></div>
+      <div className="h-[76px] w-full shrink-0"></div>
 
-      <div className="to-background from-background/30 absolute inset-x-0 bottom-0 flex items-center justify-center bg-linear-to-b to-15% px-4 pt-8 pb-6">
+      <div className="to-background from-background/0 absolute inset-x-0 bottom-0 flex items-center justify-center bg-linear-to-b to-15% px-4 pt-8 pb-6">
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-3">
           <ChatInput
             assistant={assistant}
