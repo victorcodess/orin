@@ -66,7 +66,7 @@ export function AppHeader() {
   const showShareAction = isActiveChat;
 
   return (
-    <header className="to-background from-background/0 flex h-16 pb-2 shrink-0 items-center justify-between gap-2 bg-linear-to-t to-25% px-4 absolute inset-x-0 top-0 z-20">
+    <header className="to-background from-background/0 flex h-16 pb-2 shrink-0 items-center justify-between gap-2 bg-linear-to-t to-25% px-4 absolute inset-x-0 top-0 z-2">
       <div className="flex items-center gap-2">
         <SidebarTrigger placement="inset" />
 

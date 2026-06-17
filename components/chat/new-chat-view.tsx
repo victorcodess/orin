@@ -113,7 +113,7 @@ export function NewChatView() {
       // animate={controls}
       variants={fade}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_60%,#f97015_280%)] md:dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]" />
+      <div className="absolute inset-0 bottom-0 size-full bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_60%,#f97015_280%)] md:dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]" />
       <div className="absolute top-[calc(50%-138px)] left-1/2 -mt-10 flex w-full -translate-x-1/2 flex-col items-center justify-center gap-12 px-10 md:top-[calc(50%-103.5px)] md:px-20">
         <div className="flex flex-col items-center justify-center gap-3 md:gap-2.75">
           <p className="text-muted-foreground text-center text-sm font-medium tracking-normal md:hidden">

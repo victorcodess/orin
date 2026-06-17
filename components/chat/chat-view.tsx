@@ -280,7 +280,7 @@ export function ChatView({
         style={
           {
             "--orin-thread-content-gap": "24px",
-            "--orin-thread-content-bottom-padding": "120px",
+            "--orin-thread-content-bottom-padding": "240px",
             "--orin-min-height-misc": "24px",
           } as CSSProperties
         }
@@ -317,7 +317,7 @@ export function ChatView({
                     from={message.role === "user" ? "user" : "assistant"}
                     className={
                       isLast && useAssistantMinHeight
-                        ? "min-h-[calc(var(--orin-thread-height)-var(--orin-prev-user-height)-var(--orin-thread-content-gap)-var(--orin-thread-content-bottom-padding)-var(--orin-min-height-misc))]"
+                        ? "min-h- [calc(var(--orin-thread-height)-var(--orin-prev-user-height)-var(--orin-thread-content-gap)-var(--orin-thread-content-bottom-padding)-var(--orin-min-height-misc))]"
                         : undefined
                     }
                     style={
