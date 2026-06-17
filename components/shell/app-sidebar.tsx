@@ -14,6 +14,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 import { CircleIcon } from "@hugeicons/core-free-icons";
@@ -21,6 +22,14 @@ import { CircleIcon } from "@hugeicons/core-free-icons";
 type AppSidebarProps = ComponentProps<typeof Sidebar>;
 
 export function AppSidebar({ ...props }: AppSidebarProps) {
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const closeMobileSidebar = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader className="mt-1">
@@ -28,6 +37,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
           <SidebarMenuItem className="flex items-center justify-between">
             <Link
               href="/"
+              onClick={closeMobileSidebar}
               className="ml-1 flex items-center gap-1.25 px-2 hover:opacity-80 transition-opacity"
             >
               <HugeiconsIcon

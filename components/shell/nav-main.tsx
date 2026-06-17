@@ -15,10 +15,18 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 export function NavMain() {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const closeMobileSidebar = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <SidebarGroup className="mt-2">
@@ -26,7 +34,13 @@ export function NavMain() {
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton asChild isActive={pathname === "/chat"}>
-            <Link href="/chat" onClick={signalNewChat}>
+            <Link
+              href="/chat"
+              onClick={() => {
+                signalNewChat();
+                closeMobileSidebar();
+              }}
+            >
               <HugeiconsIcon
                 icon={Add01Icon}
                 strokeWidth={2}
@@ -38,7 +52,7 @@ export function NavMain() {
         </SidebarMenuItem>
         <SidebarMenuItem>
           <SidebarMenuButton asChild>
-            <Link href="/chat">
+            <Link href="/chat" onClick={closeMobileSidebar}>
               <HugeiconsIcon
                 icon={Search01Icon}
                 strokeWidth={2}
@@ -50,7 +64,7 @@ export function NavMain() {
         </SidebarMenuItem>
         <SidebarMenuItem>
           <SidebarMenuButton asChild isActive={pathname === "/"}>
-            <Link href="/">
+            <Link href="/" onClick={closeMobileSidebar}>
               <HugeiconsIcon
                 icon={Home01Icon}
                 strokeWidth={2}
