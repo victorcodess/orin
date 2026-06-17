@@ -19,7 +19,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="h-10 w-full"></div>
           <AppHeader />
         </Suspense>
-        <div className="flex h-full max-h-[calc(100vh-0.5px)] flex-col lg:max-h-[calc(100vh-80px)]">
+        <div className="flex h-full max-h-[calc(100vh-0.5px)] flex-col lg:max-h-[calc(100vh-64px)]">
           {children}
         </div>
       </SidebarInset>

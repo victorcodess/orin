@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 import { KeyboardShortcutsDialog } from "@/components/shell/keyboard-shortcuts-dialog";
@@ -11,6 +12,7 @@ import {
 
 export function AppKeyboardShortcuts() {
   const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -40,12 +42,22 @@ export function AppKeyboardShortcuts() {
       ) {
         event.preventDefault();
         router.push("/settings");
+        return;
+      }
+
+      if (
+        event.shiftKey &&
+        !event.altKey &&
+        (event.key.toLowerCase() === "l" || event.code === "KeyL")
+      ) {
+        event.preventDefault();
+        setTheme(resolvedTheme === "dark" ? "light" : "dark");
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [router]);
+  }, [resolvedTheme, router, setTheme]);
 
   return <KeyboardShortcutsDialog open={open} onOpenChange={setOpen} />;
 }
