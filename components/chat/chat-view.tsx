@@ -1,5 +1,7 @@
 "use client";
 
+import { Copy01Icon, Refresh04Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
 import { useRouter } from "next/navigation";
@@ -16,6 +18,9 @@ import {
 import { useChatComposer } from "@/components/chat/chat-composer";
 import {
   Message,
+  MessageAction,
+  MessageActionGroup,
+  MessageActions,
   MessageContent,
   MessageMarkdown,
   MessageStack,
@@ -28,6 +33,7 @@ import {
 } from "@/components/nexus-ui/thread";
 import { TextShimmer } from "@/components/nexus-ui/text-shimmer";
 import { isKeyboardShortcutsDialogOpen } from "@/components/shell/app-keyboard-shortcuts";
+import { Button } from "@/components/ui/button";
 import { chatFetch } from "@/lib/ai/chat-fetch";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 import { cn } from "@/lib/utils";
@@ -40,6 +46,55 @@ function textFromMessage(message: UIMessage) {
 }
 
 const PENDING_ASSISTANT_ID = "__orin-pending-assistant__";
+const COPIED_RESET_MS = 1500;
+const messageActionButtonClassName =
+  "text-muted-foreground hover:text-foreground size-7";
+
+function CopyMessageAction({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCopy = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    void navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      timeoutRef.current = setTimeout(() => {
+        setCopied(false);
+      }, COPIED_RESET_MS);
+    });
+  }, [text]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <MessageAction asChild tooltip={copied ? "Copied" : "Copy"}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        className={messageActionButtonClassName}
+        aria-label={copied ? "Copied message" : "Copy message"}
+        disabled={!text.trim()}
+        onClick={handleCopy}
+      >
+        <HugeiconsIcon
+          icon={copied ? Tick02Icon : Copy01Icon}
+          strokeWidth={1.75}
+          className={copied ? "size-4.5" : "size-4"}
+        />
+      </Button>
+    </MessageAction>
+  );
+}
 
 function toastChatError(error: Error) {
   const message = error.message;
@@ -115,7 +170,15 @@ export function ChatView({
     [conversationId]
   );
 
-  const { messages, sendMessage, status, stop, error, clearError } = useChat({
+  const {
+    messages,
+    sendMessage,
+    regenerate,
+    status,
+    stop,
+    error,
+    clearError,
+  } = useChat({
     transport,
     messages: initialMessages,
     onError: (chatError) => {
@@ -301,6 +364,8 @@ export function ChatView({
                 const text = textFromMessage(message);
                 const showTyping =
                   isAssistant && isLast && isLoading && !text.trim();
+                const showActions =
+                  text.trim().length > 0 && message.id !== PENDING_ASSISTANT_ID;
 
                 return (
                   <Message
@@ -339,6 +404,41 @@ export function ChatView({
                           <MessageMarkdown>{text}</MessageMarkdown>
                         )}
                       </MessageContent>
+                      {showActions ? (
+                        <MessageActions
+                          className={cn(
+                            "transition-opacity duration-150",
+                            isAssistant
+                              ? "opacity-100"
+                              : "opacity-0 group-hover/message:opacity-100 focus-within:opacity-100"
+                          )}
+                        >
+                          <MessageActionGroup>
+                            <CopyMessageAction text={text} />
+                            {isAssistant ? (
+                              <MessageAction asChild tooltip="Retry">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  className={messageActionButtonClassName}
+                                  aria-label="Retry response"
+                                  disabled={isLoading}
+                                  onClick={() => {
+                                    void regenerate({ messageId: message.id });
+                                  }}
+                                >
+                                  <HugeiconsIcon
+                                    icon={Refresh04Icon}
+                                    strokeWidth={1.75}
+                                    className="size-4"
+                                  />
+                                </Button>
+                              </MessageAction>
+                            ) : null}
+                          </MessageActionGroup>
+                        </MessageActions>
+                      ) : null}
                     </MessageStack>
                   </Message>
                 );
@@ -348,7 +448,6 @@ export function ChatView({
         </ThreadContent>
         <ThreadScrollToBottom className="bottom-18 shadow-2xl" />
       </Thread>
-
     </div>
   );
 }
