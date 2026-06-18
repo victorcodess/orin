@@ -195,7 +195,7 @@ export function ChatMessageActions({
         "transition-opacity duration-150",
         isAssistant
           ? "opacity-100"
-          : "opacity-0 group-hover/message:opacity-100 focus-within:opacity-100"
+          : "md:opacity-0 group-hover/message:opacity-100 focus-within:opacity-100"
       )}
     >
       <MessageActionGroup className="gap-0">
