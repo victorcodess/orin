@@ -1,9 +1,16 @@
 "use client";
 
-import { ArrowUp01Icon, Mic02Icon, StopIcon } from "@hugeicons/core-free-icons";
+import { ArrowUp01Icon, StopIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useLayoutEffect, useRef, useState } from "react";
 
+import {
+  SpeechInput,
+  SpeechInputCancelButton,
+  SpeechInputPreview,
+  SpeechInputRecordButton,
+} from "@/components/elevenlabs/speech-input";
+import { toast } from "@/components/nexus-ui/toaster";
 import { Button } from "@/components/ui/button";
 import {
   PromptInput,
@@ -14,6 +21,7 @@ import {
 } from "@/components/nexus-ui/prompt-input";
 import { AssistantConfig } from "@/lib/orin/defaults";
 import { cn } from "@/lib/utils";
+import { CommitStrategy } from "@/hooks/use-scribe";
 
 type ChatInputProps = {
   assistant: AssistantConfig;
@@ -33,6 +41,7 @@ export function ChatInput({
   onStop,
 }: ChatInputProps) {
   const [textareaRef, isMultirow, isMultiline] = useResponsiveTextarea(input);
+  const dictationBaseInputRef = useRef("");
 
   return (
     <form
@@ -74,20 +83,40 @@ export function ChatInput({
           )}
         >
           <PromptInputActionGroup>
-            <PromptInputAction asChild>
-              <Button
-                type="button"
-                size="icon"
+            <SpeechInput
+              className="rounded-full"
+              getToken={getScribeToken}
+              commitStrategy={CommitStrategy.VAD}
+              onStart={() => {
+                dictationBaseInputRef.current = input;
+              }}
+              onChange={({ transcript }) => {
+                setInput(
+                  appendDictation(dictationBaseInputRef.current, transcript)
+                );
+              }}
+              onCancel={() => {
+                setInput(dictationBaseInputRef.current);
+              }}
+              onError={toastDictationError}
+              onAuthError={({ error }) => {
+                toastDictationError(new Error(error));
+              }}
+              onQuotaExceededError={({ error }) => {
+                toastDictationError(new Error(error));
+              }}
+            >
+              <SpeechInputRecordButton
                 variant="ghost"
-                className="hover:bg-sidebar-accent/60 size-9"
-              >
-                <HugeiconsIcon
-                  icon={Mic02Icon}
-                  strokeWidth={2}
-                  className="text-foreground/90 size-4.5 shrink-0"
-                />
-              </Button>
-            </PromptInputAction>
+                disabled={isSubmitting}
+                className="hover:bg-sidebar hover:dark:bg-input size-9"
+              />
+              <SpeechInputPreview placeholder="Listening..." />
+              <SpeechInputCancelButton
+                variant="ghost"
+                className="hover:bg-sidebar hover:dark:bg-input"
+              />
+            </SpeechInput>
             <PromptInputAction asChild>
               {isSubmitting && onStop ? (
                 <Button
@@ -125,6 +154,41 @@ export function ChatInput({
   );
 }
 
+async function getScribeToken() {
+  const response = await fetch("/api/elevenlabs/scribe-token", {
+    method: "POST",
+  });
+  const data = (await response.json().catch(() => null)) as {
+    token?: string;
+    error?: string;
+  } | null;
+
+  if (!response.ok || !data?.token) {
+    throw new Error(data?.error ?? "Failed to start dictation");
+  }
+
+  return data.token;
+}
+
+function appendDictation(baseInput: string, transcript: string) {
+  const text = transcript.trim();
+  if (!text) {
+    return baseInput;
+  }
+
+  const separator = baseInput.trim() ? " " : "";
+  return `${baseInput}${separator}${text}`;
+}
+
+function toastDictationError(error: Error | Event) {
+  toast.error("Couldn't start dictation", {
+    description:
+      error instanceof Error
+        ? error.message
+        : "Check microphone permissions and try again.",
+  });
+}
+
 function useResponsiveTextarea(value: string) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -145,7 +209,8 @@ function useResponsiveTextarea(value: string) {
       const isMultirow =
         hasHardBreak ||
         (wasStacked ? exceedsSingleRowWidth(el, value, contextRef) : wraps(el));
-      const isMultiline = isMultirow && (hasHardBreak || (wasStacked && wraps(el)));
+      const isMultiline =
+        isMultirow && (hasHardBreak || (wasStacked && wraps(el)));
 
       setMode(isMultiline ? "multi" : isMultirow ? "stack" : "row");
     };
@@ -171,8 +236,9 @@ function exceedsSingleRowWidth(
   contextRef: { current: CanvasRenderingContext2D | null }
 ) {
   const styles = getComputedStyle(textarea);
-  const context =
-    contextRef.current ??= document.createElement("canvas").getContext("2d");
+  const context = (contextRef.current ??= document
+    .createElement("canvas")
+    .getContext("2d"));
   if (!context) {
     return false;
   }
@@ -181,8 +247,12 @@ function exceedsSingleRowWidth(
   const actions = textarea.nextElementSibling;
   const buttons = actions?.firstElementChild;
   const reserved =
-    (buttons instanceof HTMLElement ? buttons.getBoundingClientRect().width : 0) +
-    (actions instanceof HTMLElement ? inlineSize(getComputedStyle(actions)) : 0);
+    (buttons instanceof HTMLElement
+      ? buttons.getBoundingClientRect().width
+      : 0) +
+    (actions instanceof HTMLElement
+      ? inlineSize(getComputedStyle(actions))
+      : 0);
   const textWidth =
     context.measureText(value).width +
     Math.max(value.length - 1, 0) * px(styles.letterSpacing);

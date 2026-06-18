@@ -114,7 +114,7 @@ export interface UseScribeReturn {
 
   // Connection methods
   connect: (options?: Partial<ScribeHookOptions>) => Promise<void>
-  disconnect: () => void
+  disconnect: (options?: { skipCommit?: boolean }) => void
 
   // Audio methods (for manual mode)
   sendAudio: (
@@ -176,6 +176,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
   const connectionRef = useRef<RealtimeConnection | null>(null)
   const connectionIdCounterRef = useRef(0)
   const activeConnectionIdRef = useRef<number | null>(null)
+  const disconnectingRef = useRef(false)
 
   const [status, setStatus] = useState<ScribeStatus>("disconnected")
   const [partialTranscript, setPartialTranscript] = useState<string>("")
@@ -184,37 +185,33 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
   >([])
   const [error, setError] = useState<string | null>(null)
 
-  const disconnect = useCallback(() => {
-    const connection = connectionRef.current
-    if (!connection) {
-      setStatus("disconnected")
-      activeConnectionIdRef.current = null
-      return
-    }
-
-    activeConnectionIdRef.current = null
-    connectionRef.current = null
-
-    try {
-      const result = connection.close()
-      if (
-        typeof result === "object" &&
-        result !== null &&
-        "catch" in result &&
-        typeof (result as Promise<unknown>).catch === "function"
-      ) {
-        const promise = result as Promise<void>
-        promise.catch(() => {
-          /* noop */
-        })
+  const disconnect = useCallback(
+    (options?: { skipCommit?: boolean }) => {
+      const connection = connectionRef.current
+      if (!connection) {
+        setStatus("disconnected")
+        activeConnectionIdRef.current = null
+        return
       }
-    } catch (err) {
-      console.warn("[useScribe] Failed to close connection", err)
-    } finally {
-      setStatus("disconnected")
-      onDisconnect?.()
-    }
-  }, [onDisconnect])
+
+      disconnectingRef.current = true
+      activeConnectionIdRef.current = null
+      connectionRef.current = null
+
+      try {
+        gracefulCloseScribeConnection(connection, options)
+      } catch (err) {
+        console.warn("[useScribe] Failed to close connection", err)
+      } finally {
+        setStatus("disconnected")
+        onDisconnect?.()
+        setTimeout(() => {
+          disconnectingRef.current = false
+        }, 250)
+      }
+    },
+    [onDisconnect]
+  )
 
   // Cleanup on unmount
   useEffect(() => {
@@ -377,10 +374,16 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
         connection.on(
           RealtimeEvents.ERROR,
           runIfCurrent((err: unknown) => {
-            const message = err as ScribeErrorMessage
-            setError(message.error)
+            const errorMessage = normalizeScribeError(err)
+            if (
+              disconnectingRef.current ||
+              isExpectedDisconnectError(errorMessage)
+            ) {
+              return
+            }
+            setError(errorMessage)
             setStatus("error")
-            onError?.(new Error(message.error))
+            onError?.(new Error(errorMessage))
           })
         )
 
@@ -615,6 +618,67 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     commit,
     clearTranscripts,
     getConnection,
+  }
+}
+
+type ScribeConnectionInternals = {
+  websocket?: WebSocket
+  _audioCleanup?: () => void
+}
+
+function normalizeScribeError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "error" in error &&
+    typeof (error as ScribeErrorMessage).error === "string"
+  ) {
+    return (error as ScribeErrorMessage).error
+  }
+
+  return "Unknown transcription error"
+}
+
+function isExpectedDisconnectError(message: string): boolean {
+  return message.includes("WebSocket closed unexpectedly: 1006") ||
+    message.includes("WebSocket closed unexpectedly: 1005")
+}
+
+function gracefulCloseScribeConnection(
+  connection: RealtimeConnection,
+  options?: { skipCommit?: boolean }
+) {
+  const internals = connection as unknown as ScribeConnectionInternals
+  const websocket = internals.websocket
+
+  if (!options?.skipCommit && websocket?.readyState === WebSocket.OPEN) {
+    try {
+      connection.commit()
+    } catch {
+      // Socket may already be closing.
+    }
+  }
+
+  // Close the WebSocket before stopping the mic. The SDK's close() does the
+  // opposite and often triggers abnormal closure (1006).
+  if (
+    websocket &&
+    websocket.readyState !== WebSocket.CLOSED &&
+    websocket.readyState !== WebSocket.CLOSING
+  ) {
+    try {
+      websocket.close(1000, "User ended session")
+    } catch {
+      // Socket may already be closing.
+    }
+  }
+
+  if (internals._audioCleanup) {
+    internals._audioCleanup()
   }
 }
 

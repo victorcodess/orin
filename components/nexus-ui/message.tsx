@@ -150,9 +150,9 @@ function MessageContent({
           width="16"
           height="16"
           className={cn(
-            "fill-sidebar dark:fill-input absolute top-[-6px] transition-[scale,fill,opacity] duration-300 will-change-[fill,opacity]",
+            "fill-sidebar dark:fill-input absolute top-[-5.5px] transition-[scale,fill,opacity] duration-300 will-change-[fill,opacity]",
             from === "user"
-              ? "right-0"
+              ? "right-0.5"
               : "fill-foreground/5 dark:fill-input left-0 scale-x-[-1]"
           )}
           fill="currentColor"

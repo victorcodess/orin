@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { motion } from "framer-motion"
-import { Mic02Icon, StopIcon, Cancel01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { motion } from "motion/react";
+import { Mic02Icon, StopIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 import {
   useScribe,
   type AudioFormat,
   type CommitStrategy,
-} from "@/hooks/use-scribe"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
+} from "@/hooks/use-scribe";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const buttonVariants = cva("!px-0", {
   variants: {
@@ -26,192 +26,192 @@ const buttonVariants = cva("!px-0", {
   defaultVariants: {
     size: "default",
   },
-})
+});
 
-type ButtonSize = VariantProps<typeof buttonVariants>["size"]
+type ButtonSize = VariantProps<typeof buttonVariants>["size"];
 
 export interface SpeechInputData {
   /** The current partial (in-progress) transcript */
-  partialTranscript: string
+  partialTranscript: string;
   /** Array of all committed (finalized) transcripts */
-  committedTranscripts: string[]
+  committedTranscripts: string[];
   /** Full transcript combining committed and partial transcripts */
-  transcript: string
+  transcript: string;
 }
 
 interface SpeechInputContextValue {
-  isConnected: boolean
-  isConnecting: boolean
-  transcript: string
-  partialTranscript: string
-  committedTranscripts: string[]
-  error: string | null
-  start: () => Promise<void>
-  stop: () => void
-  cancel: () => void
-  size: ButtonSize
+  isConnected: boolean;
+  isConnecting: boolean;
+  transcript: string;
+  partialTranscript: string;
+  committedTranscripts: string[];
+  error: string | null;
+  start: () => Promise<void>;
+  stop: () => void;
+  cancel: () => void;
+  size: ButtonSize;
 }
 
 const SpeechInputContext = React.createContext<SpeechInputContextValue | null>(
   null
-)
+);
 
 function useSpeechInput() {
-  const context = React.useContext(SpeechInputContext)
+  const context = React.useContext(SpeechInputContext);
   if (!context) {
     throw new Error(
       "SpeechInput compound components must be used within a SpeechInput"
-    )
+    );
   }
-  return context
+  return context;
 }
 
 function buildTranscript({
   partialTranscript,
   committedTranscripts,
 }: {
-  partialTranscript: string
-  committedTranscripts: string[]
+  partialTranscript: string;
+  committedTranscripts: string[];
 }): string {
-  const committed = committedTranscripts.join(" ").trim()
-  const partial = partialTranscript.trim()
+  const committed = committedTranscripts.join(" ").trim();
+  const partial = partialTranscript.trim();
 
   if (committed && partial) {
-    return `${committed} ${partial}`
+    return `${committed} ${partial}`;
   }
-  return committed || partial
+  return committed || partial;
 }
 
 function buildData({
   partialTranscript,
   committedTranscripts,
 }: {
-  partialTranscript: string
-  committedTranscripts: string[]
+  partialTranscript: string;
+  committedTranscripts: string[];
 }): SpeechInputData {
   return {
     partialTranscript,
     committedTranscripts,
     transcript: buildTranscript({ partialTranscript, committedTranscripts }),
-  }
+  };
 }
 
 export interface SpeechInputProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 
   /**
    * Function that returns a token for authenticating with the speech service.
    * This should be an async function that fetches a token from your backend.
    */
-  getToken: () => Promise<string>
+  getToken: () => Promise<string>;
 
   /**
    * Called whenever the transcript changes (partial or committed)
    */
-  onChange?: (data: SpeechInputData) => void
+  onChange?: (data: SpeechInputData) => void;
 
   /**
    * Called when recording is cancelled
    */
-  onCancel?: (data: SpeechInputData) => void
+  onCancel?: (data: SpeechInputData) => void;
 
   /**
    * Called when recording starts
    */
-  onStart?: (data: SpeechInputData) => void
+  onStart?: (data: SpeechInputData) => void;
 
   /**
    * Called when recording stops
    */
-  onStop?: (data: SpeechInputData) => void
+  onStop?: (data: SpeechInputData) => void;
 
   /**
    * Additional CSS classes for the root container
    */
-  className?: string
+  className?: string;
 
   /**
    * Size variant for the component buttons
    * @default "default"
    */
-  size?: ButtonSize
+  size?: ButtonSize;
 
   /**
    * Model ID for the speech recognition service
    * @default "scribe_v2_realtime"
    */
-  modelId?: string
+  modelId?: string;
 
   /**
    * Base URI for the speech recognition service
    */
-  baseUri?: string
+  baseUri?: string;
 
   /**
    * Strategy for committing transcripts
    */
-  commitStrategy?: CommitStrategy
+  commitStrategy?: CommitStrategy;
 
   /**
    * Silence threshold in seconds for VAD
    */
-  vadSilenceThresholdSecs?: number
+  vadSilenceThresholdSecs?: number;
 
   /**
    * VAD threshold value
    */
-  vadThreshold?: number
+  vadThreshold?: number;
 
   /**
    * Minimum speech duration in milliseconds
    */
-  minSpeechDurationMs?: number
+  minSpeechDurationMs?: number;
 
   /**
    * Minimum silence duration in milliseconds
    */
-  minSilenceDurationMs?: number
+  minSilenceDurationMs?: number;
 
   /**
    * Language code for transcription (e.g., "en", "es", "fr")
    */
-  languageCode?: string
+  languageCode?: string;
 
   /**
    * Microphone configuration options
    */
   microphone?: {
-    deviceId?: string
-    echoCancellation?: boolean
-    noiseSuppression?: boolean
-    autoGainControl?: boolean
-    channelCount?: number
-  }
+    deviceId?: string;
+    echoCancellation?: boolean;
+    noiseSuppression?: boolean;
+    autoGainControl?: boolean;
+    channelCount?: number;
+  };
 
   /**
    * Audio format for manual audio mode
    */
-  audioFormat?: AudioFormat
+  audioFormat?: AudioFormat;
 
   /**
    * Sample rate for manual audio mode
    */
-  sampleRate?: number
+  sampleRate?: number;
 
   /**
    * Called when an error occurs
    */
-  onError?: (error: Error | Event) => void
+  onError?: (error: Error | Event) => void;
 
   /**
    * Called when an authentication error occurs
    */
-  onAuthError?: (data: { error: string }) => void
+  onAuthError?: (data: { error: string }) => void;
 
   /**
    * Called when a quota exceeded error occurs
    */
-  onQuotaExceededError?: (data: { error: string }) => void
+  onQuotaExceededError?: (data: { error: string }) => void;
 }
 
 const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
@@ -248,8 +248,9 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
     const transcriptsRef = React.useRef({
       partialTranscript: "",
       committedTranscripts: [] as string[],
-    })
-    const startRequestIdRef = React.useRef(0)
+    });
+    const startRequestIdRef = React.useRef(0);
+    const [isTokenPending, setIsTokenPending] = React.useState(false);
 
     const scribe = useScribe({
       modelId,
@@ -264,67 +265,90 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       sampleRate,
       microphone,
       onPartialTranscript: (data) => {
-        transcriptsRef.current.partialTranscript = data.text
-        onChange?.(buildData(transcriptsRef.current))
+        transcriptsRef.current.partialTranscript = data.text;
+        onChange?.(buildData(transcriptsRef.current));
       },
       onCommittedTranscript: (data) => {
-        transcriptsRef.current.committedTranscripts.push(data.text)
-        transcriptsRef.current.partialTranscript = ""
-        onChange?.(buildData(transcriptsRef.current))
+        transcriptsRef.current.committedTranscripts.push(data.text);
+        transcriptsRef.current.partialTranscript = "";
+        onChange?.(buildData(transcriptsRef.current));
       },
       onError,
       onAuthError,
       onQuotaExceededError,
-    })
+    });
 
-    const isConnecting = scribe.status === "connecting"
+    const scribeRef = React.useRef(scribe);
+    scribeRef.current = scribe;
+
+    const isConnecting = isTokenPending || scribe.status === "connecting";
 
     const start = React.useCallback(async () => {
-      const requestId = startRequestIdRef.current + 1
-      startRequestIdRef.current = requestId
+      const requestId = startRequestIdRef.current + 1;
+      startRequestIdRef.current = requestId;
 
       transcriptsRef.current = {
         partialTranscript: "",
         committedTranscripts: [],
-      }
-      scribe.clearTranscripts()
+      };
+      scribeRef.current.clearTranscripts();
+      setIsTokenPending(true);
 
       try {
-        const token = await getToken()
+        const token = await getToken();
         if (startRequestIdRef.current !== requestId) {
-          return
+          return;
         }
 
-        await scribe.connect({
+        await scribeRef.current.connect({
           token,
-        })
+        });
         if (startRequestIdRef.current !== requestId) {
-          scribe.disconnect()
-          return
+          scribeRef.current.disconnect({ skipCommit: true });
+          return;
         }
-        onStart?.(buildData(transcriptsRef.current))
+        onStart?.(buildData(transcriptsRef.current));
       } catch (error) {
-        onError?.(error instanceof Error ? error : new Error(String(error)))
+        onError?.(error instanceof Error ? error : new Error(String(error)));
+      } finally {
+        if (startRequestIdRef.current === requestId) {
+          setIsTokenPending(false);
+        }
       }
-    }, [getToken, scribe, onStart, onError])
+    }, [getToken, onStart, onError]);
 
     const stop = React.useCallback(() => {
-      startRequestIdRef.current += 1
-      scribe.disconnect()
-      onStop?.(buildData(transcriptsRef.current))
-    }, [scribe, onStop])
+      startRequestIdRef.current += 1;
+      setIsTokenPending(false);
+
+      const data = buildData({
+        partialTranscript: scribeRef.current.partialTranscript,
+        committedTranscripts: scribeRef.current.committedTranscripts.map(
+          (t) => t.text
+        ),
+      });
+      transcriptsRef.current = {
+        partialTranscript: data.partialTranscript,
+        committedTranscripts: data.committedTranscripts,
+      };
+      onChange?.(data);
+
+      scribeRef.current.disconnect();
+      onStop?.(data);
+    }, [onChange, onStop]);
 
     const cancel = React.useCallback(() => {
-      startRequestIdRef.current += 1
-      const data = buildData(transcriptsRef.current)
-      scribe.disconnect()
-      scribe.clearTranscripts()
+      startRequestIdRef.current += 1;
+      setIsTokenPending(false);
+      const data = buildData(transcriptsRef.current);
+      scribeRef.current.disconnect({ skipCommit: true });
+      scribeRef.current.clearTranscripts();
       transcriptsRef.current = {
         partialTranscript: "",
         committedTranscripts: [],
-      }
-      onCancel?.(data)
-    }, [scribe, onCancel])
+      };
+      onCancel?.(data);
+    }, [onCancel]);
 
     const contextValue: SpeechInputContextValue = React.useMemo(
       () => ({
@@ -351,40 +375,39 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
         cancel,
         size,
       ]
-    )
+    );
 
     React.useEffect(() => {
       return () => {
-        startRequestIdRef.current += 1
-        scribe.disconnect()
-      }
-    }, [scribe, scribe.disconnect])
+        startRequestIdRef.current += 1;
+        setIsTokenPending(false);
+        scribeRef.current.disconnect();
+      };
+    }, []);
 
     return (
       <SpeechInputContext.Provider value={contextValue}>
         <div
           ref={ref}
           className={cn(
-            "relative inline-flex items-center overflow-hidden rounded-md transition-all duration-200",
-            scribe.isConnected
-              ? "bg-background dark:bg-muted shadow-[inset_0_0_0_1px_var(--color-input),0_1px_2px_0_rgba(0,0,0,0.05)]"
-              : "",
+            "relative inline-flex items-center overflow-hidden rounded-full transition-all duration-200",
+            scribe.isConnected ? "bg-background dark:bg-accent/50" : "",
             className
           )}
         >
           {children}
         </div>
       </SpeechInputContext.Provider>
-    )
+    );
   }
-)
+);
 
-SpeechInput.displayName = "SpeechInput"
+SpeechInput.displayName = "SpeechInput";
 
 export type SpeechInputRecordButtonProps = Omit<
   React.ComponentPropsWithoutRef<typeof Button>,
   "size"
->
+>;
 
 /**
  * Toggle button for starting/stopping speech recording.
@@ -397,7 +420,7 @@ const SpeechInputRecordButton = React.forwardRef<
   { className, onClick, variant = "ghost", disabled, ...props },
   ref
 ) {
-  const speechInput = useSpeechInput()
+  const speechInput = useSpeechInput();
 
   return (
     <Button
@@ -406,17 +429,17 @@ const SpeechInputRecordButton = React.forwardRef<
       variant={variant}
       onClick={(e) => {
         if (speechInput.isConnected) {
-          speechInput.stop()
+          speechInput.stop();
         } else {
-          speechInput.start()
+          speechInput.start();
         }
-        onClick?.(e)
+        onClick?.(e);
       }}
       disabled={disabled ?? speechInput.isConnecting}
       className={cn(
         buttonVariants({ size: speechInput.size }),
         "relative flex items-center justify-center transition-all",
-        speechInput.isConnected && "scale-[80%]",
+        speechInput.isConnected && "scale-[90%] active:scale-[80%]",
         className
       )}
       aria-label={
@@ -453,18 +476,17 @@ const SpeechInputRecordButton = React.forwardRef<
         )}
       />
     </Button>
-  )
-})
+  );
+});
 
-SpeechInputRecordButton.displayName = "SpeechInputRecordButton"
+SpeechInputRecordButton.displayName = "SpeechInputRecordButton";
 
-export interface SpeechInputPreviewProps
-  extends React.ComponentPropsWithoutRef<"div"> {
+export interface SpeechInputPreviewProps extends React.ComponentPropsWithoutRef<"div"> {
   /**
    * Text to show when no transcript is available
    * @default "Listening..."
    */
-  placeholder?: string
+  placeholder?: string;
 }
 
 /**
@@ -478,10 +500,10 @@ const SpeechInputPreview = React.forwardRef<
   { className, placeholder = "Listening...", ...props },
   ref
 ) {
-  const speechInput = useSpeechInput()
+  const speechInput = useSpeechInput();
 
-  const displayText = speechInput.transcript || placeholder
-  const showPlaceholder = !speechInput.transcript.trim()
+  const displayText = speechInput.transcript || placeholder;
+  const showPlaceholder = !speechInput.transcript.trim();
 
   return (
     <div
@@ -509,15 +531,15 @@ const SpeechInputPreview = React.forwardRef<
         </motion.p>
       </div>
     </div>
-  )
-})
+  );
+});
 
-SpeechInputPreview.displayName = "SpeechInputPreview"
+SpeechInputPreview.displayName = "SpeechInputPreview";
 
 export type SpeechInputCancelButtonProps = Omit<
   React.ComponentPropsWithoutRef<typeof Button>,
   "size"
->
+>;
 
 /**
  * Button to cancel the current recording and discard the transcript.
@@ -530,7 +552,7 @@ const SpeechInputCancelButton = React.forwardRef<
   { className, onClick, variant = "ghost", ...props },
   ref
 ) {
-  const speechInput = useSpeechInput()
+  const speechInput = useSpeechInput();
 
   return (
     <Button
@@ -539,30 +561,26 @@ const SpeechInputCancelButton = React.forwardRef<
       variant={variant}
       inert={speechInput.isConnected ? undefined : true}
       onClick={(e) => {
-        speechInput.cancel()
-        onClick?.(e)
+        speechInput.cancel();
+        onClick?.(e);
       }}
       className={cn(
         buttonVariants({ size: speechInput.size }),
         "transition-[opacity,transform,width] duration-200 ease-out",
         speechInput.isConnected
-          ? "scale-[80%] opacity-100"
+          ? "scale-[90%] active:scale-[80%] opacity-100"
           : "pointer-events-none w-0 scale-100 opacity-0",
         className
       )}
       aria-label="Cancel recording"
       {...props}
     >
-      <HugeiconsIcon
-        icon={Cancel01Icon}
-        strokeWidth={2}
-        className="h-3 w-3"
-      />
+      <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="h-3 w-3" />
     </Button>
-  )
-})
+  );
+});
 
-SpeechInputCancelButton.displayName = "SpeechInputCancelButton"
+SpeechInputCancelButton.displayName = "SpeechInputCancelButton";
 
 export {
   SpeechInput,
@@ -570,4 +588,4 @@ export {
   SpeechInputPreview,
   SpeechInputCancelButton,
   useSpeechInput,
-}
+};
