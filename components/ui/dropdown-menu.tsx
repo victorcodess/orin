@@ -7,6 +7,11 @@ import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
+const dropdownMenuGlassClasses = "bg-popover/70 backdrop-blur-3xl";
+
+const dropdownMenuAnimationClasses =
+  "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:duration-75 data-[state=closed]:fade-out-0 data-[state=closed]:overflow-hidden data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:zoom-in-95";
+
 type DropdownMenuDeferCloseContextValue = {
   deferUntilClose: (action: () => void) => void;
   runPendingCloseAction: (event: Event) => void;
@@ -108,7 +113,9 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         onCloseAutoFocus={handleCloseAutoFocus}
         className={cn(
-          "dark:border-border/80 bg-popover text-popover-foreground data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:duration-75 data-[state=closed]:fade-out-0 data-[state=closed]:overflow-hidden data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 no-scrollbar z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-3xl border px-1.5 py-1.5 shadow-md/2",
+          dropdownMenuGlassClasses,
+          dropdownMenuAnimationClasses,
+          "border-border/50  text-popover-foreground no-scrollbar z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-3xl border px-1.5 py-1.5 shadow-2xl/10 dark:shadow-2xl/90",
           className
         )}
         {...props}
@@ -327,14 +334,18 @@ function DropdownMenuSubContent({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
   return (
-    <DropdownMenuPrimitive.SubContent
-      data-slot="dropdown-menu-sub-content"
-      className={cn(
-        "dark:border-border/80 bg-popover text-popover-foreground data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:duration-75 data-[state=closed]:fade-out-0 data-[state=closed]:overflow-hidden data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 z-50 min-w-36 origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-3xl border px-1.5 py-1.5 shadow-md/2",
-        className
-      )}
-      {...props}
-    />
+    <DropdownMenuPrimitive.Portal>
+      <DropdownMenuPrimitive.SubContent
+        data-slot="dropdown-menu-sub-content"
+        className={cn(
+          dropdownMenuGlassClasses,
+          dropdownMenuAnimationClasses,
+          "dark:border-border/80 text-popover-foreground z-50 min-w-36 origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-3xl border px-1.5 py-1.5 shadow-md/2",
+          className
+        )}
+        {...props}
+      />
+    </DropdownMenuPrimitive.Portal>
   );
 }
 
