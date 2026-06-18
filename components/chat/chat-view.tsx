@@ -1,6 +1,13 @@
 "use client";
 
-import { Copy01Icon, Refresh04Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+import {
+  Copy01Icon,
+  Edit02Icon,
+  PauseIcon,
+  PlayIcon,
+  Refresh04Icon,
+  Tick02Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
@@ -13,6 +20,8 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type Dispatch,
+  type SetStateAction,
 } from "react";
 
 import { useChatComposer } from "@/components/chat/chat-composer";
@@ -96,6 +105,111 @@ function CopyMessageAction({ text }: { text: string }) {
   );
 }
 
+function focusComposerInput() {
+  requestAnimationFrame(() => {
+    const input = document.querySelector<HTMLTextAreaElement>(
+      'textarea[aria-label="Message input"]'
+    );
+
+    input?.focus();
+    input?.setSelectionRange(input.value.length, input.value.length);
+  });
+}
+
+function ReadAloudMessageAction({
+  messageId,
+  text,
+  activeMessageId,
+  isPaused,
+  setActiveMessageId,
+  setIsPaused,
+}: {
+  messageId: string;
+  text: string;
+  activeMessageId: string | null;
+  isPaused: boolean;
+  setActiveMessageId: Dispatch<SetStateAction<string | null>>;
+  setIsPaused: Dispatch<SetStateAction<boolean>>;
+}) {
+  const isReading = activeMessageId === messageId;
+  const isPlaying = isReading && !isPaused;
+
+  const handleReadAloud = useCallback(() => {
+    if (!("speechSynthesis" in window)) {
+      toast.error("Read aloud isn't supported in this browser");
+      return;
+    }
+
+    if (isPlaying) {
+      window.speechSynthesis.pause();
+      setIsPaused(true);
+      return;
+    }
+
+    if (isReading && isPaused) {
+      window.speechSynthesis.resume();
+      setIsPaused(false);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.onend = () => {
+      setActiveMessageId((current) =>
+        current === messageId ? null : current
+      );
+      setIsPaused(false);
+    };
+    utterance.onerror = () => {
+      setActiveMessageId((current) =>
+        current === messageId ? null : current
+      );
+      setIsPaused(false);
+    };
+
+    setActiveMessageId(messageId);
+    setIsPaused(false);
+    window.speechSynthesis.speak(utterance);
+  }, [
+    isPaused,
+    isPlaying,
+    isReading,
+    messageId,
+    setActiveMessageId,
+    setIsPaused,
+    text,
+  ]);
+
+  return (
+    <MessageAction
+      asChild
+      tooltip={isPlaying ? "Pause" : isReading ? "Resume" : "Read aloud"}
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        className={messageActionButtonClassName}
+        aria-label={
+          isPlaying
+            ? "Pause reading message"
+            : isReading
+              ? "Resume reading message"
+              : "Read message aloud"
+        }
+        onClick={handleReadAloud}
+      >
+        <HugeiconsIcon
+          icon={isPlaying ? PauseIcon : PlayIcon}
+          strokeWidth={1.75}
+          className="size-4.5"
+        />
+      </Button>
+    </MessageAction>
+  );
+}
+
 function toastChatError(error: Error) {
   const message = error.message;
 
@@ -159,6 +273,10 @@ export function ChatView({
   const sentInitialPrompt = useRef(false);
   const previousUserMessageRef = useRef<HTMLDivElement | null>(null);
   const [previousUserMessageHeight, setPreviousUserMessageHeight] = useState(0);
+  const [activeReadAloudMessageId, setActiveReadAloudMessageId] = useState<
+    string | null
+  >(null);
+  const [isReadAloudPaused, setIsReadAloudPaused] = useState(false);
 
   const transport = useMemo(
     () =>
@@ -235,6 +353,12 @@ export function ChatView({
       hasError: Boolean(error),
     });
   }, [conversationId, status, messages.length, error]);
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis?.cancel();
+    };
+  }, []);
 
   const handleSubmit = useCallback(
     (value?: string) => {
@@ -416,26 +540,61 @@ export function ChatView({
                           <MessageActionGroup>
                             <CopyMessageAction text={text} />
                             {isAssistant ? (
-                              <MessageAction asChild tooltip="Retry">
+                              <>
+                                <ReadAloudMessageAction
+                                  messageId={message.id}
+                                  text={text}
+                                  activeMessageId={activeReadAloudMessageId}
+                                  isPaused={isReadAloudPaused}
+                                  setActiveMessageId={
+                                    setActiveReadAloudMessageId
+                                  }
+                                  setIsPaused={setIsReadAloudPaused}
+                                />
+                                <MessageAction asChild tooltip="Retry">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    className={messageActionButtonClassName}
+                                    aria-label="Retry response"
+                                    disabled={isLoading}
+                                    onClick={() => {
+                                      void regenerate({
+                                        messageId: message.id,
+                                      });
+                                    }}
+                                  >
+                                    <HugeiconsIcon
+                                      icon={Refresh04Icon}
+                                      strokeWidth={1.75}
+                                      className="size-4"
+                                    />
+                                  </Button>
+                                </MessageAction>
+                              </>
+                            ) : (
+                              <MessageAction asChild tooltip="Edit">
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="icon-sm"
                                   className={messageActionButtonClassName}
-                                  aria-label="Retry response"
+                                  aria-label="Edit message"
                                   disabled={isLoading}
                                   onClick={() => {
-                                    void regenerate({ messageId: message.id });
+                                    setInput(text);
+                                    focusComposerInput();
                                   }}
                                 >
                                   <HugeiconsIcon
-                                    icon={Refresh04Icon}
+                                    icon={Edit02Icon}
                                     strokeWidth={1.75}
                                     className="size-4"
                                   />
                                 </Button>
                               </MessageAction>
-                            ) : null}
+                            )}
                           </MessageActionGroup>
                         </MessageActions>
                       ) : null}
