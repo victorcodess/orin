@@ -1,35 +1,33 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ArrowDown01Icon,
-  Delete02Icon,
-  Edit02Icon,
-  FavouriteIcon,
-} from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
+import { ChatOptionsMenuContent } from "@/components/chat/chat-options-menu";
 import type { ConversationRow } from "@/lib/ai/conversations";
-import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  broadcastConversationTitleChange,
+  conversationDisplayTitle,
+  normalizeConversationTitleInput,
+  patchConversationTitle,
+} from "@/lib/conversation-title";
+import {
+  CONVERSATIONS_CHANGED_EVENT,
+  type ConversationsChangedDetail,
+  getCachedConversations,
+} from "@/lib/conversations-cache";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/components/nexus-ui/toaster";
 import { cn } from "@/lib/utils";
 
 type ChatTitleProps = {
   conversationId: string;
   isLoggedIn: boolean;
 };
-
-function conversationLabel(title: string | null | undefined) {
-  return title?.trim() || "Untitled chat";
-}
 
 export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
   const [chatTitle, setChatTitle] = useState<string | null>(null);
@@ -38,9 +36,25 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
   const [titleDraft, setTitleDraft] = useState("");
   const pendingRenameFocusRef = useRef(false);
 
-  const displayTitle = chatTitle ?? "Untitled chat";
+  const displayTitle = conversationDisplayTitle(chatTitle);
+
+  const applyTitle = useCallback((title: string | null) => {
+    setChatTitle(title);
+    setTitleDraft(conversationDisplayTitle(title));
+    broadcastConversationTitleChange(conversationId, title);
+  }, [conversationId]);
 
   const loadChatTitle = useCallback(async () => {
+    const cachedConversation = getCachedConversations()?.find(
+      (item) => item.id === conversationId
+    );
+
+    if (cachedConversation) {
+      setChatTitle(cachedConversation.title);
+      setIsTitleLoaded(true);
+      return;
+    }
+
     try {
       const response = await fetch("/api/conversations", { cache: "no-store" });
       if (!response.ok) {
@@ -51,7 +65,7 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
       const conversation = conversations.find(
         (item) => item.id === conversationId
       );
-      setChatTitle(conversation ? conversationLabel(conversation.title) : null);
+      setChatTitle(conversation?.title ?? null);
     } catch {
     } finally {
       setIsTitleLoaded(true);
@@ -63,15 +77,22 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
   }, [loadChatTitle]);
 
   useEffect(() => {
-    const handleChange = () => {
+    const handleChange = (event: Event) => {
+      const detail = (event as CustomEvent<ConversationsChangedDetail>).detail;
+
+      if (detail?.type === "rename" && detail.conversationId === conversationId) {
+        setChatTitle(detail.title ?? null);
+        return;
+      }
+
       void loadChatTitle();
     };
 
-    window.addEventListener("orin:conversations-changed", handleChange);
+    window.addEventListener(CONVERSATIONS_CHANGED_EVENT, handleChange);
     return () => {
-      window.removeEventListener("orin:conversations-changed", handleChange);
+      window.removeEventListener(CONVERSATIONS_CHANGED_EVENT, handleChange);
     };
-  }, [loadChatTitle]);
+  }, [conversationId, loadChatTitle]);
 
   useEffect(() => {
     setIsEditingTitle(false);
@@ -84,6 +105,15 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
       setTitleDraft(displayTitle);
     }
   }, [displayTitle, isEditingTitle]);
+
+  const focusTitleInput = useCallback(() => {
+    const input = document.getElementById(
+      `chat-title-${conversationId}`
+    ) as HTMLInputElement | null;
+
+    input?.focus();
+    input?.select();
+  }, [conversationId]);
 
   const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
@@ -108,12 +138,37 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
     setTitleDraft(displayTitle);
   };
 
-  const handleTitleBlur = () => {
+  const handleTitleBlur = async () => {
     if (pendingRenameFocusRef.current) {
       return;
     }
 
-    handleCancelTitleEdit();
+    if (!isEditingTitle) {
+      return;
+    }
+
+    const nextTitle = normalizeConversationTitleInput(titleDraft);
+    const currentTitle = chatTitle?.trim() || null;
+
+    if (nextTitle === currentTitle) {
+      handleCancelTitleEdit();
+      return;
+    }
+
+    const previousTitle = chatTitle;
+    setIsEditingTitle(false);
+    applyTitle(nextTitle);
+
+    try {
+      const conversation = await patchConversationTitle(
+        conversationId,
+        titleDraft
+      );
+      applyTitle(conversation.title);
+    } catch {
+      applyTitle(previousTitle);
+      toast.error("Couldn't rename chat");
+    }
   };
 
   const handleRename = () => {
@@ -128,14 +183,8 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
     }
 
     event.preventDefault();
-
-    const input = document.getElementById(
-      `chat-title-${conversationId}`
-    ) as HTMLInputElement | null;
-
     pendingRenameFocusRef.current = false;
-    input?.focus();
-    input?.select();
+    focusTitleInput();
   };
 
   return (
@@ -192,37 +241,11 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
                 />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="min-w-40"
+            <ChatOptionsMenuContent
+              isLoggedIn={isLoggedIn}
+              onRename={handleRename}
               onCloseAutoFocus={handleRenameMenuClose}
-            >
-              <DropdownMenuItem disabled={!isLoggedIn} onSelect={handleRename}>
-                <HugeiconsIcon
-                  icon={Edit02Icon}
-                  strokeWidth={2}
-                  className="size-4 shrink-0"
-                />
-                Rename
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={!isLoggedIn}>
-                <HugeiconsIcon
-                  icon={FavouriteIcon}
-                  strokeWidth={2}
-                  className="size-4 shrink-0"
-                />
-                Favorite
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" disabled={!isLoggedIn}>
-                <HugeiconsIcon
-                  icon={Delete02Icon}
-                  strokeWidth={2}
-                  className="size-4 shrink-0"
-                />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
+            />
           </DropdownMenu>
         </>
       )}
