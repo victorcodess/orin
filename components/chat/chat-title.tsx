@@ -73,8 +73,11 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
   }, [conversationId]);
 
   useEffect(() => {
+    setIsEditingTitle(false);
+    setIsTitleLoaded(false);
+    setChatTitle(null);
     void loadChatTitle();
-  }, [loadChatTitle]);
+  }, [conversationId, loadChatTitle]);
 
   useEffect(() => {
     const handleChange = (event: Event) => {
@@ -93,12 +96,6 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
       window.removeEventListener(CONVERSATIONS_CHANGED_EVENT, handleChange);
     };
   }, [conversationId, loadChatTitle]);
-
-  useEffect(() => {
-    setIsEditingTitle(false);
-    setIsTitleLoaded(false);
-    setChatTitle(null);
-  }, [conversationId]);
 
   useEffect(() => {
     if (!isEditingTitle) {
