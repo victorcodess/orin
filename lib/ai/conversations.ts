@@ -81,6 +81,48 @@ export async function getConversation(
   return (data as ConversationRow | null) ?? null;
 }
 
+const MAX_CONVERSATION_TITLE_LENGTH = 200;
+
+function normalizeConversationTitle(title: string): string | null {
+  const trimmed = title.trim();
+
+  if (!trimmed || trimmed.toLowerCase() === "untitled chat") {
+    return null;
+  }
+
+  if (trimmed.length <= MAX_CONVERSATION_TITLE_LENGTH) {
+    return trimmed;
+  }
+
+  return trimmed.slice(0, MAX_CONVERSATION_TITLE_LENGTH);
+}
+
+export async function updateConversationTitle(
+  conversationId: string,
+  title: string,
+): Promise<ConversationRow> {
+  await verifyConversationAccess(conversationId);
+
+  const normalizedTitle = normalizeConversationTitle(title);
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from("conversations")
+    .update({
+      title: normalizedTitle,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", conversationId)
+    .select("id, user_id, session_id, title, created_at, updated_at")
+    .single();
+
+  if (error || !data) {
+    throw error ?? new Error("Failed to update conversation title");
+  }
+
+  return data as ConversationRow;
+}
+
 export async function maybeUpdateConversationTitle(
   conversationId: string,
   userText: string,
