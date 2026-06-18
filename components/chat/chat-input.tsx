@@ -68,7 +68,7 @@ export function ChatInput({
           placeholder={`Message ${assistant.name}...`}
           disabled={isSubmitting}
           className={cn(
-            "text-foreground w-full px-6 pt-3 pb-3 text-[15px] leading-7 font-[450]",
+            "text-foreground w-full px-6 pt-3 pb-3 text-base leading-7 font-[450] md:text-[15px] placeholder:text-sm placeholder:leading-7",
             isMultiline
               ? "field-sizing-content max-h-40 min-h-0! flex-1 shrink-0 overflow-y-auto"
               : "field-sizing-fixed! max-h-none min-h-0! overflow-hidden"
