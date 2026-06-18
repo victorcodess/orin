@@ -7,6 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { useChatComposer } from "@/components/chat/chat-composer";
 import { ChatInput } from "@/components/chat/chat-input";
 import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
+import { CONVERSATIONS_CHANGED_EVENT } from "@/lib/conversations-cache";
 import { toast } from "@/components/nexus-ui/toaster";
 import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 
@@ -81,7 +82,7 @@ export function NewChatView() {
           throw new Error(payload.error ?? "Failed to create chat");
         }
 
-        window.dispatchEvent(new CustomEvent("orin:conversations-changed"));
+        window.dispatchEvent(new CustomEvent(CONVERSATIONS_CHANGED_EVENT));
         setInput("");
         router.push(
           `/c/${payload.id}?message=${encodeURIComponent(trimmed)}`
