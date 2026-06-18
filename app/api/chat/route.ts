@@ -1,9 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import {
-  convertToModelMessages,
-  streamText,
-  type UIMessage,
-} from "ai";
+import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import {
@@ -45,18 +41,24 @@ export async function POST(req: Request) {
       debugLog("api/chat", "validation failed", { conversationId, messages });
       return Response.json(
         { error: "conversationId and messages are required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes("your-")) {
-      debugError("api/chat", "OPENAI_API_KEY is missing or still a placeholder");
+    if (
+      !process.env.OPENAI_API_KEY ||
+      process.env.OPENAI_API_KEY.includes("your-")
+    ) {
+      debugError(
+        "api/chat",
+        "OPENAI_API_KEY is missing or still a placeholder"
+      );
       return Response.json(
         {
           error:
             "OPENAI_API_KEY is not configured. Set a real key in .env.local and restart the dev server.",
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -76,7 +78,9 @@ export async function POST(req: Request) {
       authUserId: authData.user?.id ?? null,
     });
 
-    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((m) => m.role === "user");
 
     if (lastUserMessage) {
       const userText = textFromUIMessage(lastUserMessage);

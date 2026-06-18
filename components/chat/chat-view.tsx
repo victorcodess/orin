@@ -1,16 +1,7 @@
 "use client";
 
-import {
-  Copy01Icon,
-  Edit03Icon,
-  PauseIcon,
-  PlayIcon,
-  Refresh04Icon,
-  Tick02Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -20,90 +11,23 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type Dispatch,
-  type SetStateAction,
 } from "react";
 
 import { useChatComposer } from "@/components/chat/chat-composer";
 import {
-  Message,
-  MessageAction,
-  MessageActionGroup,
-  MessageActions,
-  MessageContent,
-  MessageMarkdown,
-  MessageStack,
-} from "@/components/nexus-ui/message";
+  ChatMessageList,
+  PENDING_ASSISTANT_ID,
+} from "@/components/chat/message-list";
 import { toast } from "@/components/nexus-ui/toaster";
 import {
   Thread,
   ThreadContent,
   ThreadScrollToBottom,
 } from "@/components/nexus-ui/thread";
-import { TextShimmer } from "@/components/nexus-ui/text-shimmer";
 import { isKeyboardShortcutsDialogOpen } from "@/components/shell/app-keyboard-shortcuts";
-import { Button } from "@/components/ui/button";
 import { chatFetch } from "@/lib/ai/chat-fetch";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 import { cn } from "@/lib/utils";
-
-function textFromMessage(message: UIMessage) {
-  return message.parts
-    .filter(isTextUIPart)
-    .map((part) => part.text)
-    .join("");
-}
-
-const PENDING_ASSISTANT_ID = "__orin-pending-assistant__";
-const COPIED_RESET_MS = 1500;
-const messageActionButtonClassName =
-  "text-muted-foreground hover:text-foreground hover:bg-muted/70 hover:dark:bg-secondary/70";
-
-function CopyMessageAction({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleCopy = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    void navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      timeoutRef.current = setTimeout(() => {
-        setCopied(false);
-      }, COPIED_RESET_MS);
-    });
-  }, [text]);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <MessageAction asChild tooltip={copied ? "Copied" : "Copy"}>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        className={messageActionButtonClassName}
-        aria-label={copied ? "Copied message" : "Copy message"}
-        disabled={!text.trim()}
-        onClick={handleCopy}
-      >
-        <HugeiconsIcon
-          icon={copied ? Tick02Icon : Copy01Icon}
-          strokeWidth={1.75}
-          className={copied ? "size-4.5" : "size-4"}
-        />
-      </Button>
-    </MessageAction>
-  );
-}
 
 function focusComposerInput() {
   requestAnimationFrame(() => {
@@ -114,100 +38,6 @@ function focusComposerInput() {
     input?.focus();
     input?.setSelectionRange(input.value.length, input.value.length);
   });
-}
-
-function ReadAloudMessageAction({
-  messageId,
-  text,
-  activeMessageId,
-  isPaused,
-  setActiveMessageId,
-  setIsPaused,
-}: {
-  messageId: string;
-  text: string;
-  activeMessageId: string | null;
-  isPaused: boolean;
-  setActiveMessageId: Dispatch<SetStateAction<string | null>>;
-  setIsPaused: Dispatch<SetStateAction<boolean>>;
-}) {
-  const isReading = activeMessageId === messageId;
-  const isPlaying = isReading && !isPaused;
-
-  const handleReadAloud = useCallback(() => {
-    if (!("speechSynthesis" in window)) {
-      toast.error("Read aloud isn't supported in this browser");
-      return;
-    }
-
-    if (isPlaying) {
-      window.speechSynthesis.pause();
-      setIsPaused(true);
-      return;
-    }
-
-    if (isReading && isPaused) {
-      window.speechSynthesis.resume();
-      setIsPaused(false);
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.onend = () => {
-      setActiveMessageId((current) =>
-        current === messageId ? null : current
-      );
-      setIsPaused(false);
-    };
-    utterance.onerror = () => {
-      setActiveMessageId((current) =>
-        current === messageId ? null : current
-      );
-      setIsPaused(false);
-    };
-
-    setActiveMessageId(messageId);
-    setIsPaused(false);
-    window.speechSynthesis.speak(utterance);
-  }, [
-    isPaused,
-    isPlaying,
-    isReading,
-    messageId,
-    setActiveMessageId,
-    setIsPaused,
-    text,
-  ]);
-
-  return (
-    <MessageAction
-      asChild
-      tooltip={isPlaying ? "Pause" : isReading ? "Resume" : "Read aloud"}
-    >
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        className={messageActionButtonClassName}
-        aria-label={
-          isPlaying
-            ? "Pause reading message"
-            : isReading
-              ? "Resume reading message"
-              : "Read message aloud"
-        }
-        onClick={handleReadAloud}
-      >
-        <HugeiconsIcon
-          icon={isPlaying ? PauseIcon : PlayIcon}
-          strokeWidth={1.75}
-          className="size-4.5"
-        />
-      </Button>
-    </MessageAction>
-  );
 }
 
 function toastChatError(error: Error) {
@@ -271,8 +101,6 @@ export function ChatView({
   const router = useRouter();
   const { input, setInput, setControls, setIsVisible } = useChatComposer();
   const sentInitialPrompt = useRef(false);
-  const previousUserMessageRef = useRef<HTMLDivElement | null>(null);
-  const [previousUserMessageHeight, setPreviousUserMessageHeight] = useState(0);
   const [activeReadAloudMessageId, setActiveReadAloudMessageId] = useState<
     string | null
   >(null);
@@ -407,6 +235,32 @@ export function ChatView({
     [conversationId, editingMessageId, input, isLoading, sendMessage, setInput]
   );
 
+  const handleRetryMessage = useCallback(
+    (messageId: string) => {
+      void regenerate({ messageId });
+    },
+    [regenerate]
+  );
+
+  const handleEditMessage = useCallback(
+    (messageId: string, text: string) => {
+      setEditingMessageId(messageId);
+      setInput(text);
+      focusComposerInput();
+    },
+    [setInput]
+  );
+
+  const readAloud = useMemo(
+    () => ({
+      activeMessageId: activeReadAloudMessageId,
+      isPaused: isReadAloudPaused,
+      setActiveMessageId: setActiveReadAloudMessageId,
+      setIsPaused: setIsReadAloudPaused,
+    }),
+    [activeReadAloudMessageId, isReadAloudPaused]
+  );
+
   useLayoutEffect(() => {
     setIsVisible(true);
     setControls({
@@ -433,53 +287,6 @@ export function ChatView({
         },
       ]
     : visibleMessages;
-  const lastIndex = displayMessages.length - 1;
-  const editingMessageIndex = editingMessageId
-    ? displayMessages.findIndex((message) => message.id === editingMessageId)
-    : -1;
-  const lastMessageIsAssistant =
-    displayMessages[lastIndex]?.role === "assistant";
-  const previousUserMessageIndex = lastMessageIsAssistant
-    ? displayMessages.findLastIndex(
-        (message, index) => index < lastIndex && message.role === "user"
-      )
-    : -1;
-  const useAssistantMinHeight =
-    lastMessageIsAssistant &&
-    previousUserMessageIndex > -1 &&
-    displayMessages.some(
-      (message, index) => index < lastIndex && message.role === "assistant"
-    );
-
-  const attachPreviousUserMessageRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      previousUserMessageRef.current = node;
-      setPreviousUserMessageHeight(node?.clientHeight ?? 0);
-    },
-    []
-  );
-
-  useLayoutEffect(() => {
-    if (previousUserMessageIndex < 0) {
-      setPreviousUserMessageHeight(0);
-      return;
-    }
-
-    const element = previousUserMessageRef.current;
-    if (!element) {
-      return;
-    }
-
-    const measureHeight = () => {
-      setPreviousUserMessageHeight(element.clientHeight);
-    };
-
-    measureHeight();
-    const resizeObserver = new ResizeObserver(measureHeight);
-    resizeObserver.observe(element);
-
-    return () => resizeObserver.disconnect();
-  }, [previousUserMessageIndex]);
 
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -514,152 +321,15 @@ export function ChatView({
               <p className="max-w-md text-sm">{assistant.firstMessage}</p>
             </div>
           ) : (
-            <>
-              {displayMessages.map((message, index) => {
-                const isLast = index === lastIndex;
-                const isAssistant = message.role === "assistant";
-                const isEditingMessage = message.id === editingMessageId;
-                const fadeForEditing =
-                  editingMessageIndex > -1 && index > editingMessageIndex;
-                const text = textFromMessage(message);
-                const showTyping =
-                  isAssistant && isLast && isLoading && !text.trim();
-                const showActions =
-                  text.trim().length > 0 && message.id !== PENDING_ASSISTANT_ID;
-
-                return (
-                  <Message
-                    key={
-                      isAssistant && displayMessages[index - 1]?.role === "user"
-                        ? `${displayMessages[index - 1].id}::assistant`
-                        : message.id
-                    }
-                    ref={
-                      index === previousUserMessageIndex
-                        ? attachPreviousUserMessageRef
-                        : undefined
-                    }
-                    from={message.role === "user" ? "user" : "assistant"}
-                    className={cn(
-                      isLast &&
-                        useAssistantMinHeight &&
-                        "min-h- [calc(var(--orin-thread-height)-var(--orin-prev-user-height)-var(--orin-thread-content-gap)-var(--orin-thread-content-bottom-padding)-var(--orin-min-height-misc))]",
-                      fadeForEditing && "opacity-50",
-                      "transition-opacity duration-300"
-                    )}
-                    style={
-                      isLast && useAssistantMinHeight
-                        ? ({
-                            "--orin-prev-user-height": `${previousUserMessageHeight}px`,
-                          } as CSSProperties)
-                        : undefined
-                    }
-                    aria-label={showTyping ? "Assistant is typing" : undefined}
-                  >
-                    <MessageStack>
-                      <MessageContent
-                        className={
-                          isEditingMessage
-                            ? "animate-pulse  outline-1 outline-dashed outline-primary [&_svg]:opacity-0"
-                            : undefined
-                        }
-                      >
-                        {showTyping ? (
-                          <TextShimmer className="text-muted-foreground text-sm">
-                            Thinking...
-                          </TextShimmer>
-                        ) : (
-                          <MessageMarkdown>{text}</MessageMarkdown>
-                        )}
-                      </MessageContent>
-                      {showActions ? (
-                        <MessageActions
-                          className={cn(
-                            "transition-opacity duration-150",
-                            isAssistant
-                              ? "opacity-100"
-                              : "opacity-0 group-hover/message:opacity-100 focus-within:opacity-100"
-                          )}
-                        >
-                          <MessageActionGroup className="gap-0">
-                            <CopyMessageAction text={text} />
-                            {isAssistant ? (
-                              <>
-                                <ReadAloudMessageAction
-                                  messageId={message.id}
-                                  text={text}
-                                  activeMessageId={activeReadAloudMessageId}
-                                  isPaused={isReadAloudPaused}
-                                  setActiveMessageId={
-                                    setActiveReadAloudMessageId
-                                  }
-                                  setIsPaused={setIsReadAloudPaused}
-                                />
-                                <MessageAction asChild tooltip="Retry">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    className={messageActionButtonClassName}
-                                    aria-label="Retry response"
-                                    disabled={isLoading}
-                                    onClick={() => {
-                                      void regenerate({
-                                        messageId: message.id,
-                                      });
-                                    }}
-                                  >
-                                    <HugeiconsIcon
-                                      icon={Refresh04Icon}
-                                      strokeWidth={1.75}
-                                      className="size-4"
-                                    />
-                                  </Button>
-                                </MessageAction>
-                              </>
-                            ) : (
-                              <MessageAction
-                                asChild
-                                tooltip={isEditingMessage ? "Cancel edit" : "Edit"}
-                              >
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  className={messageActionButtonClassName}
-                                  aria-label={
-                                    isEditingMessage
-                                      ? "Cancel editing message"
-                                      : "Edit message"
-                                  }
-                                  disabled={isLoading}
-                                  onClick={() => {
-                                    if (isEditingMessage) {
-                                      cancelEditing();
-                                      return;
-                                    }
-
-                                    setEditingMessageId(message.id);
-                                    setInput(text);
-                                    focusComposerInput();
-                                  }}
-                                >
-                                  <HugeiconsIcon
-                                    icon={Edit03Icon}
-                                    strokeWidth={1.75}
-                                    className="size-4"
-                                  />
-                                </Button>
-                              </MessageAction>
-                            )}
-                          </MessageActionGroup>
-                        </MessageActions>
-                      ) : null}
-                    </MessageStack>
-                  </Message>
-                );
-              })}
-            </>
+            <ChatMessageList
+              messages={displayMessages}
+              isLoading={isLoading}
+              editingMessageId={editingMessageId}
+              readAloud={readAloud}
+              onRetry={handleRetryMessage}
+              onEdit={handleEditMessage}
+              onCancelEdit={cancelEditing}
+            />
           )}
         </ThreadContent>
         <ThreadScrollToBottom className="bottom-18 shadow-2xl" />
