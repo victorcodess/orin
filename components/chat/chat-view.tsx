@@ -305,7 +305,7 @@ export function ChatView({
           } as CSSProperties
         }
       >
-        <ThreadContent className="mx-auto w-full max-w-3xl items-stretch gap-(--orin-thread-content-gap) pt-5 pb-3 md:pt-10 md:pb-(--orin-thread-content-bottom-padding)">
+        <ThreadContent className="mx-auto w-full max-w-3xl items-stretch gap-(--orin-thread-content-gap) pt-7.5 pb-30 md:pt-10 md:pb-(--orin-thread-content-bottom-padding)">
           {visibleMessages.length === 0 ? (
             <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-24 text-center">
               <p className="text-foreground text-lg font-medium">
