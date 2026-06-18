@@ -121,31 +121,24 @@ export function ChatView({
     [conversationId]
   );
 
-  const {
-    messages,
-    sendMessage,
-    regenerate,
-    status,
-    stop,
-    error,
-    clearError,
-  } = useChat({
-    transport,
-    messages: initialMessages,
-    generateId: () => crypto.randomUUID(),
-    onError: (chatError) => {
-      console.error("[orin:chat-view] useChat error", chatError);
-      toastChatError(chatError);
-      clearError();
-    },
-    onFinish: () => {
-      console.log("[orin:chat-view] stream finished", {
-        conversationId,
-        messageCount: messages.length,
-      });
-      window.dispatchEvent(new CustomEvent("orin:conversations-changed"));
-    },
-  });
+  const { messages, sendMessage, regenerate, status, stop, error, clearError } =
+    useChat({
+      transport,
+      messages: initialMessages,
+      generateId: () => crypto.randomUUID(),
+      onError: (chatError) => {
+        console.error("[orin:chat-view] useChat error", chatError);
+        toastChatError(chatError);
+        clearError();
+      },
+      onFinish: () => {
+        console.log("[orin:chat-view] stream finished", {
+          conversationId,
+          messageCount: messages.length,
+        });
+        window.dispatchEvent(new CustomEvent("orin:conversations-changed"));
+      },
+    });
 
   const isLoading = status === "streaming" || status === "submitted";
 
@@ -312,7 +305,7 @@ export function ChatView({
           } as CSSProperties
         }
       >
-        <ThreadContent className="mx-auto w-full max-w-3xl items-stretch gap-(--orin-thread-content-gap) pb-(--orin-thread-content-bottom-padding)">
+        <ThreadContent className="mx-auto w-full max-w-3xl items-stretch gap-(--orin-thread-content-gap) pt-5 pb-3 md:pt-10 md:pb-(--orin-thread-content-bottom-padding)">
           {visibleMessages.length === 0 ? (
             <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-24 text-center">
               <p className="text-foreground text-lg font-medium">
@@ -332,7 +325,7 @@ export function ChatView({
             />
           )}
         </ThreadContent>
-        <ThreadScrollToBottom className="bottom-18 shadow-2xl" />
+        <ThreadScrollToBottom className="bottom-9 shadow-2xl md:bottom-18" />
       </Thread>
     </div>
   );
