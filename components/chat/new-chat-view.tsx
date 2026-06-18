@@ -84,7 +84,7 @@ export function NewChatView() {
         window.dispatchEvent(new CustomEvent("orin:conversations-changed"));
         setInput("");
         router.push(
-          `/chat/${payload.id}?message=${encodeURIComponent(trimmed)}`
+          `/c/${payload.id}?message=${encodeURIComponent(trimmed)}`
         );
       } catch (error) {
         toast.error("Couldn't start a new chat", {

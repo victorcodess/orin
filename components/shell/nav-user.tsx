@@ -295,7 +295,7 @@ export function NavUser() {
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/chat");
+    router.push("/new");
   }
 
   return (

@@ -42,7 +42,7 @@ export default function Home() {
 
         <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2 w-full">
           <Button asChild size="lg" className="w-full sm:w-auto">
-            <Link href="/chat">Meet Orin</Link>
+            <Link href="/new">Meet Orin</Link>
           </Button>
 
           <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto">

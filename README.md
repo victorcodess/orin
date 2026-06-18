@@ -44,7 +44,7 @@ Start the dev server:
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000). Chat lives at `/chat`.
+Open [localhost:3000](http://localhost:3000). New chat lives at `/new`.
 
 ## Scripts
 

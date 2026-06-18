@@ -19,11 +19,11 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 function getChatContext(pathname: string) {
-  if (pathname === "/chat") {
+  if (pathname === "/new") {
     return { isEmptyChat: true, conversationId: null as string | null };
   }
 
-  const match = pathname.match(/^\/chat\/([^/]+)$/);
+  const match = pathname.match(/^\/c\/([^/]+)$/);
   if (match) {
     return { isEmptyChat: false, conversationId: match[1] };
   }

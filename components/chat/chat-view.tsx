@@ -59,7 +59,7 @@ function toastChatError(error: Error) {
       action: {
         label: "New chat",
         onClick: () => {
-          window.location.href = "/chat";
+          window.location.href = "/new";
         },
       },
       duration: 8000,
@@ -73,7 +73,7 @@ function toastChatError(error: Error) {
       action: {
         label: "New chat",
         onClick: () => {
-          window.location.href = "/chat";
+          window.location.href = "/new";
         },
       },
     });
@@ -160,7 +160,7 @@ export function ChatView({
 
     sentInitialPrompt.current = true;
     sendMessage({ text: prompt });
-    router.replace(`/chat/${conversationId}`, { scroll: false });
+    router.replace(`/c/${conversationId}`, { scroll: false });
   }, [conversationId, initialPrompt, router, sendMessage]);
 
   useEffect(() => {

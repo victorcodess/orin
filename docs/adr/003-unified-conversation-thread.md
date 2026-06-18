@@ -11,7 +11,7 @@ Users should be able to text Orin, start a voice call mid-conversation, and cont
 
 - One `conversation_id` holds all turns (text and voice)
 - `messages.source` is `text` or `voice`
-- Chat UI (`app/(app)/chat/[id]`) is the canonical transcript
+- Chat UI (`app/(app)/(chat)/c/[id]`) is the canonical transcript
 - Call UI is an overlay on the chat page, not a separate route
 - Voice sidecar persists each transcript turn to `messages` as it happens
 - Chat subscribes to new messages via Supabase Realtime during calls

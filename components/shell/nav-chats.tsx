@@ -200,7 +200,7 @@ export function NavChats() {
                 </MotionSidebarMenuItem>
               ) : (
                 conversations.map((conversation) => {
-                  const href = `/chat/${conversation.id}`;
+                  const href = `/c/${conversation.id}`;
                   const isActive = pathname === href;
 
                   return (

@@ -33,9 +33,9 @@ export function NavMain() {
       {/* <SidebarGroupLabel>Orin</SidebarGroupLabel> */}
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton asChild isActive={pathname === "/chat"}>
+          <SidebarMenuButton asChild isActive={pathname === "/new"}>
             <Link
-              href="/chat"
+              href="/new"
               onClick={() => {
                 signalNewChat();
                 closeMobileSidebar();
@@ -52,7 +52,7 @@ export function NavMain() {
         </SidebarMenuItem>
         <SidebarMenuItem>
           <SidebarMenuButton asChild>
-            <Link href="/chat" onClick={closeMobileSidebar}>
+            <Link href="/new" onClick={closeMobileSidebar}>
               <HugeiconsIcon
                 icon={Search01Icon}
                 strokeWidth={2}
