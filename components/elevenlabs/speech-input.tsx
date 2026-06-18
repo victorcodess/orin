@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Mic02Icon, StopIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
@@ -29,6 +29,108 @@ const buttonVariants = cva("!px-0", {
 });
 
 type ButtonSize = VariantProps<typeof buttonVariants>["size"];
+
+const EASE = [0.25, 0.1, 0.25, 1] as const;
+const PREVIEW_WIDTH = 112;
+const BUTTON_PX: Record<NonNullable<ButtonSize>, number> = {
+  default: 36,
+  sm: 32,
+  lg: 40,
+};
+
+const BAR_DURATION = 0.22;
+const BAR_STAGGER = 0.04;
+const BAR_CLOSE_TOTAL = BAR_STAGGER + BAR_DURATION;
+const MIC_REAPPEAR_DELAY = BAR_CLOSE_TOTAL + 0.06;
+
+function barEnterTransition(
+  reduceMotion: boolean | null,
+  delay = 0
+) {
+  return reduceMotion
+    ? { duration: 0 }
+    : { duration: BAR_DURATION, ease: EASE, delay };
+}
+
+function barExitTransition(reduceMotion: boolean | null, delay = 0) {
+  return reduceMotion
+    ? { duration: 0 }
+    : { duration: BAR_DURATION - 0.1, ease: EASE, delay };
+}
+
+function speechTransition(reduceMotion: boolean | null, duration = BAR_DURATION) {
+  return reduceMotion ? { duration: 0 } : { duration, ease: EASE };
+}
+
+function useBarBackgroundVisible(
+  isConnected: boolean,
+  reduceMotion: boolean | null
+) {
+  const [visible, setVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isConnected) {
+      setVisible(true);
+      return;
+    }
+
+    const delay = reduceMotion ? 0 : BAR_CLOSE_TOTAL * 1000;
+    const id = window.setTimeout(() => setVisible(false), delay);
+    return () => window.clearTimeout(id);
+  }, [isConnected, reduceMotion]);
+
+  return visible;
+}
+
+function micIconMotion(reduceMotion: boolean | null) {
+  const blur = reduceMotion ? "blur(0px)" : "blur(6px)";
+
+  return {
+    initial: { opacity: 0, scale: 0.88, filter: blur },
+    animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
+    exit: {
+      opacity: 0,
+      scale: 0.88,
+      filter: blur,
+      transition: speechTransition(reduceMotion, 0.15),
+    },
+    transition: speechTransition(reduceMotion, 0.2),
+  } as const;
+}
+
+type TrailingSlotMode = "mic" | "cancel" | "connecting";
+
+function useTrailingSlotMode(
+  isConnected: boolean,
+  isConnecting: boolean,
+  reduceMotion: boolean | null
+) {
+  const [mode, setMode] = React.useState<TrailingSlotMode>("mic");
+  const modeRef = React.useRef(mode);
+  modeRef.current = mode;
+
+  React.useEffect(() => {
+    if (isConnecting) {
+      setMode("connecting");
+      return;
+    }
+
+    if (isConnected) {
+      setMode("cancel");
+      return;
+    }
+
+    if (modeRef.current === "cancel" || modeRef.current === "connecting") {
+      const delay = reduceMotion ? 0 : MIC_REAPPEAR_DELAY * 1000;
+      const id = window.setTimeout(() => setMode("mic"), delay);
+      return () => window.clearTimeout(id);
+    }
+
+    setMode("mic");
+  }, [isConnected, isConnecting, reduceMotion]);
+
+  return mode;
+}
 
 export interface SpeechInputData {
   /** The current partial (in-progress) transcript */
@@ -385,18 +487,29 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       };
     }, []);
 
+    const reduceMotion = useReducedMotion();
+    const showBarBackground = useBarBackgroundVisible(
+      scribe.isConnected,
+      reduceMotion
+    );
+
     return (
       <SpeechInputContext.Provider value={contextValue}>
-        <div
+        <motion.div
           ref={ref}
+          layout
+          initial={false}
+          transition={{
+            layout: speechTransition(reduceMotion),
+          }}
           className={cn(
-            "relative inline-flex items-center overflow-hidden rounded-full transition-all duration-200",
-            scribe.isConnected ? "bg-background dark:bg-accent/50" : "",
+            "relative inline-flex items-center justify-end overflow-hidden rounded-full",
+            showBarBackground ? "bg-background dark:bg-accent/50" : "",
             className
           )}
         >
           {children}
-        </div>
+        </motion.div>
       </SpeechInputContext.Provider>
     );
   }
@@ -410,8 +523,7 @@ export type SpeechInputRecordButtonProps = Omit<
 >;
 
 /**
- * Toggle button for starting/stopping speech recording.
- * Shows a microphone icon when idle and a stop icon when recording.
+ * Stop button shown on the left while recording.
  */
 const SpeechInputRecordButton = React.forwardRef<
   HTMLButtonElement,
@@ -421,61 +533,63 @@ const SpeechInputRecordButton = React.forwardRef<
   ref
 ) {
   const speechInput = useSpeechInput();
+  const reduceMotion = useReducedMotion();
+  const buttonWidth = BUTTON_PX[speechInput.size ?? "default"];
 
   return (
-    <Button
-      ref={ref}
-      type="button"
-      variant={variant}
-      onClick={(e) => {
-        if (speechInput.isConnected) {
-          speechInput.stop();
-        } else {
-          speechInput.start();
-        }
-        onClick?.(e);
-      }}
-      disabled={disabled ?? speechInput.isConnecting}
-      className={cn(
-        buttonVariants({ size: speechInput.size }),
-        "relative flex items-center justify-center transition-all",
-        speechInput.isConnected && "scale-[90%] active:scale-[80%]",
-        className
+    <AnimatePresence initial={false}>
+      {speechInput.isConnected && (
+        <motion.div
+          key="speech-stop"
+          layout
+          initial={{ width: 0, opacity: 0 }}
+          animate={{
+            width: buttonWidth,
+            opacity: 1,
+            transition: barEnterTransition(
+              reduceMotion,
+              reduceMotion ? 0 : BAR_STAGGER
+            ),
+          }}
+          exit={{
+            width: 0,
+            opacity: 0,
+            transition: barExitTransition(reduceMotion),
+          }}
+          className="shrink-0 overflow-hidden"
+        >
+          <motion.div
+            animate={{ scale: 0.9 }}
+            whileTap={{ scale: 0.8 }}
+            transition={speechTransition(reduceMotion, 0.18)}
+          >
+            <Button
+              ref={ref}
+              type="button"
+              variant={variant}
+              onClick={(e) => {
+                speechInput.stop();
+                onClick?.(e);
+              }}
+              disabled={disabled}
+              className={cn(
+                buttonVariants({ size: speechInput.size }),
+                "relative flex items-center justify-center",
+                className
+              )}
+              aria-label="Stop recording"
+              {...props}
+            >
+              <HugeiconsIcon
+                icon={StopIcon}
+                strokeWidth={2}
+                className="text-destructive h-4 w-4 fill-current"
+              />
+            </Button>
+          </motion.div>
+        </motion.div>
       )}
-      aria-label={
-        speechInput.isConnected ? "Stop recording" : "Start recording"
-      }
-      {...props}
-    >
-      <Skeleton
-        className={cn(
-          "absolute h-4 w-4 rounded-full transition-all duration-200",
-          speechInput.isConnecting
-            ? "bg-primary scale-90"
-            : "scale-[60%] bg-transparent"
-        )}
-      />
-      <HugeiconsIcon
-        icon={StopIcon}
-        strokeWidth={2}
-        className={cn(
-          "text-destructive absolute h-4 w-4 fill-current transition-all duration-200",
-          !speechInput.isConnecting && speechInput.isConnected
-            ? "scale-100 opacity-100"
-            : "scale-[60%] opacity-0"
-        )}
-      />
-      <HugeiconsIcon
-        icon={Mic02Icon}
-        strokeWidth={2}
-        className={cn(
-          "absolute h-4 w-4 transition-all duration-200",
-          !speechInput.isConnecting && !speechInput.isConnected
-            ? "scale-100 opacity-100"
-            : "scale-[60%] opacity-0"
-        )}
-      />
-    </Button>
+    </AnimatePresence>
   );
 });
 
@@ -497,40 +611,59 @@ const SpeechInputPreview = React.forwardRef<
   HTMLDivElement,
   SpeechInputPreviewProps
 >(function SpeechInputPreview(
-  { className, placeholder = "Listening...", ...props },
+  { className, placeholder = "Listening..." },
   ref
 ) {
   const speechInput = useSpeechInput();
+  const reduceMotion = useReducedMotion();
 
   const displayText = speechInput.transcript || placeholder;
   const showPlaceholder = !speechInput.transcript.trim();
 
   return (
-    <div
-      ref={ref}
-      inert={speechInput.isConnected ? undefined : true}
-      className={cn(
-        "relative self-stretch text-sm transition-[opacity,transform,width] duration-200 ease-out",
-        showPlaceholder
-          ? "text-muted-foreground italic"
-          : "text-muted-foreground",
-        speechInput.isConnected ? "w-28 opacity-100" : "w-0 opacity-0",
-        className
-      )}
-      title={displayText}
-      aria-hidden={!speechInput.isConnected}
-      {...props}
-    >
-      <div className="absolute inset-y-0 -right-1 -left-1 mask-[linear-gradient(to_right,transparent,black_10px,black_calc(100%-10px),transparent)]">
-        <motion.p
-          key="text"
-          layout="position"
-          className="absolute top-0 right-0 bottom-0 flex h-full min-w-full items-center px-1 whitespace-nowrap"
+    <AnimatePresence initial={false}>
+      {speechInput.isConnected && (
+        <motion.div
+          ref={ref}
+          key="speech-preview"
+          layout
+          style={{ transformOrigin: "right center" }}
+          initial={{ width: 0, opacity: 0 }}
+          animate={{
+            width: PREVIEW_WIDTH,
+            opacity: 1,
+            transition: barEnterTransition(reduceMotion),
+          }}
+          exit={{
+            width: 0,
+            opacity: 0,
+            transition: barExitTransition(
+              reduceMotion,
+              reduceMotion ? 0 : BAR_STAGGER
+            ),
+          }}
+          className={cn(
+            "relative shrink-0 self-stretch overflow-hidden text-sm",
+            showPlaceholder
+              ? "text-muted-foreground italic"
+              : "text-muted-foreground",
+            className
+          )}
+          title={displayText}
         >
-          {displayText}
-        </motion.p>
-      </div>
-    </div>
+          <div className="absolute inset-y-0 -right-1 -left-1 mask-[linear-gradient(to_right,transparent,black_10px,black_calc(100%-10px),transparent)]">
+            <motion.p
+              key="text"
+              layout="position"
+              transition={{ layout: speechTransition(reduceMotion, 0.18) }}
+              className="absolute top-0 right-0 bottom-0 flex h-full min-w-full items-center px-1 whitespace-nowrap"
+            >
+              {displayText}
+            </motion.p>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 });
 
@@ -542,41 +675,115 @@ export type SpeechInputCancelButtonProps = Omit<
 >;
 
 /**
- * Button to cancel the current recording and discard the transcript.
- * Only visible when actively recording.
+ * Trailing control anchored on the right: mic to start, cancel to discard.
+ * After the bar collapses, cancel crossfades into the mic in this slot.
  */
 const SpeechInputCancelButton = React.forwardRef<
   HTMLButtonElement,
   SpeechInputCancelButtonProps
 >(function SpeechInputCancelButton(
-  { className, onClick, variant = "ghost", ...props },
+  { className, onClick, variant = "ghost", disabled, ...props },
   ref
 ) {
   const speechInput = useSpeechInput();
+  const reduceMotion = useReducedMotion();
+  const buttonWidth = BUTTON_PX[speechInput.size ?? "default"];
+  const trailingMode = useTrailingSlotMode(
+    speechInput.isConnected,
+    speechInput.isConnecting,
+    reduceMotion
+  );
 
   return (
-    <Button
-      ref={ref}
-      type="button"
-      variant={variant}
-      inert={speechInput.isConnected ? undefined : true}
-      onClick={(e) => {
-        speechInput.cancel();
-        onClick?.(e);
-      }}
-      className={cn(
-        buttonVariants({ size: speechInput.size }),
-        "transition-[opacity,transform,width] duration-200 ease-out",
-        speechInput.isConnected
-          ? "scale-[90%] active:scale-[80%] opacity-100"
-          : "pointer-events-none w-0 scale-100 opacity-0",
-        className
-      )}
-      aria-label="Cancel recording"
-      {...props}
+    <motion.div
+      layout
+      className="inline-flex shrink-0"
+      style={{ width: buttonWidth }}
+      transition={{ layout: speechTransition(reduceMotion) }}
     >
-      <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="h-3 w-3" />
-    </Button>
+      <motion.div
+        animate={{ scale: trailingMode === "cancel" ? 0.9 : 1 }}
+        whileTap={{
+          scale: trailingMode === "cancel" ? 0.8 : 0.97,
+        }}
+        transition={speechTransition(reduceMotion, 0.18)}
+      >
+        <Button
+          ref={ref}
+          type="button"
+          variant={variant}
+          onClick={(e) => {
+            if (trailingMode === "mic") {
+              void speechInput.start();
+            } else if (trailingMode === "cancel") {
+              speechInput.cancel();
+            }
+            onClick?.(e);
+          }}
+          disabled={
+            disabled ??
+            (trailingMode === "connecting" || speechInput.isConnecting)
+          }
+          className={cn(
+            buttonVariants({ size: speechInput.size }),
+            "relative flex items-center justify-center",
+            className
+          )}
+          aria-label={
+            trailingMode === "cancel"
+              ? "Cancel recording"
+              : trailingMode === "connecting"
+                ? "Connecting"
+                : "Start recording"
+          }
+          {...props}
+        >
+          <span className="relative flex h-4 w-4 items-center justify-center">
+            <AnimatePresence mode="wait" initial={false}>
+              {trailingMode === "connecting" ? (
+                <motion.span
+                  key="connecting"
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 0.9 }}
+                  exit={{ opacity: 0, scale: 0.6 }}
+                  transition={speechTransition(reduceMotion, 0.15)}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <Skeleton className="bg-primary h-4 w-4 rounded-full" />
+                </motion.span>
+              ) : trailingMode === "cancel" ? (
+                <motion.span
+                  key="cancel"
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.6 }}
+                  transition={speechTransition(reduceMotion, 0.15)}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <HugeiconsIcon
+                    icon={Cancel01Icon}
+                    strokeWidth={2}
+                    className="h-3 w-3"
+                  />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="mic"
+                  {...micIconMotion(reduceMotion)}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <HugeiconsIcon
+                    icon={Mic02Icon}
+                    strokeWidth={2}
+                    className="h-4 w-4"
+                  />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </span>
+        </Button>
+      </motion.div>
+    </motion.div>
   );
 });
 
