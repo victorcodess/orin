@@ -142,3 +142,64 @@ export async function saveMessageIfNew({
 
   await saveMessage({ conversationId, role, content, source });
 }
+
+export async function updateUserMessageAndDeleteAfter({
+  id,
+  conversationId,
+  content,
+  source = "text",
+}: {
+  id: string;
+  conversationId: string;
+  content: string;
+  source?: MessageRow["source"];
+}): Promise<boolean> {
+  if (!isValidUuid(id)) {
+    return false;
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: existing, error: existingError } = await supabase
+    .from("messages")
+    .select("id, conversation_id, role, created_at")
+    .eq("id", id)
+    .eq("conversation_id", conversationId)
+    .eq("role", "user")
+    .maybeSingle();
+
+  if (existingError) {
+    throw existingError;
+  }
+
+  if (!existing) {
+    return false;
+  }
+
+  const { error: updateError } = await supabase
+    .from("messages")
+    .update({ content, source })
+    .eq("id", id)
+    .eq("conversation_id", conversationId);
+
+  if (updateError) {
+    throw updateError;
+  }
+
+  const { error: deleteError } = await supabase
+    .from("messages")
+    .delete()
+    .eq("conversation_id", conversationId)
+    .gt("created_at", existing.created_at);
+
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  await supabase
+    .from("conversations")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", conversationId);
+
+  return true;
+}

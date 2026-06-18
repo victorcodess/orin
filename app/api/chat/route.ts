@@ -14,6 +14,7 @@ import {
   saveMessage,
   saveMessageIfNew,
   textFromUIMessage,
+  updateUserMessageAndDeleteAfter,
 } from "@/lib/ai/messages";
 import { buildSystemPrompt } from "@/lib/ai/prompts";
 import { debugError, debugLog } from "@/lib/debug";
@@ -84,13 +85,22 @@ export async function POST(req: Request) {
         preview: userText.slice(0, 80),
       });
 
-      await saveMessageIfNew({
+      const updatedExistingMessage = await updateUserMessageAndDeleteAfter({
         id: lastUserMessage.id,
         conversationId,
-        role: "user",
         content: userText,
         source: "text",
       });
+
+      if (!updatedExistingMessage) {
+        await saveMessageIfNew({
+          id: lastUserMessage.id,
+          conversationId,
+          role: "user",
+          content: userText,
+          source: "text",
+        });
+      }
 
       await maybeUpdateConversationTitle(conversationId, userText);
     }

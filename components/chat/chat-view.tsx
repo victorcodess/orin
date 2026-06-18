@@ -2,7 +2,7 @@
 
 import {
   Copy01Icon,
-  Edit02Icon,
+  Edit03Icon,
   PauseIcon,
   PlayIcon,
   Refresh04Icon,
@@ -57,7 +57,7 @@ function textFromMessage(message: UIMessage) {
 const PENDING_ASSISTANT_ID = "__orin-pending-assistant__";
 const COPIED_RESET_MS = 1500;
 const messageActionButtonClassName =
-  "text-muted-foreground hover:text-foreground size-7";
+  "text-muted-foreground hover:text-foreground hover:bg-muted/70 hover:dark:bg-secondary/70";
 
 function CopyMessageAction({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -277,6 +277,11 @@ export function ChatView({
     string | null
   >(null);
   const [isReadAloudPaused, setIsReadAloudPaused] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const cancelEditing = useCallback(() => {
+    setEditingMessageId(null);
+    setInput("");
+  }, [setInput]);
 
   const transport = useMemo(
     () =>
@@ -299,6 +304,7 @@ export function ChatView({
   } = useChat({
     transport,
     messages: initialMessages,
+    generateId: () => crypto.randomUUID(),
     onError: (chatError) => {
       console.error("[orin:chat-view] useChat error", chatError);
       toastChatError(chatError);
@@ -332,6 +338,24 @@ export function ChatView({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isLoading, stop]);
+
+  useEffect(() => {
+    if (!editingMessageId) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || isKeyboardShortcutsDialogOpen()) {
+        return;
+      }
+
+      event.preventDefault();
+      cancelEditing();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [cancelEditing, editingMessageId]);
 
   useEffect(() => {
     const prompt = initialPrompt?.trim();
@@ -370,11 +394,17 @@ export function ChatView({
       console.log("[orin:chat-view] sending message", {
         conversationId,
         preview: trimmed.slice(0, 80),
+        editingMessageId,
       });
-      sendMessage({ text: trimmed });
+      sendMessage(
+        editingMessageId
+          ? { text: trimmed, messageId: editingMessageId }
+          : { text: trimmed }
+      );
       setInput("");
+      setEditingMessageId(null);
     },
-    [conversationId, input, isLoading, sendMessage, setInput]
+    [conversationId, editingMessageId, input, isLoading, sendMessage, setInput]
   );
 
   useLayoutEffect(() => {
@@ -404,6 +434,9 @@ export function ChatView({
       ]
     : visibleMessages;
   const lastIndex = displayMessages.length - 1;
+  const editingMessageIndex = editingMessageId
+    ? displayMessages.findIndex((message) => message.id === editingMessageId)
+    : -1;
   const lastMessageIsAssistant =
     displayMessages[lastIndex]?.role === "assistant";
   const previousUserMessageIndex = lastMessageIsAssistant
@@ -485,6 +518,9 @@ export function ChatView({
               {displayMessages.map((message, index) => {
                 const isLast = index === lastIndex;
                 const isAssistant = message.role === "assistant";
+                const isEditingMessage = message.id === editingMessageId;
+                const fadeForEditing =
+                  editingMessageIndex > -1 && index > editingMessageIndex;
                 const text = textFromMessage(message);
                 const showTyping =
                   isAssistant && isLast && isLoading && !text.trim();
@@ -504,11 +540,13 @@ export function ChatView({
                         : undefined
                     }
                     from={message.role === "user" ? "user" : "assistant"}
-                    className={
-                      isLast && useAssistantMinHeight
-                        ? "min-h- [calc(var(--orin-thread-height)-var(--orin-prev-user-height)-var(--orin-thread-content-gap)-var(--orin-thread-content-bottom-padding)-var(--orin-min-height-misc))]"
-                        : undefined
-                    }
+                    className={cn(
+                      isLast &&
+                        useAssistantMinHeight &&
+                        "min-h- [calc(var(--orin-thread-height)-var(--orin-prev-user-height)-var(--orin-thread-content-gap)-var(--orin-thread-content-bottom-padding)-var(--orin-min-height-misc))]",
+                      fadeForEditing && "opacity-50",
+                      "transition-opacity duration-300"
+                    )}
                     style={
                       isLast && useAssistantMinHeight
                         ? ({
@@ -519,7 +557,13 @@ export function ChatView({
                     aria-label={showTyping ? "Assistant is typing" : undefined}
                   >
                     <MessageStack>
-                      <MessageContent>
+                      <MessageContent
+                        className={
+                          isEditingMessage
+                            ? "animate-pulse  outline-1 outline-dashed outline-primary [&_svg]:opacity-0"
+                            : undefined
+                        }
+                      >
                         {showTyping ? (
                           <TextShimmer className="text-muted-foreground text-sm">
                             Thinking...
@@ -537,7 +581,7 @@ export function ChatView({
                               : "opacity-0 group-hover/message:opacity-100 focus-within:opacity-100"
                           )}
                         >
-                          <MessageActionGroup>
+                          <MessageActionGroup className="gap-0">
                             <CopyMessageAction text={text} />
                             {isAssistant ? (
                               <>
@@ -574,21 +618,34 @@ export function ChatView({
                                 </MessageAction>
                               </>
                             ) : (
-                              <MessageAction asChild tooltip="Edit">
+                              <MessageAction
+                                asChild
+                                tooltip={isEditingMessage ? "Cancel edit" : "Edit"}
+                              >
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="icon-sm"
                                   className={messageActionButtonClassName}
-                                  aria-label="Edit message"
+                                  aria-label={
+                                    isEditingMessage
+                                      ? "Cancel editing message"
+                                      : "Edit message"
+                                  }
                                   disabled={isLoading}
                                   onClick={() => {
+                                    if (isEditingMessage) {
+                                      cancelEditing();
+                                      return;
+                                    }
+
+                                    setEditingMessageId(message.id);
                                     setInput(text);
                                     focusComposerInput();
                                   }}
                                 >
                                   <HugeiconsIcon
-                                    icon={Edit02Icon}
+                                    icon={Edit03Icon}
                                     strokeWidth={1.75}
                                     className="size-4"
                                   />

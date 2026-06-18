@@ -84,7 +84,7 @@ const Message = React.forwardRef<HTMLDivElement, MessageProps>(function Message(
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
         className={cn(
-          "group/message flex w-full max-w-[98%] md:max-w-[90%] items-start gap-2",
+          "group/message flex w-full max-w-[98%] items-start gap-2 md:max-w-[90%]",
           from === "user" ? "ms-auto" : "me-auto",
           className
         )}
@@ -135,9 +135,8 @@ function MessageContent({
         "relative",
         from === "user"
           ? "bg-sidebar dark:bg-input w-fit rounded-3xl px-4 py-1.75"
-          : 
-          //  "bg-foreground/5 dark:bg-input /70 w-fit max-w-full px-4 py-1.75 " +
-          //       (isTall ? "rounded-2xl" : "rounded-3xl"),
+          : //  "bg-foreground/5 dark:bg-input /70 w-fit max-w-full px-4 py-1.75 " +
+            //       (isTall ? "rounded-2xl" : "rounded-3xl"),
 
             "mb-1 w-full bg-transparent px-2",
         className
@@ -150,20 +149,16 @@ function MessageContent({
         <svg
           width="16"
           height="16"
-          className={cn("fill-sidebar dark:fill-input absolute top-[-6px]", from === "user" ? "right-0" : "scale-x-[-1] left-0 fill-foreground/5 dark:fill-input")}
+          className={cn(
+            "fill-sidebar dark:fill-input absolute top-[-6px] transition-[scale,fill,opacity] duration-300 will-change-[fill,opacity]",
+            from === "user"
+              ? "right-0"
+              : "fill-foreground/5 dark:fill-input left-0 scale-x-[-1]"
+          )}
           fill="currentColor"
-          style={{
-            transitionProperty: "scale, fill",
-            transitionDuration: "300ms",
-            transitionTimingFunction: "cubic-bezier(0.31, 0.1, 0.08, 0.96)",
-            transitionDelay: "0ms",
-            willChange: "fill",
-
-          }}
         >
           <path d="M-2.70729e-07 6.19355C8 6.19355 12 4.12903 16 6.99382e-07C16 6.70968 16 13.5 10 16L-2.70729e-07 6.19355Z"></path>
         </svg>
-   
       )}
     </div>
   );
@@ -299,8 +294,11 @@ function MessageAction({
   ...props
 }: MessageActionProps) {
   const Comp = asChild ? Slot : "div";
-  const { content, side, shortcut } =
-    typeof tooltip === "string" ? { content: tooltip } : (tooltip ?? {});
+  const {
+    content,
+    side = "bottom",
+    shortcut,
+  } = typeof tooltip === "string" ? { content: tooltip } : (tooltip ?? {});
 
   if (!content) {
     return <Comp data-slot="message-action" {...props} />;
@@ -308,11 +306,11 @@ function MessageAction({
 
   return (
     <TooltipProvider>
-      <Tooltip>
+      <Tooltip delayDuration={700}>
         <TooltipTrigger asChild>
           <Comp data-slot="message-action" {...props} />
         </TooltipTrigger>
-        <TooltipContent className="rounded-full" side={side}>
+        <TooltipContent className="rounded-full" side={side} sideOffset={3}>
           {content}
           {shortcut ? <Kbd className="rounded-md!">{shortcut}</Kbd> : null}
         </TooltipContent>
