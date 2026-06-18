@@ -54,7 +54,7 @@ export function ChatInput({
       <PromptInput
         onSubmit={(value) => void handleSubmit(value)}
         className={cn(
-          "bg-sidebar dark:bg-border/90 shadow-sidebar-foreground/0 dark:shadow-sidebar-border/5 border-none shadow-sm backdrop-blur-lg",
+          "bg-sidebar dark:bg-border/90 shadow-sidebar-foreground/5 dark:shadow-sidebar-border/5 border-none shadow-md dark:shadow-sm backdrop-blur-lg",
           isMultirow
             ? "flex-col rounded-3xl"
             : "flex-row items-end justify-end rounded-4xl"
@@ -108,12 +108,12 @@ export function ChatInput({
             >
               <SpeechInputRecordButton
                 variant="ghost"
-                disabled={isSubmitting}
                 className="hover:bg-sidebar hover:dark:bg-input size-9"
               />
               <SpeechInputPreview placeholder="Listening..." />
               <SpeechInputCancelButton
                 variant="ghost"
+                disabled={isSubmitting}
                 className="hover:bg-sidebar hover:dark:bg-input"
               />
             </SpeechInput>
