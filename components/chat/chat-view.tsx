@@ -18,6 +18,9 @@ import {
   ChatMessageList,
   PENDING_ASSISTANT_ID,
 } from "@/components/chat/message-list";
+import {
+  CONVERSATIONS_CHANGED_EVENT,
+} from "@/lib/conversations-cache";
 import { toast } from "@/components/nexus-ui/toaster";
 import {
   Thread,
@@ -136,7 +139,7 @@ export function ChatView({
           conversationId,
           messageCount: messages.length,
         });
-        window.dispatchEvent(new CustomEvent("orin:conversations-changed"));
+        window.dispatchEvent(new CustomEvent(CONVERSATIONS_CHANGED_EVENT));
       },
     });
 

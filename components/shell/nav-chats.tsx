@@ -6,13 +6,18 @@ import { Message01Icon } from "@hugeicons/core-free-icons";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 
+import { NavChatItem } from "@/components/shell/nav-chat-item";
 import type { ConversationRow } from "@/lib/ai/conversations";
 import {
   clearConversationsCache,
+  CONVERSATIONS_CHANGED_EVENT,
+  type ConversationsChangedDetail,
   getCachedConversations,
   getCachedConversationsUserId,
   setCachedConversations,
+  updateCachedConversationTitle,
 } from "@/lib/conversations-cache";
+import { conversationDisplayTitle } from "@/lib/conversation-title";
 import { debugLog } from "@/lib/debug";
 import { createClient } from "@/lib/supabase/client";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -32,10 +37,6 @@ const listVariants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    // transition: {
-    //   staggerChildren: 0.025,
-    //   delayChildren: 0.02,
-    // },
   },
 };
 
@@ -48,12 +49,31 @@ const itemVariants = {
   },
 };
 
-function conversationLabel(conversation: ConversationRow) {
-  return conversation.title?.trim() || "Untitled chat";
+function useIsLoggedIn() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    void supabase.auth.getUser().then(({ data }) => {
+      setIsLoggedIn(Boolean(data.user));
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(Boolean(session?.user));
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  return isLoggedIn;
 }
 
 export function NavChats() {
   const pathname = usePathname();
+  const isLoggedIn = useIsLoggedIn();
   const { isMobile, setOpenMobile } = useSidebar();
   const [conversations, setConversations] = useState<ConversationRow[]>(
     () => getCachedConversations() ?? []
@@ -61,6 +81,9 @@ export function NavChats() {
   const [isLoading, setIsLoading] = useState(
     () => getCachedConversations() === null
   );
+  const [editingConversationId, setEditingConversationId] = useState<
+    string | null
+  >(null);
 
   const closeMobileSidebar = () => {
     if (isMobile) {
@@ -74,7 +97,7 @@ export function NavChats() {
       "rendering conversations",
       conversations.map((conversation) => ({
         id: conversation.id,
-        title: conversationLabel(conversation),
+        title: conversationDisplayTitle(conversation.title),
       }))
     );
   }, [conversations]);
@@ -146,16 +169,42 @@ export function NavChats() {
       }
     });
 
-    const handleChange = () => {
+    const handleChange = (event: Event) => {
+      const detail = (event as CustomEvent<ConversationsChangedDetail>).detail;
+
+      if (detail?.type === "rename" && detail.conversationId) {
+        updateCachedConversationTitle(
+          detail.conversationId,
+          detail.title ?? null
+        );
+        setConversations((current) =>
+          current.map((conversation) =>
+            conversation.id === detail.conversationId
+              ? {
+                  ...conversation,
+                  title: detail.title ?? null,
+                  updated_at: new Date().toISOString(),
+                }
+              : conversation
+          )
+        );
+        return;
+      }
+
+      const cached = getCachedConversations();
+      if (cached) {
+        setConversations(cached);
+      }
+
       void loadConversations(activeUserId ?? null);
     };
 
-    window.addEventListener("orin:conversations-changed", handleChange);
+    window.addEventListener(CONVERSATIONS_CHANGED_EVENT, handleChange);
 
     return () => {
       cancelled = true;
       subscription.unsubscribe();
-      window.removeEventListener("orin:conversations-changed", handleChange);
+      window.removeEventListener(CONVERSATIONS_CHANGED_EVENT, handleChange);
     };
   }, []);
 
@@ -208,18 +257,15 @@ export function NavChats() {
                       key={conversation.id}
                       variants={itemVariants}
                     >
-                      <SidebarMenuButton asChild isActive={isActive}>
-                        <Link href={href} onClick={closeMobileSidebar}>
-                          {/* <HugeiconsIcon
-                            icon={Message01Icon}
-                            strokeWidth={2}
-                            className="size-4 shrink-0"
-                          /> */}
-                          <span className="truncate">
-                            {conversationLabel(conversation)}
-                          </span>
-                        </Link>
-                      </SidebarMenuButton>
+                      <NavChatItem
+                        conversation={conversation}
+                        isActive={isActive}
+                        isEditing={editingConversationId === conversation.id}
+                        isLoggedIn={isLoggedIn}
+                        onStartEdit={setEditingConversationId}
+                        onFinishEdit={() => setEditingConversationId(null)}
+                        onNavigate={closeMobileSidebar}
+                      />
                     </MotionSidebarMenuItem>
                   );
                 })
