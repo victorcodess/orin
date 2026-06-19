@@ -7,7 +7,7 @@ import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
-const dropdownMenuGlassClasses = "bg-popover/70 backdrop-blur-3xl";
+const dropdownMenuGlassClasses = "bg-popover/90 backdrop-blur-3xl";
 
 const dropdownMenuAnimationClasses =
   "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:duration-75 data-[state=closed]:fade-out-0 data-[state=closed]:overflow-hidden data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:zoom-in-95";
@@ -115,7 +115,7 @@ function DropdownMenuContent({
         className={cn(
           dropdownMenuGlassClasses,
           dropdownMenuAnimationClasses,
-          "border-border/50  text-popover-foreground no-scrollbar z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-3xl border px-1.5 py-1.5 shadow-2xl/10 dark:shadow-2xl/90",
+          "border-border/50 text-popover-foreground no-scrollbar z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-3xl border px-1.5 py-1.5 shadow-2xl/5 dark:shadow-2xl/50",
           className
         )}
         {...props}
