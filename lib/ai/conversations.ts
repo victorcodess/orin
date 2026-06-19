@@ -10,6 +10,7 @@ export type ConversationRow = {
   user_id: string | null;
   session_id: string | null;
   title: string | null;
+  is_favorited: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -41,7 +42,7 @@ export async function createConversation(options?: {
       session_id: sessionId,
       title: `Chat with ${config.name}`,
     })
-    .select("id, user_id, session_id, title, created_at, updated_at")
+    .select("id, user_id, session_id, title, is_favorited, created_at, updated_at")
     .single();
 
   if (error || !data) {
@@ -70,7 +71,7 @@ export async function getConversation(
 
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, user_id, session_id, title, created_at, updated_at")
+    .select("id, user_id, session_id, title, is_favorited, created_at, updated_at")
     .eq("id", conversationId)
     .maybeSingle();
 
@@ -113,11 +114,36 @@ export async function updateConversationTitle(
       updated_at: new Date().toISOString(),
     })
     .eq("id", conversationId)
-    .select("id, user_id, session_id, title, created_at, updated_at")
+    .select("id, user_id, session_id, title, is_favorited, created_at, updated_at")
     .single();
 
   if (error || !data) {
     throw error ?? new Error("Failed to update conversation title");
+  }
+
+  return data as ConversationRow;
+}
+
+export async function updateConversationFavorite(
+  conversationId: string,
+  isFavorited: boolean,
+): Promise<ConversationRow> {
+  await verifyConversationAccess(conversationId);
+
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from("conversations")
+    .update({
+      is_favorited: isFavorited,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", conversationId)
+    .select("id, user_id, session_id, title, is_favorited, created_at, updated_at")
+    .single();
+
+  if (error || !data) {
+    throw error ?? new Error("Failed to update conversation favorite");
   }
 
   return data as ConversationRow;
@@ -164,7 +190,7 @@ export async function listConversations(limit = 30): Promise<ConversationRow[]> 
 
   let query = supabase
     .from("conversations")
-    .select("id, user_id, session_id, title, created_at, updated_at")
+    .select("id, user_id, session_id, title, is_favorited, created_at, updated_at")
     .order("updated_at", { ascending: false })
     .limit(limit);
 

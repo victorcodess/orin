@@ -7,20 +7,12 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 
 import { NavChatItem } from "@/components/shell/nav-chat-item";
-import type { ConversationRow } from "@/lib/ai/conversations";
 import {
-  clearConversationsCache,
-  CONVERSATIONS_CHANGED_EVENT,
-  type ConversationsChangedDetail,
-  getCachedConversations,
-  getCachedConversationsUserId,
-  removeCachedConversation,
-  setCachedConversations,
-  updateCachedConversationTitle,
-} from "@/lib/conversations-cache";
+  useIsLoggedIn,
+  useSidebarConversations,
+} from "@/components/shell/use-sidebar-conversations";
 import { conversationDisplayTitle } from "@/lib/conversation-title";
 import { debugLog } from "@/lib/debug";
-import { createClient } from "@/lib/supabase/client";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SidebarGroup,
@@ -50,37 +42,13 @@ const itemVariants = {
   },
 };
 
-function useIsLoggedIn() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-
-    void supabase.auth.getUser().then(({ data }) => {
-      setIsLoggedIn(Boolean(data.user));
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(Boolean(session?.user));
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  return isLoggedIn;
-}
-
 export function NavChats() {
   const pathname = usePathname();
   const isLoggedIn = useIsLoggedIn();
   const { isMobile, setOpenMobile } = useSidebar();
-  const [conversations, setConversations] = useState<ConversationRow[]>(
-    () => getCachedConversations() ?? []
-  );
-  const [isLoading, setIsLoading] = useState(
-    () => getCachedConversations() === null
+  const { conversations, isLoading } = useSidebarConversations();
+  const recentConversations = conversations.filter(
+    (conversation) => !conversation.is_favorited,
   );
   const [editingConversationId, setEditingConversationId] = useState<
     string | null
@@ -96,128 +64,12 @@ export function NavChats() {
     debugLog(
       "sidebar",
       "rendering conversations",
-      conversations.map((conversation) => ({
+      recentConversations.map((conversation) => ({
         id: conversation.id,
         title: conversationDisplayTitle(conversation.title),
-      }))
+      })),
     );
-  }, [conversations]);
-
-  useEffect(() => {
-    let cancelled = false;
-    let activeUserId: string | null | undefined = getCachedConversationsUserId();
-
-    async function loadConversations(userId: string | null) {
-      try {
-        const response = await fetch("/api/conversations", {
-          cache: "no-store",
-        });
-        if (cancelled) {
-          return;
-        }
-
-        if (!response.ok) {
-          setIsLoading(false);
-          return;
-        }
-
-        const data = (await response.json()) as ConversationRow[];
-        debugLog("sidebar", "supabase conversations", data);
-        if (!cancelled) {
-          setCachedConversations(data, userId);
-          setConversations(data);
-          setIsLoading(false);
-        }
-      } catch {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    async function syncForUser(userId: string | null) {
-      if (userId === activeUserId) {
-        return;
-      }
-
-      activeUserId = userId;
-      const cached = getCachedConversations(userId);
-      if (cached) {
-        setConversations(cached);
-        setIsLoading(false);
-        return;
-      }
-
-      clearConversationsCache();
-      setConversations([]);
-      setIsLoading(true);
-      await loadConversations(userId);
-    }
-
-    const supabase = createClient();
-
-    void supabase.auth.getUser().then(({ data }) => {
-      if (!cancelled) {
-        void syncForUser(data.user?.id ?? null);
-      }
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!cancelled) {
-        void syncForUser(session?.user?.id ?? null);
-      }
-    });
-
-    const handleChange = (event: Event) => {
-      const detail = (event as CustomEvent<ConversationsChangedDetail>).detail;
-
-      if (detail?.type === "rename" && detail.conversationId) {
-        updateCachedConversationTitle(
-          detail.conversationId,
-          detail.title ?? null
-        );
-        setConversations((current) =>
-          current.map((conversation) =>
-            conversation.id === detail.conversationId
-              ? {
-                  ...conversation,
-                  title: detail.title ?? null,
-                  updated_at: new Date().toISOString(),
-                }
-              : conversation
-          )
-        );
-        return;
-      }
-
-      if (detail?.type === "delete" && detail.conversationId) {
-        removeCachedConversation(detail.conversationId);
-        setConversations((current) =>
-          current.filter(
-            (conversation) => conversation.id !== detail.conversationId
-          )
-        );
-        return;
-      }
-
-      const cached = getCachedConversations();
-      if (cached) {
-        setConversations(cached);
-      }
-
-      void loadConversations(activeUserId ?? null);
-    };
-
-    window.addEventListener(CONVERSATIONS_CHANGED_EVENT, handleChange);
-
-    return () => {
-      cancelled = true;
-      subscription.unsubscribe();
-      window.removeEventListener(CONVERSATIONS_CHANGED_EVENT, handleChange);
-    };
-  }, []);
+  }, [recentConversations]);
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
@@ -247,7 +99,7 @@ export function NavChats() {
             animate="show"
           >
             <SidebarMenu>
-              {conversations.length === 0 ? (
+              {recentConversations.length === 0 ? (
                 <MotionSidebarMenuItem variants={itemVariants}>
                   <SidebarMenuButton disabled className="text-muted-foreground">
                     <HugeiconsIcon
@@ -259,7 +111,7 @@ export function NavChats() {
                   </SidebarMenuButton>
                 </MotionSidebarMenuItem>
               ) : (
-                conversations.map((conversation) => {
+                recentConversations.map((conversation) => {
                   const href = `/c/${conversation.id}`;
                   const isActive = pathname === href;
 

@@ -1,9 +1,10 @@
 import type { ConversationRow } from "@/lib/ai/conversations";
 
 export type ConversationsChangedDetail = {
-  type?: "rename" | "delete";
+  type?: "rename" | "delete" | "favorite";
   conversationId?: string;
   title?: string | null;
+  isFavorited?: boolean;
 };
 
 export const CONVERSATIONS_CHANGED_EVENT = "orin:conversations-changed";
@@ -63,6 +64,43 @@ export function updateCachedConversationTitle(
         ? {
             ...conversation,
             title,
+            updated_at: new Date().toISOString(),
+          }
+        : conversation
+    ),
+  };
+
+  return true;
+}
+
+export function updateCachedConversationFavorite(
+  conversationId: string,
+  isFavorited: boolean,
+  userId?: string | null
+) {
+  if (!cachedConversations) {
+    return false;
+  }
+
+  if (userId !== undefined && cachedConversations.userId !== userId) {
+    return false;
+  }
+
+  const hasConversation = cachedConversations.conversations.some(
+    (conversation) => conversation.id === conversationId
+  );
+
+  if (!hasConversation) {
+    return false;
+  }
+
+  cachedConversations = {
+    ...cachedConversations,
+    conversations: cachedConversations.conversations.map((conversation) =>
+      conversation.id === conversationId
+        ? {
+            ...conversation,
+            is_favorited: isFavorited,
             updated_at: new Date().toISOString(),
           }
         : conversation

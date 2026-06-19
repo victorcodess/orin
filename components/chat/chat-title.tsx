@@ -15,6 +15,9 @@ import {
   patchConversationTitle,
 } from "@/lib/conversation-title";
 import {
+  toggleConversationFavorite,
+} from "@/lib/conversation-favorite";
+import {
   CONVERSATIONS_CHANGED_EVENT,
   type ConversationsChangedDetail,
   getCachedConversations,
@@ -34,6 +37,7 @@ type ChatTitleProps = {
 export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
   const router = useRouter();
   const [chatTitle, setChatTitle] = useState<string | null>(null);
+  const [isFavorited, setIsFavorited] = useState(false);
   const [isTitleLoaded, setIsTitleLoaded] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
@@ -55,6 +59,7 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
 
     if (cachedConversation) {
       setChatTitle(cachedConversation.title);
+      setIsFavorited(cachedConversation.is_favorited);
       setIsTitleLoaded(true);
       return;
     }
@@ -70,6 +75,7 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
         (item) => item.id === conversationId
       );
       setChatTitle(conversation?.title ?? null);
+      setIsFavorited(conversation?.is_favorited ?? false);
     } catch {
     } finally {
       setIsTitleLoaded(true);
@@ -80,6 +86,7 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
     setIsEditingTitle(false);
     setIsTitleLoaded(false);
     setChatTitle(null);
+    setIsFavorited(false);
     void loadChatTitle();
   }, [conversationId, loadChatTitle]);
 
@@ -89,6 +96,11 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
 
       if (detail?.type === "rename" && detail.conversationId === conversationId) {
         setChatTitle(detail.title ?? null);
+        return;
+      }
+
+      if (detail?.type === "favorite" && detail.conversationId === conversationId) {
+        setIsFavorited(detail.isFavorited ?? false);
         return;
       }
 
@@ -192,6 +204,10 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
     setIsDeleteDialogOpen(true);
   };
 
+  const handleFavorite = () => {
+    toggleConversationFavorite(conversationId);
+  };
+
   return (
     <div className="flex items-center -space-x-1.5">
       {!isTitleLoaded ? (
@@ -248,7 +264,9 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
             </DropdownMenuTrigger>
             <ChatOptionsMenuContent
               isLoggedIn={isLoggedIn}
+              isFavorited={isFavorited}
               onRename={handleRename}
+              onFavorite={handleFavorite}
               onDelete={handleDelete}
               onCloseAutoFocus={handleRenameMenuClose}
             />

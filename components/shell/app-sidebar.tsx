@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { Suspense, type ComponentProps } from "react";
 import { NavChats } from "@/components/shell/nav-chats";
+import { NavFavorites } from "@/components/shell/nav-favorites";
+import { SidebarConversationsProvider } from "@/components/shell/use-sidebar-conversations";
 import { NavMain } from "@/components/shell/nav-main";
 import { NavUser } from "@/components/shell/nav-user";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -57,9 +59,14 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
         <Suspense fallback={null}>
           <NavMain />
         </Suspense>
-        <Suspense fallback={null}>
-          <NavChats />
-        </Suspense>
+        <SidebarConversationsProvider>
+          <Suspense fallback={null}>
+            <NavFavorites />
+          </Suspense>
+          <Suspense fallback={null}>
+            <NavChats />
+          </Suspense>
+        </SidebarConversationsProvider>
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

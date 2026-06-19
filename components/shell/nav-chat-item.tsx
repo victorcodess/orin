@@ -15,6 +15,9 @@ import {
   normalizeConversationTitleInput,
   patchConversationTitle,
 } from "@/lib/conversation-title";
+import {
+  toggleConversationFavorite,
+} from "@/lib/conversation-favorite";
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { SidebarMenuAction, SidebarMenuButton } from "@/components/ui/sidebar";
@@ -125,6 +128,10 @@ export function NavChatItem({
     setIsDeleteDialogOpen(true);
   };
 
+  const handleFavorite = () => {
+    toggleConversationFavorite(conversation.id);
+  };
+
   if (isEditing) {
     return (
       <Input
@@ -180,7 +187,9 @@ export function NavChatItem({
         </DropdownMenuTrigger>
         <ChatOptionsMenuContent
           isLoggedIn={isLoggedIn}
+          isFavorited={conversation.is_favorited}
           onRename={handleRename}
+          onFavorite={handleFavorite}
           onDelete={handleDelete}
           onCloseAutoFocus={handleRenameMenuClose}
         />

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import {
   deleteConversation,
+  updateConversationFavorite,
   updateConversationTitle,
 } from "@/lib/ai/conversations";
 import { debugError } from "@/lib/debug";
@@ -49,17 +50,31 @@ export async function PATCH(req: Request, context: RouteContext) {
       return NextResponse.json({ error: "Invalid conversation id" }, { status: 400 });
     }
 
-    const body = (await req.json()) as { title?: string };
+    const body = (await req.json()) as {
+      title?: string;
+      is_favorited?: boolean;
+    };
 
-    if (typeof body.title !== "string") {
-      return NextResponse.json({ error: "title is required" }, { status: 400 });
+    if (typeof body.title === "string") {
+      const conversation = await updateConversationTitle(id, body.title);
+
+      return NextResponse.json(conversation, {
+        headers: { "Cache-Control": "no-store" },
+      });
     }
 
-    const conversation = await updateConversationTitle(id, body.title);
+    if (typeof body.is_favorited === "boolean") {
+      const conversation = await updateConversationFavorite(id, body.is_favorited);
 
-    return NextResponse.json(conversation, {
-      headers: { "Cache-Control": "no-store" },
-    });
+      return NextResponse.json(conversation, {
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
+
+    return NextResponse.json(
+      { error: "title or is_favorited is required" },
+      { status: 400 },
+    );
   } catch (error) {
     const message = getErrorMessage(error);
 
@@ -71,7 +86,7 @@ export async function PATCH(req: Request, context: RouteContext) {
       return NextResponse.json({ error: message }, { status: 403 });
     }
 
-    debugError("api/conversations/[id]", "update title failed", error);
+    debugError("api/conversations/[id]", "update failed", error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
