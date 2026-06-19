@@ -189,6 +189,23 @@ export async function listConversations(limit = 30): Promise<ConversationRow[]> 
   return (data ?? []) as ConversationRow[];
 }
 
+export async function deleteConversation(
+  conversationId: string,
+): Promise<void> {
+  await verifyConversationAccess(conversationId);
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("conversations")
+    .delete()
+    .eq("id", conversationId);
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function verifyConversationAccess(
   conversationId: string,
 ): Promise<ConversationRow> {

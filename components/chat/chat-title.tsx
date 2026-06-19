@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 import { ChatOptionsMenuContent } from "@/components/chat/chat-options-menu";
+import { DeleteConversationDialog } from "@/components/chat/delete-conversation-dialog";
 import type { ConversationRow } from "@/lib/ai/conversations";
 import {
   broadcastConversationTitleChange,
@@ -30,10 +32,12 @@ type ChatTitleProps = {
 };
 
 export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
+  const router = useRouter();
   const [chatTitle, setChatTitle] = useState<string | null>(null);
   const [isTitleLoaded, setIsTitleLoaded] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const pendingRenameFocusRef = useRef(false);
 
   const displayTitle = conversationDisplayTitle(chatTitle);
@@ -184,6 +188,10 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
     focusTitleInput();
   };
 
+  const handleDelete = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
   return (
     <div className="flex items-center -space-x-1.5">
       {!isTitleLoaded ? (
@@ -241,9 +249,17 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
             <ChatOptionsMenuContent
               isLoggedIn={isLoggedIn}
               onRename={handleRename}
+              onDelete={handleDelete}
               onCloseAutoFocus={handleRenameMenuClose}
             />
           </DropdownMenu>
+          <DeleteConversationDialog
+            conversationId={conversationId}
+            chatTitle={chatTitle}
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+            onDeleted={() => router.push("/new")}
+          />
         </>
       )}
     </div>

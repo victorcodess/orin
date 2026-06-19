@@ -14,6 +14,7 @@ import {
   type ConversationsChangedDetail,
   getCachedConversations,
   getCachedConversationsUserId,
+  removeCachedConversation,
   setCachedConversations,
   updateCachedConversationTitle,
 } from "@/lib/conversations-cache";
@@ -186,6 +187,16 @@ export function NavChats() {
                   updated_at: new Date().toISOString(),
                 }
               : conversation
+          )
+        );
+        return;
+      }
+
+      if (detail?.type === "delete" && detail.conversationId) {
+        removeCachedConversation(detail.conversationId);
+        setConversations((current) =>
+          current.filter(
+            (conversation) => conversation.id !== detail.conversationId
           )
         );
         return;

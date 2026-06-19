@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { MoreVerticalIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useRef, useState } from "react";
 
 import { ChatOptionsMenuContent } from "@/components/chat/chat-options-menu";
+import { DeleteConversationDialog } from "@/components/chat/delete-conversation-dialog";
 import type { ConversationRow } from "@/lib/ai/conversations";
 import {
   broadcastConversationTitleChange,
@@ -38,12 +40,15 @@ export function NavChatItem({
   onFinishEdit,
   onNavigate,
 }: NavChatItemProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const href = `/c/${conversation.id}`;
   const inputRef = useRef<HTMLInputElement>(null);
   const pendingRenameFocusRef = useRef(false);
   const [titleDraft, setTitleDraft] = useState(() =>
     conversationDisplayTitle(conversation.title)
   );
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!isEditing) {
@@ -116,6 +121,10 @@ export function NavChatItem({
     }
   };
 
+  const handleDelete = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
   if (isEditing) {
     return (
       <Input
@@ -172,9 +181,21 @@ export function NavChatItem({
         <ChatOptionsMenuContent
           isLoggedIn={isLoggedIn}
           onRename={handleRename}
+          onDelete={handleDelete}
           onCloseAutoFocus={handleRenameMenuClose}
         />
       </DropdownMenu>
+      <DeleteConversationDialog
+        conversationId={conversation.id}
+        chatTitle={conversation.title}
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onDeleted={() => {
+          if (pathname === href) {
+            router.push("/new");
+          }
+        }}
+      />
     </>
   );
 }

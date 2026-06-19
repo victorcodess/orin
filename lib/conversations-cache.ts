@@ -1,7 +1,7 @@
 import type { ConversationRow } from "@/lib/ai/conversations";
 
 export type ConversationsChangedDetail = {
-  type?: "rename";
+  type?: "rename" | "delete";
   conversationId?: string;
   title?: string | null;
 };
@@ -67,6 +67,34 @@ export function updateCachedConversationTitle(
           }
         : conversation
     ),
+  };
+
+  return true;
+}
+
+export function removeCachedConversation(
+  conversationId: string,
+  userId?: string | null
+) {
+  if (!cachedConversations) {
+    return false;
+  }
+
+  if (userId !== undefined && cachedConversations.userId !== userId) {
+    return false;
+  }
+
+  const nextConversations = cachedConversations.conversations.filter(
+    (conversation) => conversation.id !== conversationId
+  );
+
+  if (nextConversations.length === cachedConversations.conversations.length) {
+    return false;
+  }
+
+  cachedConversations = {
+    ...cachedConversations,
+    conversations: nextConversations,
   };
 
   return true;

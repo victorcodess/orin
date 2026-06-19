@@ -16,12 +16,14 @@ import {
 type ChatOptionsMenuContentProps = {
   isLoggedIn: boolean;
   onRename?: () => void;
+  onDelete?: () => void;
   onCloseAutoFocus?: (event: Event) => void;
 };
 
 export function ChatOptionsMenuContent({
   isLoggedIn,
   onRename,
+  onDelete,
   onCloseAutoFocus,
 }: ChatOptionsMenuContentProps) {
   return (
@@ -47,7 +49,11 @@ export function ChatOptionsMenuContent({
         Favorite
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem variant="destructive" disabled={!isLoggedIn}>
+      <DropdownMenuItem
+        variant="destructive"
+        disabled={!isLoggedIn}
+        onSelect={onDelete}
+      >
         <HugeiconsIcon
           icon={Delete02Icon}
           strokeWidth={2}

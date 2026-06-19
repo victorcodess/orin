@@ -2,6 +2,7 @@ import type { ConversationRow } from "@/lib/ai/conversations";
 import {
   CONVERSATIONS_CHANGED_EVENT,
   type ConversationsChangedDetail,
+  removeCachedConversation,
   updateCachedConversationTitle,
 } from "@/lib/conversations-cache";
 
@@ -48,4 +49,25 @@ export async function patchConversationTitle(
   }
 
   return (await response.json()) as ConversationRow;
+}
+
+export function broadcastConversationDelete(conversationId: string) {
+  removeCachedConversation(conversationId);
+  window.dispatchEvent(
+    new CustomEvent<ConversationsChangedDetail>(CONVERSATIONS_CHANGED_EVENT, {
+      detail: { type: "delete", conversationId },
+    })
+  );
+}
+
+export async function deleteConversationById(
+  conversationId: string
+): Promise<void> {
+  const response = await fetch(`/api/conversations/${conversationId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete chat");
+  }
 }
