@@ -19,6 +19,17 @@ import {
   type CommitStrategy,
 } from "@/hooks/use-scribe";
 import { Button } from "@/components/ui/button";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  enterLabel,
+  primaryModifierLabel,
+  shiftLabel,
+} from "@/lib/keyboard-shortcuts";
 
 const buttonVariants = cva("!px-0", {
   variants: {
@@ -147,6 +158,40 @@ function previewLabel({
     return "Connecting…";
   }
   return placeholder;
+}
+
+function dictationToggleKeys() {
+  return [shiftLabel(), primaryModifierLabel(), "D"];
+}
+
+function SpeechInputTooltip({
+  label,
+  keys,
+  side = "top",
+  children,
+}: {
+  label: string;
+  keys?: string[];
+  side?: "top" | "right" | "bottom" | "left";
+  children: React.ReactElement;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent className="rounded-full" side={side}>
+        {label}
+        {keys?.length ? (
+          <KbdGroup className="ml-1.5">
+            {keys.map((key, index) => (
+              <Kbd key={`${key}-${index}`} className="rounded-md!">
+                {key}
+              </Kbd>
+            ))}
+          </KbdGroup>
+        ) : null}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 export interface SpeechInputData {
@@ -613,32 +658,38 @@ const SpeechInputRecordButton = React.forwardRef<
             whileTap={{ scale: 0.8 }}
             transition={speechTransition(reduceMotion, 0.18)}
           >
-            <Button
-              ref={ref}
-              type="button"
-              variant={variant}
-              onClick={(e) => {
-                speechInput.stop();
-                onClick?.(e);
-              }}
-              disabled={disabled}
-              className={cn(
-                buttonVariants({ size: speechInput.size }),
-                "relative flex items-center justify-center",
-                className
-              )}
-              aria-label="Stop recording"
-              {...props}
+            <SpeechInputTooltip
+              label="Complete dictation"
+              keys={[enterLabel()]}
+              side="top"
             >
-              <HugeiconsIcon
-                icon={StopIcon}
-                strokeWidth={2}
-                className="text-destructive h-4 w-4 fill-current"
-              />
-            </Button>
+              <Button
+                ref={ref}
+                type="button"
+                variant={variant}
+                onClick={(e) => {
+                  speechInput.stop();
+                  onClick?.(e);
+                }}
+                disabled={disabled}
+                className={cn(
+                  buttonVariants({ size: speechInput.size }),
+                  "relative flex items-center justify-center",
+                  className
+                )}
+                aria-label="Stop recording"
+                {...props}
+              >
+                <HugeiconsIcon
+                  icon={StopIcon}
+                  strokeWidth={2}
+                  className="text-destructive h-4 w-4 fill-current"
+                />
+              </Button>
+            </SpeechInputTooltip>
           </motion.div>
         </motion.div>
-        )} 
+      )}
     </AnimatePresence>
   );
 });
@@ -747,6 +798,13 @@ const SpeechInputCancelButton = React.forwardRef<
     reduceMotion
   );
 
+  const trailingTooltip =
+    trailingMode === "mic"
+      ? { label: "Dictate", keys: dictationToggleKeys() }
+      : speechInput.isConnecting
+        ? { label: "Cancel", keys: dictationToggleKeys() }
+        : { label: "Cancel dictation", keys: dictationToggleKeys() };
+
   return (
     <motion.div
       layout
@@ -761,66 +819,72 @@ const SpeechInputCancelButton = React.forwardRef<
         }}
         transition={speechTransition(reduceMotion, 0.18)}
       >
-        <Button
-          ref={ref}
-          type="button"
-          variant={variant}
-          onClick={(e) => {
-            if (trailingMode === "mic") {
-              void speechInput.start();
-            } else {
-              speechInput.cancel();
-            }
-            onClick?.(e);
-          }}
-          disabled={disabled}
-          className={cn(
-            buttonVariants({ size: speechInput.size }),
-            "relative flex items-center justify-center",
-            className
-          )}
-          aria-label={
-            trailingMode === "cancel"
-              ? speechInput.isConnecting
-                ? "Cancel connecting"
-                : "Cancel recording"
-              : "Start recording"
-          }
-          {...props}
+        <SpeechInputTooltip
+          label={trailingTooltip.label}
+          keys={trailingTooltip.keys}
+          side="top"
         >
-          <span className="relative flex h-4 w-4 items-center justify-center">
-            <AnimatePresence mode="wait" initial={false}>
-              {trailingMode === "cancel" ? (
-                <motion.span
-                  key="cancel"
-                  initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.6 }}
-                  transition={speechTransition(reduceMotion, 0.15)}
-                  className="absolute inset-0 flex items-center justify-center"
-                >
-                  <HugeiconsIcon
-                    icon={Cancel01Icon}
-                    strokeWidth={2}
-                    className="h-3 w-3"
-                  />
-                </motion.span>
-              ) : (
-                <motion.span
-                  key="mic"
-                  {...micIconMotion(reduceMotion)}
-                  className="absolute inset-0 flex items-center justify-center"
-                >
-                  <HugeiconsIcon
-                    icon={Mic02Icon}
-                    strokeWidth={2}
-                    className="h-4 w-4"
-                  />
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </span>
-        </Button>
+          <Button
+            ref={ref}
+            type="button"
+            variant={variant}
+            onClick={(e) => {
+              if (trailingMode === "mic") {
+                void speechInput.start();
+              } else {
+                speechInput.cancel();
+              }
+              onClick?.(e);
+            }}
+            disabled={disabled}
+            className={cn(
+              buttonVariants({ size: speechInput.size }),
+              "relative flex items-center justify-center",
+              className
+            )}
+            aria-label={
+              trailingMode === "cancel"
+                ? speechInput.isConnecting
+                  ? "Cancel connecting"
+                  : "Cancel recording"
+                : "Start recording"
+            }
+            {...props}
+          >
+            <span className="relative flex h-4 w-4 items-center justify-center">
+              <AnimatePresence mode="wait" initial={false}>
+                {trailingMode === "cancel" ? (
+                  <motion.span
+                    key="cancel"
+                    initial={{ opacity: 0, scale: 0.6 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.6 }}
+                    transition={speechTransition(reduceMotion, 0.15)}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <HugeiconsIcon
+                      icon={Cancel01Icon}
+                      strokeWidth={2}
+                      className="h-3 w-3"
+                    />
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="mic"
+                    {...micIconMotion(reduceMotion)}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <HugeiconsIcon
+                      icon={Mic02Icon}
+                      strokeWidth={2}
+                      className="h-4 w-4"
+                    />
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </span>
+          </Button>
+        </SpeechInputTooltip>
       </motion.div>
     </motion.div>
   );
