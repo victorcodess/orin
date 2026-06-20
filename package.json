@@ -4,7 +4,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "gen:types": "supabase gen types typescript --linked > types/database.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.68",

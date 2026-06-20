@@ -11,14 +11,14 @@ Orin supports text chat and voice calls. Both must feel like the same companion 
 
 Use **Vercel AI SDK** (`streamText`) as the single LLM layer for both text and voice. ElevenLabs Speech Engine handles audio transport (STT/TTS) only — not prompt logic or model selection.
 
-- Text: `app/api/chat/route.ts` → `lib/ai/chat.ts`
-- Voice: `server/handlers/speech-engine.ts` → same `lib/ai/chat.ts`
+- Text: `app/api/chat/route.ts` → `lib/ai/prompts.ts` + `lib/ai/messages.ts`
+- Voice: `server/handlers/speech-engine.ts` → same shared modules (Phase 2)
 
 Shared modules:
 
 - `lib/ai/prompts.ts` — system prompt from assistant config
 - `lib/ai/messages.ts` — load/save conversation history
-- `lib/ai/chat.ts` — `streamText` wrapper
+- `lib/ai/assistant-config.ts` — resolve default or user config from Supabase
 
 ## Consequences
 
