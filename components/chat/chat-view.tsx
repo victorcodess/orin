@@ -28,7 +28,7 @@ import {
   ThreadContent,
   ThreadScrollToBottom,
 } from "@/components/nexus-ui/thread";
-import { isKeyboardShortcutsDialogOpen } from "@/components/shell/app-keyboard-shortcuts";
+import { isKeyboardShortcutsDialogOpen } from "@/lib/keyboard-shortcuts";
 import { chatFetch } from "@/lib/ai/chat-fetch";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 import { cn } from "@/lib/utils";

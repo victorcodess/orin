@@ -4,6 +4,51 @@ export function hasPrimaryModifier(
   return event.metaKey || event.ctrlKey;
 }
 
+export function isKeyboardShortcutsDialogOpen() {
+  return Boolean(
+    typeof document !== "undefined" &&
+      document.querySelector('[data-slot="keyboard-shortcuts-dialog"]'),
+  );
+}
+
+type ShortcutMatchOptions = {
+  shift?: boolean;
+  alt?: boolean;
+  modifier?: boolean;
+};
+
+export function matchesShortcut(
+  event: KeyboardEvent,
+  key: string,
+  options: ShortcutMatchOptions = {},
+) {
+  const wantsModifier = options.modifier ?? true;
+  const wantsShift = options.shift ?? false;
+  const wantsAlt = options.alt ?? false;
+
+  if (wantsModifier && !hasPrimaryModifier(event)) {
+    return false;
+  }
+
+  if (!wantsModifier && hasPrimaryModifier(event)) {
+    return false;
+  }
+
+  if (event.shiftKey !== wantsShift) {
+    return false;
+  }
+
+  if (event.altKey !== wantsAlt) {
+    return false;
+  }
+
+  const normalizedKey = key.toLowerCase();
+  return (
+    event.key.toLowerCase() === normalizedKey ||
+    event.code === `Key${key.toUpperCase()}`
+  );
+}
+
 export function isMacPlatform() {
   if (typeof navigator === "undefined") {
     return false;

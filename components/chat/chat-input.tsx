@@ -9,6 +9,7 @@ import {
   SpeechInputCancelButton,
   SpeechInputPreview,
   SpeechInputRecordButton,
+  useSpeechInput,
 } from "@/components/elevenlabs/speech-input";
 import { toast } from "@/components/nexus-ui/toaster";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,11 @@ import {
   getScribeToken,
   prefetchScribeToken,
 } from "@/lib/elevenlabs/scribe-token-client";
+import {
+  hasPrimaryModifier,
+  isKeyboardShortcutsDialogOpen,
+  matchesShortcut,
+} from "@/lib/keyboard-shortcuts";
 import { AssistantConfig } from "@/lib/orin/defaults";
 import { cn } from "@/lib/utils";
 
@@ -116,6 +122,7 @@ export function ChatInput({
                 toastDictationError(new Error(error));
               }}
             >
+              <DictationKeyboardShortcuts disabled={isSubmitting} />
               <SpeechInputRecordButton
                 variant="ghost"
                 className="hover:bg-sidebar hover:dark:bg-input size-9"
@@ -163,6 +170,51 @@ export function ChatInput({
       </PromptInput>
     </form>
   );
+}
+
+function DictationKeyboardShortcuts({ disabled }: { disabled: boolean }) {
+  const { isConnected, isConnecting, start, stop, cancel } = useSpeechInput();
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (disabled || isKeyboardShortcutsDialogOpen()) {
+        return;
+      }
+
+      if (matchesShortcut(event, "d", { shift: true }) && !event.altKey) {
+        event.preventDefault();
+
+        if (isConnected) {
+          cancel();
+          return;
+        }
+
+        if (isConnecting) {
+          return;
+        }
+
+        prefetchScribeToken();
+        void start();
+        return;
+      }
+
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        !hasPrimaryModifier(event) &&
+        !event.altKey &&
+        isConnected
+      ) {
+        event.preventDefault();
+        stop();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [disabled, isConnected, isConnecting, start, stop, cancel]);
+
+  return null;
 }
 
 function appendDictation(baseInput: string, transcript: string) {

@@ -4,10 +4,13 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
+import { signalNewChat } from "@/components/chat/new-chat-view";
 import { KeyboardShortcutsDialog } from "@/components/shell/keyboard-shortcuts-dialog";
 import {
   hasPrimaryModifier,
+  isKeyboardShortcutsDialogOpen,
   KEYBOARD_SHORTCUTS_OPEN_EVENT,
+  matchesShortcut,
 } from "@/lib/keyboard-shortcuts";
 
 export function AppKeyboardShortcuts() {
@@ -25,6 +28,20 @@ export function AppKeyboardShortcuts() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isKeyboardShortcutsDialogOpen()) {
+        return;
+      }
+
+      if (
+        matchesShortcut(event, "o", { shift: true }) &&
+        !event.altKey
+      ) {
+        event.preventDefault();
+        signalNewChat();
+        router.push("/new");
+        return;
+      }
+
       if (!hasPrimaryModifier(event)) {
         return;
       }
@@ -60,10 +77,4 @@ export function AppKeyboardShortcuts() {
   }, [resolvedTheme, router, setTheme]);
 
   return <KeyboardShortcutsDialog open={open} onOpenChange={setOpen} />;
-}
-
-export function isKeyboardShortcutsDialogOpen() {
-  return Boolean(
-    document.querySelector('[data-slot="keyboard-shortcuts-dialog"]'),
-  );
 }
