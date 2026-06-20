@@ -2,6 +2,12 @@ const SCRIBE_TOKEN_URL =
   "https://api.elevenlabs.io/v1/single-use-token/realtime_scribe";
 
 export async function POST() {
+  const startedAt = performance.now();
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("[orin:dictation] token API started");
+  }
+
   const apiKey = process.env.ELEVENLABS_API_KEY;
 
   if (!apiKey || apiKey.includes("your-")) {
@@ -31,6 +37,12 @@ export async function POST() {
     return Response.json(
       { error: "Failed to create ElevenLabs Scribe token" },
       { status: response.ok ? 500 : response.status }
+    );
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.log(
+      `[orin:dictation] token API complete (+${Math.round(performance.now() - startedAt)}ms)`
     );
   }
 
