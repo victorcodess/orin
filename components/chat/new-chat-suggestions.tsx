@@ -159,6 +159,7 @@ export function NewChatSuggestions({
                   transition: INSTANT,
                 },
               }}
+              whileTap={reduceMotion ? undefined : { scale: 0.99 }}
               variant={isTop ? "ghost" : "outline"}
               onClick={(event) => handleCategoryClick(event, category.label)}
               className={cn(
@@ -270,6 +271,7 @@ export function NewChatSuggestions({
                           },
                         },
                       }}
+                      whileTap={reduceMotion ? undefined : { scale: 0.99 }}
                       variant="ghost"
                       value={text}
                       className={cn(
