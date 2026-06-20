@@ -8,12 +8,17 @@ import { HugeiconsIcon } from "@hugeicons/react";
 
 import { cn } from "@/lib/utils";
 import {
+  beginDictationSession,
+  dictationLog,
+  type DictationSession,
+} from "@/lib/elevenlabs/dictation-debug";
+import { warmMicrophoneAccess } from "@/lib/elevenlabs/warm-microphone";
+import {
   useScribe,
   type AudioFormat,
   type CommitStrategy,
 } from "@/hooks/use-scribe";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const buttonVariants = cva("!px-0", {
   variants: {
@@ -63,13 +68,13 @@ function speechTransition(reduceMotion: boolean | null, duration = BAR_DURATION)
 }
 
 function useBarBackgroundVisible(
-  isConnected: boolean,
+  isActive: boolean,
   reduceMotion: boolean | null
 ) {
   const [visible, setVisible] = React.useState(false);
 
   React.useEffect(() => {
-    if (isConnected) {
+    if (isActive) {
       setVisible(true);
       return;
     }
@@ -77,7 +82,7 @@ function useBarBackgroundVisible(
     const delay = reduceMotion ? 0 : BAR_CLOSE_TOTAL * 1000;
     const id = window.setTimeout(() => setVisible(false), delay);
     return () => window.clearTimeout(id);
-  }, [isConnected, reduceMotion]);
+  }, [isActive, reduceMotion]);
 
   return visible;
 }
@@ -98,11 +103,10 @@ function micIconMotion(reduceMotion: boolean | null) {
   } as const;
 }
 
-type TrailingSlotMode = "mic" | "cancel" | "connecting";
+type TrailingSlotMode = "mic" | "cancel";
 
 function useTrailingSlotMode(
-  isConnected: boolean,
-  isConnecting: boolean,
+  isActive: boolean,
   reduceMotion: boolean | null
 ) {
   const [mode, setMode] = React.useState<TrailingSlotMode>("mic");
@@ -110,26 +114,39 @@ function useTrailingSlotMode(
   modeRef.current = mode;
 
   React.useEffect(() => {
-    if (isConnecting) {
-      setMode("connecting");
-      return;
-    }
-
-    if (isConnected) {
+    if (isActive) {
       setMode("cancel");
       return;
     }
 
-    if (modeRef.current === "cancel" || modeRef.current === "connecting") {
+    if (modeRef.current === "cancel") {
       const delay = reduceMotion ? 0 : MIC_REAPPEAR_DELAY * 1000;
       const id = window.setTimeout(() => setMode("mic"), delay);
       return () => window.clearTimeout(id);
     }
 
     setMode("mic");
-  }, [isConnected, isConnecting, reduceMotion]);
+  }, [isActive, reduceMotion]);
 
   return mode;
+}
+
+function previewLabel({
+  isConnecting,
+  transcript,
+  placeholder,
+}: {
+  isConnecting: boolean;
+  transcript: string;
+  placeholder: string;
+}) {
+  if (transcript.trim()) {
+    return transcript;
+  }
+  if (isConnecting) {
+    return "Connecting…";
+  }
+  return placeholder;
 }
 
 export interface SpeechInputData {
@@ -144,6 +161,8 @@ export interface SpeechInputData {
 interface SpeechInputContextValue {
   isConnected: boolean;
   isConnecting: boolean;
+  isActive: boolean;
+  isTranscribing: boolean;
   transcript: string;
   partialTranscript: string;
   committedTranscripts: string[];
@@ -205,7 +224,7 @@ export interface SpeechInputProps {
    * Function that returns a token for authenticating with the speech service.
    * This should be an async function that fetches a token from your backend.
    */
-  getToken: () => Promise<string>;
+  getToken: (session?: DictationSession) => Promise<string>;
 
   /**
    * Called whenever the transcript changes (partial or committed)
@@ -330,14 +349,15 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       modelId = "scribe_v2_realtime",
       baseUri,
       commitStrategy,
-      vadSilenceThresholdSecs,
-      vadThreshold,
-      minSpeechDurationMs,
-      minSilenceDurationMs,
+      vadSilenceThresholdSecs = 1,
+      vadThreshold = 0.35,
+      minSpeechDurationMs = 100,
+      minSilenceDurationMs = 100,
       languageCode,
       microphone = {
         echoCancellation: true,
         noiseSuppression: true,
+        autoGainControl: false,
       },
       audioFormat,
       sampleRate,
@@ -352,6 +372,7 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       committedTranscripts: [] as string[],
     });
     const startRequestIdRef = React.useRef(0);
+    const sessionRef = React.useRef<DictationSession | null>(null);
     const [isTokenPending, setIsTokenPending] = React.useState(false);
 
     const scribe = useScribe({
@@ -373,6 +394,9 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       onCommittedTranscript: (data) => {
         transcriptsRef.current.committedTranscripts.push(data.text);
         transcriptsRef.current.partialTranscript = "";
+        dictationLog(sessionRef.current, "committed transcript", {
+          text: data.text.slice(0, 80),
+        });
         onChange?.(buildData(transcriptsRef.current));
       },
       onError,
@@ -384,10 +408,13 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
     scribeRef.current = scribe;
 
     const isConnecting = isTokenPending || scribe.status === "connecting";
+    const isActive = isConnecting || scribe.isConnected;
 
     const start = React.useCallback(async () => {
       const requestId = startRequestIdRef.current + 1;
       startRequestIdRef.current = requestId;
+      const session = beginDictationSession();
+      sessionRef.current = session;
 
       transcriptsRef.current = {
         partialTranscript: "",
@@ -395,33 +422,47 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       };
       scribeRef.current.clearTranscripts();
       setIsTokenPending(true);
+      dictationLog(session, "start requested");
 
       try {
-        const token = await getToken();
+        const [token] = await Promise.all([
+          getToken(session).then((value) => {
+            dictationLog(session, "token ready");
+            return value;
+          }),
+          warmMicrophoneAccess(microphone, session),
+        ]);
         if (startRequestIdRef.current !== requestId) {
+          dictationLog(session, "aborted after token (superseded)");
           return;
         }
 
+        dictationLog(session, "connecting to scribe");
         await scribeRef.current.connect({
           token,
         });
         if (startRequestIdRef.current !== requestId) {
+          dictationLog(session, "aborted after connect (superseded)");
           scribeRef.current.disconnect({ skipCommit: true });
           return;
         }
+        dictationLog(session, "connected, waiting for audio");
         onStart?.(buildData(transcriptsRef.current));
       } catch (error) {
+        dictationLog(session, "start failed", error);
         onError?.(error instanceof Error ? error : new Error(String(error)));
       } finally {
         if (startRequestIdRef.current === requestId) {
           setIsTokenPending(false);
         }
       }
-    }, [getToken, onStart, onError]);
+    }, [getToken, microphone, onStart, onError]);
 
     const stop = React.useCallback(() => {
+      dictationLog(sessionRef.current, "stop");
       startRequestIdRef.current += 1;
       setIsTokenPending(false);
+      sessionRef.current = null;
 
       const data = buildData({
         partialTranscript: scribeRef.current.partialTranscript,
@@ -440,8 +481,10 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
     }, [onChange, onStop]);
 
     const cancel = React.useCallback(() => {
+      dictationLog(sessionRef.current, "cancel");
       startRequestIdRef.current += 1;
       setIsTokenPending(false);
+      sessionRef.current = null;
       const data = buildData(transcriptsRef.current);
       scribeRef.current.disconnect({ skipCommit: true });
       scribeRef.current.clearTranscripts();
@@ -456,6 +499,8 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       () => ({
         isConnected: scribe.isConnected,
         isConnecting,
+        isActive,
+        isTranscribing: scribe.isTranscribing,
         start,
         stop,
         cancel,
@@ -468,10 +513,12 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       }),
       [
         scribe.isConnected,
+        scribe.isTranscribing,
         scribe.error,
         scribe.partialTranscript,
         scribe.committedTranscripts,
         isConnecting,
+        isActive,
         start,
         stop,
         cancel,
@@ -483,15 +530,13 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       return () => {
         startRequestIdRef.current += 1;
         setIsTokenPending(false);
+        sessionRef.current = null;
         scribeRef.current.disconnect();
       };
     }, []);
 
     const reduceMotion = useReducedMotion();
-    const showBarBackground = useBarBackgroundVisible(
-      scribe.isConnected,
-      reduceMotion
-    );
+    const showBarBackground = useBarBackgroundVisible(isActive, reduceMotion);
 
     return (
       <SpeechInputContext.Provider value={contextValue}>
@@ -538,7 +583,7 @@ const SpeechInputRecordButton = React.forwardRef<
 
   return (
     <AnimatePresence initial={false}>
-      {speechInput.isConnected && (
+      {speechInput.isActive && (
         <motion.div
           key="speech-stop"
           layout
@@ -588,7 +633,7 @@ const SpeechInputRecordButton = React.forwardRef<
             </Button>
           </motion.div>
         </motion.div>
-      )}
+        )} 
     </AnimatePresence>
   );
 });
@@ -617,12 +662,16 @@ const SpeechInputPreview = React.forwardRef<
   const speechInput = useSpeechInput();
   const reduceMotion = useReducedMotion();
 
-  const displayText = speechInput.transcript || placeholder;
+  const displayText = previewLabel({
+    isConnecting: speechInput.isConnecting,
+    transcript: speechInput.transcript,
+    placeholder,
+  });
   const showPlaceholder = !speechInput.transcript.trim();
 
   return (
     <AnimatePresence initial={false}>
-      {speechInput.isConnected && (
+      {speechInput.isActive && (
         <motion.div
           ref={ref}
           key="speech-preview"
@@ -689,8 +738,7 @@ const SpeechInputCancelButton = React.forwardRef<
   const reduceMotion = useReducedMotion();
   const buttonWidth = BUTTON_PX[speechInput.size ?? "default"];
   const trailingMode = useTrailingSlotMode(
-    speechInput.isConnected,
-    speechInput.isConnecting,
+    speechInput.isActive,
     reduceMotion
   );
 
@@ -715,15 +763,12 @@ const SpeechInputCancelButton = React.forwardRef<
           onClick={(e) => {
             if (trailingMode === "mic") {
               void speechInput.start();
-            } else if (trailingMode === "cancel") {
+            } else {
               speechInput.cancel();
             }
             onClick?.(e);
           }}
-          disabled={
-            disabled ??
-            (trailingMode === "connecting" || speechInput.isConnecting)
-          }
+          disabled={disabled}
           className={cn(
             buttonVariants({ size: speechInput.size }),
             "relative flex items-center justify-center",
@@ -731,27 +776,16 @@ const SpeechInputCancelButton = React.forwardRef<
           )}
           aria-label={
             trailingMode === "cancel"
-              ? "Cancel recording"
-              : trailingMode === "connecting"
-                ? "Connecting"
-                : "Start recording"
+              ? speechInput.isConnecting
+                ? "Cancel connecting"
+                : "Cancel recording"
+              : "Start recording"
           }
           {...props}
         >
           <span className="relative flex h-4 w-4 items-center justify-center">
             <AnimatePresence mode="wait" initial={false}>
-              {trailingMode === "connecting" ? (
-                <motion.span
-                  key="connecting"
-                  initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 0.9 }}
-                  exit={{ opacity: 0, scale: 0.6 }}
-                  transition={speechTransition(reduceMotion, 0.15)}
-                  className="absolute inset-0 flex items-center justify-center"
-                >
-                  <Skeleton className="bg-primary h-4 w-4 rounded-full" />
-                </motion.span>
-              ) : trailingMode === "cancel" ? (
+              {trailingMode === "cancel" ? (
                 <motion.span
                   key="cancel"
                   initial={{ opacity: 0, scale: 0.6 }}

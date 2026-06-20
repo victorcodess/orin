@@ -23,7 +23,7 @@ import {
 import { CommitStrategy } from "@/hooks/use-scribe";
 import {
   getScribeToken,
-  prefetchScribeToken,
+  warmDictation,
 } from "@/lib/elevenlabs/scribe-token-client";
 import {
   hasPrimaryModifier,
@@ -54,7 +54,7 @@ export function ChatInput({
   const dictationBaseInputRef = useRef("");
 
   useEffect(() => {
-    prefetchScribeToken();
+    warmDictation();
   }, []);
 
   return (
@@ -79,7 +79,7 @@ export function ChatInput({
           rows={isMultiline ? undefined : 1}
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          onFocus={() => prefetchScribeToken()}
+          onFocus={() => warmDictation()}
           placeholder={`Message ${assistant.name}...`}
           disabled={isSubmitting}
           className={cn(
@@ -104,7 +104,6 @@ export function ChatInput({
               commitStrategy={CommitStrategy.VAD}
               onStart={() => {
                 dictationBaseInputRef.current = input;
-                prefetchScribeToken();
               }}
               onChange={({ transcript }) => {
                 setInput(
@@ -127,12 +126,12 @@ export function ChatInput({
                 variant="ghost"
                 className="hover:bg-sidebar hover:dark:bg-input size-9"
               />
-              <SpeechInputPreview placeholder="Listening..." />
+              <SpeechInputPreview placeholder="Listening…" />
               <SpeechInputCancelButton
                 variant="ghost"
                 disabled={isSubmitting}
                 className="hover:bg-sidebar hover:dark:bg-input"
-                onPointerEnter={() => prefetchScribeToken()}
+                onPointerEnter={() => warmDictation()}
               />
             </SpeechInput>
             <PromptInputAction asChild>
@@ -173,7 +172,8 @@ export function ChatInput({
 }
 
 function DictationKeyboardShortcuts({ disabled }: { disabled: boolean }) {
-  const { isConnected, isConnecting, start, stop, cancel } = useSpeechInput();
+  const { isConnected, isActive, isConnecting, start, stop, cancel } =
+    useSpeechInput();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -184,16 +184,12 @@ function DictationKeyboardShortcuts({ disabled }: { disabled: boolean }) {
       if (matchesShortcut(event, "d", { shift: true }) && !event.altKey) {
         event.preventDefault();
 
-        if (isConnected) {
+        if (isActive) {
           cancel();
           return;
         }
 
-        if (isConnecting) {
-          return;
-        }
-
-        prefetchScribeToken();
+        warmDictation();
         void start();
         return;
       }
@@ -203,7 +199,8 @@ function DictationKeyboardShortcuts({ disabled }: { disabled: boolean }) {
         !event.shiftKey &&
         !hasPrimaryModifier(event) &&
         !event.altKey &&
-        isConnected
+        isConnected &&
+        !isConnecting
       ) {
         event.preventDefault();
         stop();
@@ -212,7 +209,7 @@ function DictationKeyboardShortcuts({ disabled }: { disabled: boolean }) {
 
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [disabled, isConnected, isConnecting, start, stop, cancel]);
+  }, [disabled, isConnected, isActive, isConnecting, start, stop, cancel]);
 
   return null;
 }
