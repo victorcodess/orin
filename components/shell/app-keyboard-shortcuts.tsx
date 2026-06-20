@@ -12,6 +12,7 @@ import {
   KEYBOARD_SHORTCUTS_OPEN_EVENT,
   matchesShortcut,
 } from "@/lib/keyboard-shortcuts";
+import { useMessageStyleStore } from "@/lib/stores/message-style-store";
 
 export function AppKeyboardShortcuts() {
   const router = useRouter();
@@ -69,6 +70,16 @@ export function AppKeyboardShortcuts() {
       ) {
         event.preventDefault();
         setTheme(resolvedTheme === "dark" ? "light" : "dark");
+        return;
+      }
+
+      if (
+        process.env.NODE_ENV === "development" &&
+        matchesShortcut(event, "m", { shift: true }) &&
+        !event.altKey
+      ) {
+        event.preventDefault();
+        useMessageStyleStore.getState().toggleLayout();
       }
     };
 

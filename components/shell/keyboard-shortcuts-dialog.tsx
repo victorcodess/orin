@@ -90,6 +90,19 @@ export function KeyboardShortcutsDialog({
         { label: "Complete dictation", keys: [enterLabel()] },
       ],
     },
+    ...(process.env.NODE_ENV === "development"
+      ? [
+          {
+            title: "Developer",
+            shortcuts: [
+              {
+                label: "Toggle message bubble layout",
+                keys: [shift, modifier, "M"],
+              },
+            ],
+          },
+        ]
+      : []),
   ];
 
   useEffect(() => {
