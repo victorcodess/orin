@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 
 import { useChatComposer } from "@/components/chat/chat-composer";
+import { prefetchScribeToken } from "@/lib/elevenlabs/scribe-token-client";
 import { ChatInput } from "@/components/chat/chat-input";
 import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
 import { CONVERSATIONS_CHANGED_EVENT } from "@/lib/conversations-cache";
@@ -23,7 +24,8 @@ export function NewChatView() {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const controls = useAnimationControls();
-  const { input, setInput, setIsVisible } = useChatComposer();
+  const { setIsVisible } = useChatComposer();
+  const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replay, setReplay] = useState(0);
 
@@ -36,6 +38,10 @@ export function NewChatView() {
     setIsVisible(false);
     play();
   }, [play, setIsVisible]);
+
+  useEffect(() => {
+    prefetchScribeToken();
+  }, []);
 
   useEffect(() => {
     const onNewChat = () => {

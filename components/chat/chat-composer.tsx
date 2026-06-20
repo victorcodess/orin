@@ -3,8 +3,11 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
+  useSyncExternalStore,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
@@ -12,6 +15,7 @@ import {
 
 import { ChatInput } from "@/components/chat/chat-input";
 import { DEFAULT_ASSISTANT, type AssistantConfig } from "@/lib/orin/defaults";
+import { prefetchScribeToken } from "@/lib/elevenlabs/scribe-token-client";
 
 type ChatComposerControls = {
   assistant: AssistantConfig;
@@ -20,9 +24,41 @@ type ChatComposerControls = {
   onStop?: () => void;
 };
 
-type ChatComposerContextValue = {
-  input: string;
+type ComposerInput = {
+  subscribe: (listener: () => void) => () => void;
+  getSnapshot: () => string;
   setInput: (input: string) => void;
+  getInput: () => string;
+};
+
+function createComposerInput(): ComposerInput {
+  let value = "";
+  const listeners = new Set<() => void>();
+
+  return {
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    getSnapshot() {
+      return value;
+    },
+    getInput() {
+      return value;
+    },
+    setInput(input) {
+      if (value !== input) {
+        value = input;
+        listeners.forEach((listener) => listener());
+      }
+    },
+  };
+}
+
+type ChatComposerContextValue = {
+  composerInput: ComposerInput;
+  setInput: (input: string) => void;
+  getInput: () => string;
   controls: ChatComposerControls | null;
   setControls: Dispatch<SetStateAction<ChatComposerControls | null>>;
   isVisible: boolean;
@@ -32,19 +68,26 @@ type ChatComposerContextValue = {
 const ChatComposerContext = createContext<ChatComposerContextValue | null>(null);
 
 export function ChatComposerProvider({ children }: { children: ReactNode }) {
-  const [input, setInput] = useState("");
+  const composerInputRef = useRef<ComposerInput | null>(null);
+  if (!composerInputRef.current) {
+    composerInputRef.current = createComposerInput();
+  }
+  const composerInput = composerInputRef.current;
+
   const [controls, setControls] = useState<ChatComposerControls | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+
   const value = useMemo(
     () => ({
-      input,
-      setInput,
+      composerInput,
+      setInput: composerInput.setInput,
+      getInput: composerInput.getInput,
       controls,
       setControls,
       isVisible,
       setIsVisible,
     }),
-    [input, controls, isVisible]
+    [composerInput, controls, isVisible]
   );
 
   return (
@@ -63,8 +106,25 @@ export function useChatComposer() {
   return context;
 }
 
+export function useComposerInput() {
+  const { composerInput } = useChatComposer();
+
+  return useSyncExternalStore(
+    composerInput.subscribe,
+    composerInput.getSnapshot,
+    composerInput.getSnapshot
+  );
+}
+
 export function ChatComposerDock() {
-  const { input, setInput, controls, isVisible } = useChatComposer();
+  const { setInput, controls, isVisible } = useChatComposer();
+  const input = useComposerInput();
+
+  useEffect(() => {
+    if (isVisible) {
+      prefetchScribeToken();
+    }
+  }, [isVisible]);
 
   if (!isVisible) {
     return null;
