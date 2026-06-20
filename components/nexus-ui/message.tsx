@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { Streamdown } from "streamdown";
-// import useMeasure from "react-use-measure";
+import useMeasure from "react-use-measure";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
@@ -124,42 +124,43 @@ function MessageContent({
 }: MessageContentProps) {
   const ctx = useMessageContext();
   const from = ctx?.from ?? "assistant";
-  // const [ref, bounds] = useMeasure();
-  // const isTall = bounds.height > 46;
+  const [ref, bounds] = useMeasure();
+  const isTall = bounds.height > 46;
 
   return (
     <div
-      // ref={ref}
+      ref={ref}
       data-slot="message-content"
       className={cn(
         "relative",
         from === "user"
-          ? "bg-sidebar dark:bg-input w-fit rounded-3xl px-4 py-1.75"
-          : //  "bg-foreground/5 dark:bg-input /70 w-fit max-w-full px-4 py-1.75 " +
-            //       (isTall ? "rounded-2xl" : "rounded-3xl"),
+          ? "bg-primary dark:bg-primary-dark text-popover dark:text-card-foreground w-fit rounded-3xl px-4 py-1.75"
+          : 
+           "bg-sidebar dark:bg-input /70 w-fit max-w-full px-4 py-1.75 " +
+                  (isTall ? "rounded-3xl" : "rounded-3xl"),
 
-            "mb-1 w-full bg-transparent px-2",
+            // "mb-1 w-full bg-transparent px-2",
         className
       )}
       {...props}
     >
       {children}
 
-      {from === "user" && (
+      {/* {from === "user" && ( */}
         <svg
           width="16"
           height="16"
           className={cn(
-            "fill-sidebar dark:fill-input absolute top-[-5.5px] transition-[scale,fill,opacity] duration-300 will-change-[fill,opacity]",
+            "fill-primary dark:fill-primary-dark absolute top-[-5.5px] transition-[scale,fill,opacity] duration-300 will-change-[fill,opacity]",
             from === "user"
               ? "right-0.5"
-              : "fill-foreground/5 dark:fill-input left-0 scale-x-[-1]"
+              : "fill-sidebar dark:fill-input left-0 scale-x-[-1]"
           )}
           fill="currentColor"
         >
           <path d="M-2.70729e-07 6.19355C8 6.19355 12 4.12903 16 6.99382e-07C16 6.70968 16 13.5 10 16L-2.70729e-07 6.19355Z"></path>
         </svg>
-      )}
+      {/* )} */}
     </div>
   );
 }
