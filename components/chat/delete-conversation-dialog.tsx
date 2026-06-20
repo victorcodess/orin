@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/nexus-ui/toaster";
-import { CONVERSATIONS_CHANGED_EVENT } from "@/lib/conversations-cache";
+import { useConversationsStore } from "@/lib/stores/conversations-store";
 import {
   broadcastConversationDelete,
   conversationDisplayTitle,
@@ -45,7 +45,7 @@ export function DeleteConversationDialog({
     onDeleted?.();
 
     void deleteConversationById(conversationId).catch(() => {
-      window.dispatchEvent(new CustomEvent(CONVERSATIONS_CHANGED_EVENT));
+      void useConversationsStore.getState().refresh();
       toast.error("Couldn't delete chat");
     });
   };

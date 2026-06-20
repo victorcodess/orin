@@ -7,21 +7,17 @@ import { HugeiconsIcon } from "@hugeicons/react";
 
 import { ChatOptionsMenuContent } from "@/components/chat/chat-options-menu";
 import { DeleteConversationDialog } from "@/components/chat/delete-conversation-dialog";
-import type { ConversationRow } from "@/lib/ai/conversations";
 import {
   broadcastConversationTitleChange,
   conversationDisplayTitle,
   normalizeConversationTitleInput,
   patchConversationTitle,
 } from "@/lib/conversation-title";
+import { toggleConversationFavorite } from "@/lib/conversation-favorite";
 import {
-  toggleConversationFavorite,
-} from "@/lib/conversation-favorite";
-import {
-  CONVERSATIONS_CHANGED_EVENT,
-  type ConversationsChangedDetail,
-  getCachedConversations,
-} from "@/lib/conversations-cache";
+  useConversation,
+  useConversationsStore,
+} from "@/lib/stores/conversations-store";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -36,9 +32,11 @@ type ChatTitleProps = {
 
 export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
   const router = useRouter();
-  const [chatTitle, setChatTitle] = useState<string | null>(null);
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [isTitleLoaded, setIsTitleLoaded] = useState(false);
+  const conversation = useConversation(conversationId);
+  const isLoading = useConversationsStore((state) => state.isLoading);
+  const chatTitle = conversation?.title ?? null;
+  const isFavorited = conversation?.is_favorited ?? false;
+  const isTitleLoaded = !isLoading || conversation !== undefined;
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -46,78 +44,29 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
 
   const displayTitle = conversationDisplayTitle(chatTitle);
 
-  const applyTitle = useCallback((title: string | null) => {
-    setChatTitle(title);
-    setTitleDraft(conversationDisplayTitle(title));
-    broadcastConversationTitleChange(conversationId, title);
-  }, [conversationId]);
-
-  const loadChatTitle = useCallback(async () => {
-    const cachedConversation = getCachedConversations()?.find(
-      (item) => item.id === conversationId
-    );
-
-    if (cachedConversation) {
-      setChatTitle(cachedConversation.title);
-      setIsFavorited(cachedConversation.is_favorited);
-      setIsTitleLoaded(true);
-      return;
+  useEffect(() => {
+    if (!isLoading && !conversation) {
+      void useConversationsStore.getState().refresh();
     }
-
-    try {
-      const response = await fetch("/api/conversations", { cache: "no-store" });
-      if (!response.ok) {
-        return;
-      }
-
-      const conversations = (await response.json()) as ConversationRow[];
-      const conversation = conversations.find(
-        (item) => item.id === conversationId
-      );
-      setChatTitle(conversation?.title ?? null);
-      setIsFavorited(conversation?.is_favorited ?? false);
-    } catch {
-    } finally {
-      setIsTitleLoaded(true);
-    }
-  }, [conversationId]);
+  }, [conversation, conversationId, isLoading]);
 
   useEffect(() => {
     setIsEditingTitle(false);
-    setIsTitleLoaded(false);
-    setChatTitle(null);
-    setIsFavorited(false);
-    void loadChatTitle();
-  }, [conversationId, loadChatTitle]);
-
-  useEffect(() => {
-    const handleChange = (event: Event) => {
-      const detail = (event as CustomEvent<ConversationsChangedDetail>).detail;
-
-      if (detail?.type === "rename" && detail.conversationId === conversationId) {
-        setChatTitle(detail.title ?? null);
-        return;
-      }
-
-      if (detail?.type === "favorite" && detail.conversationId === conversationId) {
-        setIsFavorited(detail.isFavorited ?? false);
-        return;
-      }
-
-      void loadChatTitle();
-    };
-
-    window.addEventListener(CONVERSATIONS_CHANGED_EVENT, handleChange);
-    return () => {
-      window.removeEventListener(CONVERSATIONS_CHANGED_EVENT, handleChange);
-    };
-  }, [conversationId, loadChatTitle]);
+  }, [conversationId]);
 
   useEffect(() => {
     if (!isEditingTitle) {
       setTitleDraft(displayTitle);
     }
   }, [displayTitle, isEditingTitle]);
+
+  const applyTitle = useCallback(
+    (title: string | null) => {
+      setTitleDraft(conversationDisplayTitle(title));
+      broadcastConversationTitleChange(conversationId, title);
+    },
+    [conversationId]
+  );
 
   const focusTitleInput = useCallback(() => {
     const input = document.getElementById(
@@ -173,11 +122,11 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
     applyTitle(nextTitle);
 
     try {
-      const conversation = await patchConversationTitle(
+      const updatedConversation = await patchConversationTitle(
         conversationId,
         titleDraft
       );
-      applyTitle(conversation.title);
+      applyTitle(updatedConversation.title);
     } catch {
       applyTitle(previousTitle);
       toast.error("Couldn't rename chat");

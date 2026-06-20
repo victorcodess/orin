@@ -1,10 +1,5 @@
 import type { ConversationRow } from "@/lib/ai/conversations";
-import {
-  CONVERSATIONS_CHANGED_EVENT,
-  type ConversationsChangedDetail,
-  removeCachedConversation,
-  updateCachedConversationTitle,
-} from "@/lib/conversations-cache";
+import { useConversationsStore } from "@/lib/stores/conversations-store";
 
 export const UNTITLED_CHAT_LABEL = "Untitled chat";
 
@@ -26,12 +21,7 @@ export function broadcastConversationTitleChange(
   conversationId: string,
   title: string | null
 ) {
-  updateCachedConversationTitle(conversationId, title);
-  window.dispatchEvent(
-    new CustomEvent<ConversationsChangedDetail>(CONVERSATIONS_CHANGED_EVENT, {
-      detail: { type: "rename", conversationId, title },
-    })
-  );
+  useConversationsStore.getState().renameConversation(conversationId, title);
 }
 
 export async function patchConversationTitle(
@@ -52,12 +42,7 @@ export async function patchConversationTitle(
 }
 
 export function broadcastConversationDelete(conversationId: string) {
-  removeCachedConversation(conversationId);
-  window.dispatchEvent(
-    new CustomEvent<ConversationsChangedDetail>(CONVERSATIONS_CHANGED_EVENT, {
-      detail: { type: "delete", conversationId },
-    })
-  );
+  useConversationsStore.getState().removeConversation(conversationId);
 }
 
 export async function deleteConversationById(

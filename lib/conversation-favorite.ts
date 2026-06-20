@@ -1,11 +1,6 @@
 import type { ConversationRow } from "@/lib/ai/conversations";
 import { toast } from "@/components/nexus-ui/toaster";
-import {
-  CONVERSATIONS_CHANGED_EVENT,
-  type ConversationsChangedDetail,
-  getCachedConversations,
-  updateCachedConversationFavorite,
-} from "@/lib/conversations-cache";
+import { useConversationsStore } from "@/lib/stores/conversations-store";
 
 type FavoriteSyncState = {
   version: number;
@@ -18,12 +13,7 @@ export function broadcastConversationFavoriteChange(
   conversationId: string,
   isFavorited: boolean,
 ) {
-  updateCachedConversationFavorite(conversationId, isFavorited);
-  window.dispatchEvent(
-    new CustomEvent<ConversationsChangedDetail>(CONVERSATIONS_CHANGED_EVENT, {
-      detail: { type: "favorite", conversationId, isFavorited },
-    }),
-  );
+  useConversationsStore.getState().setFavorite(conversationId, isFavorited);
 }
 
 export async function patchConversationFavorite(
@@ -44,9 +34,9 @@ export async function patchConversationFavorite(
 }
 
 export function toggleConversationFavorite(conversationId: string): void {
-  const cached = getCachedConversations()?.find(
-    (conversation) => conversation.id === conversationId,
-  );
+  const cached = useConversationsStore
+    .getState()
+    .getConversation(conversationId);
   const currentIsFavorited = cached?.is_favorited ?? false;
 
   void syncConversationFavorite(conversationId, !currentIsFavorited);

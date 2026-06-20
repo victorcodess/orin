@@ -6,10 +6,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 
 import { NavChatItem } from "@/components/shell/nav-chat-item";
-import {
-  useIsLoggedIn,
-  useSidebarConversations,
-} from "@/components/shell/use-sidebar-conversations";
+import { useIsLoggedIn } from "@/lib/stores/auth-store";
+import { useSidebarConversations } from "@/lib/stores/conversations-store";
 import { conversationDisplayTitle } from "@/lib/conversation-title";
 import { debugLog } from "@/lib/debug";
 import { HugeiconsIcon } from "@hugeicons/react";
