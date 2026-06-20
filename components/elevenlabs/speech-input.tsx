@@ -83,14 +83,14 @@ function useBarBackgroundVisible(
 }
 
 function micIconMotion(reduceMotion: boolean | null) {
-  const blur = reduceMotion ? "blur(0px)" : "blur(6px)";
+  const blur = reduceMotion ? "blur(0px)" : "blur(1px)";
 
   return {
-    initial: { opacity: 0, scale: 0.88, filter: blur },
+    initial: { opacity: 0, scale: 0.90, filter: blur },
     animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
     exit: {
       opacity: 0,
-      scale: 0.88,
+      scale: 0.90,
       filter: blur,
       transition: speechTransition(reduceMotion, 0.15),
     },

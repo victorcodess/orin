@@ -102,7 +102,7 @@ export function ChatView({
   initialPrompt,
 }: ChatViewProps) {
   const router = useRouter();
-  const { input, setInput, setControls, setIsVisible } = useChatComposer();
+  const { getInput, setInput, setControls, setIsVisible } = useChatComposer();
   const sentInitialPrompt = useRef(false);
   const [activeReadAloudMessageId, setActiveReadAloudMessageId] = useState<
     string | null
@@ -210,7 +210,7 @@ export function ChatView({
 
   const handleSubmit = useCallback(
     (value?: string) => {
-      const trimmed = (value ?? input).trim();
+      const trimmed = (value ?? getInput()).trim();
       if (!trimmed || isLoading) {
         return;
       }
@@ -228,7 +228,7 @@ export function ChatView({
       setInput("");
       setEditingMessageId(null);
     },
-    [conversationId, editingMessageId, input, isLoading, sendMessage, setInput]
+    [conversationId, editingMessageId, getInput, isLoading, sendMessage, setInput]
   );
 
   const handleRetryMessage = useCallback(

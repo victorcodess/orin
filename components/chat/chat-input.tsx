@@ -2,7 +2,7 @@
 
 import { ArrowUp01Icon, StopIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import {
   SpeechInput,
@@ -19,9 +19,13 @@ import {
   PromptInputActions,
   PromptInputTextarea,
 } from "@/components/nexus-ui/prompt-input";
+import { CommitStrategy } from "@/hooks/use-scribe";
+import {
+  getScribeToken,
+  prefetchScribeToken,
+} from "@/lib/elevenlabs/scribe-token-client";
 import { AssistantConfig } from "@/lib/orin/defaults";
 import { cn } from "@/lib/utils";
-import { CommitStrategy } from "@/hooks/use-scribe";
 
 type ChatInputProps = {
   assistant: AssistantConfig;
@@ -42,6 +46,10 @@ export function ChatInput({
 }: ChatInputProps) {
   const [textareaRef, isMultirow, isMultiline] = useResponsiveTextarea(input);
   const dictationBaseInputRef = useRef("");
+
+  useEffect(() => {
+    prefetchScribeToken();
+  }, []);
 
   return (
     <form
@@ -65,6 +73,7 @@ export function ChatInput({
           rows={isMultiline ? undefined : 1}
           value={input}
           onChange={(event) => setInput(event.target.value)}
+          onFocus={() => prefetchScribeToken()}
           placeholder={`Message ${assistant.name}...`}
           disabled={isSubmitting}
           className={cn(
@@ -89,6 +98,7 @@ export function ChatInput({
               commitStrategy={CommitStrategy.VAD}
               onStart={() => {
                 dictationBaseInputRef.current = input;
+                prefetchScribeToken();
               }}
               onChange={({ transcript }) => {
                 setInput(
@@ -115,6 +125,7 @@ export function ChatInput({
                 variant="ghost"
                 disabled={isSubmitting}
                 className="hover:bg-sidebar hover:dark:bg-input"
+                onPointerEnter={() => prefetchScribeToken()}
               />
             </SpeechInput>
             <PromptInputAction asChild>
@@ -152,22 +163,6 @@ export function ChatInput({
       </PromptInput>
     </form>
   );
-}
-
-async function getScribeToken() {
-  const response = await fetch("/api/elevenlabs/scribe-token", {
-    method: "POST",
-  });
-  const data = (await response.json().catch(() => null)) as {
-    token?: string;
-    error?: string;
-  } | null;
-
-  if (!response.ok || !data?.token) {
-    throw new Error(data?.error ?? "Failed to start dictation");
-  }
-
-  return data.token;
 }
 
 function appendDictation(baseInput: string, transcript: string) {
