@@ -13,14 +13,15 @@ import {
   type CSSProperties,
 } from "react";
 
-import { useChatComposer } from "@/components/chat/chat-composer";
 import {
   ChatMessageList,
   PENDING_ASSISTANT_ID,
 } from "@/components/chat/message-list";
 import {
-  CONVERSATIONS_CHANGED_EVENT,
-} from "@/lib/conversations-cache";
+  getComposerInput,
+  useComposerStore,
+} from "@/lib/stores/composer-store";
+import { useConversationsStore } from "@/lib/stores/conversations-store";
 import { toast } from "@/components/nexus-ui/toaster";
 import {
   Thread,
@@ -102,7 +103,9 @@ export function ChatView({
   initialPrompt,
 }: ChatViewProps) {
   const router = useRouter();
-  const { getInput, setInput, setControls, setIsVisible } = useChatComposer();
+  const setInput = useComposerStore((state) => state.setInput);
+  const setControls = useComposerStore((state) => state.setControls);
+  const setIsVisible = useComposerStore((state) => state.setIsVisible);
   const sentInitialPrompt = useRef(false);
   const [activeReadAloudMessageId, setActiveReadAloudMessageId] = useState<
     string | null
@@ -139,7 +142,7 @@ export function ChatView({
           conversationId,
           messageCount: messages.length,
         });
-        window.dispatchEvent(new CustomEvent(CONVERSATIONS_CHANGED_EVENT));
+        void useConversationsStore.getState().refresh();
       },
     });
 
@@ -210,7 +213,7 @@ export function ChatView({
 
   const handleSubmit = useCallback(
     (value?: string) => {
-      const trimmed = (value ?? getInput()).trim();
+      const trimmed = (value ?? getComposerInput()).trim();
       if (!trimmed || isLoading) {
         return;
       }
@@ -228,7 +231,7 @@ export function ChatView({
       setInput("");
       setEditingMessageId(null);
     },
-    [conversationId, editingMessageId, getInput, isLoading, sendMessage, setInput]
+    [conversationId, editingMessageId, isLoading, sendMessage, setInput]
   );
 
   const handleRetryMessage = useCallback(

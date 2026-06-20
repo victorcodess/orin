@@ -1,124 +1,20 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type Dispatch,
-  type ReactNode,
-  type SetStateAction,
-} from "react";
+import { useEffect } from "react";
 
 import { ChatInput } from "@/components/chat/chat-input";
-import { DEFAULT_ASSISTANT, type AssistantConfig } from "@/lib/orin/defaults";
+import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 import { prefetchScribeToken } from "@/lib/elevenlabs/scribe-token-client";
-
-type ChatComposerControls = {
-  assistant: AssistantConfig;
-  isSubmitting: boolean;
-  handleSubmit: (value?: string) => void;
-  onStop?: () => void;
-};
-
-type ComposerInput = {
-  subscribe: (listener: () => void) => () => void;
-  getSnapshot: () => string;
-  setInput: (input: string) => void;
-  getInput: () => string;
-};
-
-function createComposerInput(): ComposerInput {
-  let value = "";
-  const listeners = new Set<() => void>();
-
-  return {
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    getSnapshot() {
-      return value;
-    },
-    getInput() {
-      return value;
-    },
-    setInput(input) {
-      if (value !== input) {
-        value = input;
-        listeners.forEach((listener) => listener());
-      }
-    },
-  };
-}
-
-type ChatComposerContextValue = {
-  composerInput: ComposerInput;
-  setInput: (input: string) => void;
-  getInput: () => string;
-  controls: ChatComposerControls | null;
-  setControls: Dispatch<SetStateAction<ChatComposerControls | null>>;
-  isVisible: boolean;
-  setIsVisible: Dispatch<SetStateAction<boolean>>;
-};
-
-const ChatComposerContext = createContext<ChatComposerContextValue | null>(null);
-
-export function ChatComposerProvider({ children }: { children: ReactNode }) {
-  const composerInputRef = useRef<ComposerInput | null>(null);
-  if (!composerInputRef.current) {
-    composerInputRef.current = createComposerInput();
-  }
-  const composerInput = composerInputRef.current;
-
-  const [controls, setControls] = useState<ChatComposerControls | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  const value = useMemo(
-    () => ({
-      composerInput,
-      setInput: composerInput.setInput,
-      getInput: composerInput.getInput,
-      controls,
-      setControls,
-      isVisible,
-      setIsVisible,
-    }),
-    [composerInput, controls, isVisible]
-  );
-
-  return (
-    <ChatComposerContext.Provider value={value}>
-      {children}
-    </ChatComposerContext.Provider>
-  );
-}
-
-export function useChatComposer() {
-  const context = useContext(ChatComposerContext);
-  if (!context) {
-    throw new Error("useChatComposer must be used within ChatComposerProvider");
-  }
-
-  return context;
-}
-
-export function useComposerInput() {
-  const { composerInput } = useChatComposer();
-
-  return useSyncExternalStore(
-    composerInput.subscribe,
-    composerInput.getSnapshot,
-    composerInput.getSnapshot
-  );
-}
+import {
+  useComposerStore,
+  type ChatComposerControls,
+} from "@/lib/stores/composer-store";
 
 export function ChatComposerDock() {
-  const { setInput, controls, isVisible } = useChatComposer();
-  const input = useComposerInput();
+  const input = useComposerStore((state) => state.input);
+  const setInput = useComposerStore((state) => state.setInput);
+  const controls = useComposerStore((state) => state.controls);
+  const isVisible = useComposerStore((state) => state.isVisible);
 
   useEffect(() => {
     if (isVisible) {

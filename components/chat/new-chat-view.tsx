@@ -4,11 +4,11 @@ import { motion, useAnimationControls, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 
-import { useChatComposer } from "@/components/chat/chat-composer";
-import { prefetchScribeToken } from "@/lib/elevenlabs/scribe-token-client";
+import { useComposerStore } from "@/lib/stores/composer-store";
+import { useConversationsStore } from "@/lib/stores/conversations-store";
 import { ChatInput } from "@/components/chat/chat-input";
 import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
-import { CONVERSATIONS_CHANGED_EVENT } from "@/lib/conversations-cache";
+import { prefetchScribeToken } from "@/lib/elevenlabs/scribe-token-client";
 import { toast } from "@/components/nexus-ui/toaster";
 import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 
@@ -24,7 +24,7 @@ export function NewChatView() {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const controls = useAnimationControls();
-  const { setIsVisible } = useChatComposer();
+  const setIsVisible = useComposerStore((state) => state.setIsVisible);
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replay, setReplay] = useState(0);
@@ -88,7 +88,7 @@ export function NewChatView() {
           throw new Error(payload.error ?? "Failed to create chat");
         }
 
-        window.dispatchEvent(new CustomEvent(CONVERSATIONS_CHANGED_EVENT));
+        void useConversationsStore.getState().refresh();
         setInput("");
         router.push(
           `/c/${payload.id}?message=${encodeURIComponent(trimmed)}`
