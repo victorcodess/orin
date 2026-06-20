@@ -8,7 +8,7 @@ import { useComposerStore } from "@/lib/stores/composer-store";
 import { useConversationsStore } from "@/lib/stores/conversations-store";
 import { ChatInput } from "@/components/chat/chat-input";
 import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
-import { prefetchScribeToken } from "@/lib/elevenlabs/scribe-token-client";
+import { warmDictation } from "@/lib/elevenlabs/scribe-token-client";
 import { toast } from "@/components/nexus-ui/toaster";
 import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 
@@ -40,7 +40,7 @@ export function NewChatView() {
   }, [play, setIsVisible]);
 
   useEffect(() => {
-    prefetchScribeToken();
+    warmDictation();
   }, []);
 
   useEffect(() => {

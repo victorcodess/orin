@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 import { ChatInput } from "@/components/chat/chat-input";
 import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
-import { prefetchScribeToken } from "@/lib/elevenlabs/scribe-token-client";
+import { warmDictation } from "@/lib/elevenlabs/scribe-token-client";
 import {
   useComposerStore,
   type ChatComposerControls,
@@ -18,7 +18,7 @@ export function ChatComposerDock() {
 
   useEffect(() => {
     if (isVisible) {
-      prefetchScribeToken();
+      warmDictation();
     }
   }, [isVisible]);
 
