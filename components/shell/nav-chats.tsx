@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Message01Icon } from "@hugeicons/core-free-icons";
 import { AnimatePresence, motion } from "motion/react";

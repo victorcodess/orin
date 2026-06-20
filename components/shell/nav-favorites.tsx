@@ -22,7 +22,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 const MotionSidebarMenuItem = motion.create(SidebarMenuItem);
-const FAVORITE_SKELETON_COUNT = 2;
+const FAVORITE_SKELETON_COUNT = 1;
 
 const listVariants = {
   hidden: { opacity: 0 },
