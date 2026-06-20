@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { FavouriteIcon } from "@hugeicons/core-free-icons";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 
@@ -9,15 +10,19 @@ import {
   useIsLoggedIn,
   useSidebarConversations,
 } from "@/components/shell/use-sidebar-conversations";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
+  SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const MotionSidebarMenuItem = motion.create(SidebarMenuItem);
+const FAVORITE_SKELETON_COUNT = 2;
 
 const listVariants = {
   hidden: { opacity: 0 },
@@ -53,44 +58,71 @@ export function NavFavorites() {
     }
   };
 
-  if (isLoading || favoriteConversations.length === 0) {
-    return null;
-  }
-
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Favorites</SidebarGroupLabel>
       <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key="favorites"
-          variants={listVariants}
-          initial="hidden"
-          animate="show"
-        >
-          <SidebarMenu>
-            {favoriteConversations.map((conversation) => {
-              const href = `/c/${conversation.id}`;
-              const isActive = pathname === href;
-
-              return (
-                <MotionSidebarMenuItem
-                  key={conversation.id}
-                  variants={itemVariants}
-                >
-                  <NavChatItem
-                    conversation={conversation}
-                    isActive={isActive}
-                    isEditing={editingConversationId === conversation.id}
-                    isLoggedIn={isLoggedIn}
-                    onStartEdit={setEditingConversationId}
-                    onFinishEdit={() => setEditingConversationId(null)}
-                    onNavigate={closeMobileSidebar}
-                  />
+        {isLoading ? (
+          <motion.div
+            key="loader"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+          >
+            <SidebarMenu>
+              {Array.from({ length: FAVORITE_SKELETON_COUNT }, (_, index) => (
+                <SidebarMenuItem key={index}>
+                  <Skeleton className="bg-sidebar-accent/60 h-10 max-w-full animate-pulse rounded-full" />
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="favorites"
+            variants={listVariants}
+            initial="hidden"
+            animate="show"
+          >
+            <SidebarMenu>
+              {favoriteConversations.length === 0 ? (
+                <MotionSidebarMenuItem variants={itemVariants}>
+                  <SidebarMenuButton disabled className="text-muted-foreground">
+                    <HugeiconsIcon
+                      icon={FavouriteIcon}
+                      strokeWidth={2}
+                      className="size-4 shrink-0"
+                    />
+                    <span>No favorites yet</span>
+                  </SidebarMenuButton>
                 </MotionSidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
-        </motion.div>
+              ) : (
+                favoriteConversations.map((conversation) => {
+                  const href = `/c/${conversation.id}`;
+                  const isActive = pathname === href;
+
+                  return (
+                    <MotionSidebarMenuItem
+                      key={conversation.id}
+                      variants={itemVariants}
+                    >
+                      <NavChatItem
+                        conversation={conversation}
+                        isActive={isActive}
+                        isEditing={editingConversationId === conversation.id}
+                        isLoggedIn={isLoggedIn}
+                        onStartEdit={setEditingConversationId}
+                        onFinishEdit={() => setEditingConversationId(null)}
+                        onNavigate={closeMobileSidebar}
+                      />
+                    </MotionSidebarMenuItem>
+                  );
+                })
+              )}
+            </SidebarMenu>
+          </motion.div>
+        )}
       </AnimatePresence>
     </SidebarGroup>
   );

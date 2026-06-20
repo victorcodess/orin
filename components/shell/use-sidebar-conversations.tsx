@@ -85,7 +85,6 @@ function useSidebarConversationsState(): SidebarConversationsContextValue {
       }
 
       clearConversationsCache();
-      setConversations([]);
       setIsLoading(true);
       await loadConversations(userId);
     }
