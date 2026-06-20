@@ -143,6 +143,50 @@ export async function saveMessageIfNew({
   await saveMessage({ conversationId, role, content, source });
 }
 
+export async function deleteMessagesAfterUserMessage(
+  conversationId: string,
+  userMessageId: string,
+): Promise<boolean> {
+  if (!isValidUuid(userMessageId)) {
+    return false;
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: existing, error: existingError } = await supabase
+    .from("messages")
+    .select("created_at")
+    .eq("id", userMessageId)
+    .eq("conversation_id", conversationId)
+    .eq("role", "user")
+    .maybeSingle();
+
+  if (existingError) {
+    throw existingError;
+  }
+
+  if (!existing) {
+    return false;
+  }
+
+  const { error: deleteError } = await supabase
+    .from("messages")
+    .delete()
+    .eq("conversation_id", conversationId)
+    .gt("created_at", existing.created_at);
+
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  await supabase
+    .from("conversations")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", conversationId);
+
+  return true;
+}
+
 export async function updateUserMessageAndDeleteAfter({
   id,
   conversationId,
@@ -162,7 +206,7 @@ export async function updateUserMessageAndDeleteAfter({
 
   const { data: existing, error: existingError } = await supabase
     .from("messages")
-    .select("id, conversation_id, role, created_at")
+    .select("id")
     .eq("id", id)
     .eq("conversation_id", conversationId)
     .eq("role", "user")
@@ -186,20 +230,7 @@ export async function updateUserMessageAndDeleteAfter({
     throw updateError;
   }
 
-  const { error: deleteError } = await supabase
-    .from("messages")
-    .delete()
-    .eq("conversation_id", conversationId)
-    .gt("created_at", existing.created_at);
-
-  if (deleteError) {
-    throw deleteError;
-  }
-
-  await supabase
-    .from("conversations")
-    .update({ updated_at: new Date().toISOString() })
-    .eq("id", conversationId);
+  await deleteMessagesAfterUserMessage(conversationId, id);
 
   return true;
 }

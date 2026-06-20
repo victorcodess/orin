@@ -7,6 +7,7 @@ import {
   verifyConversationAccess,
 } from "@/lib/ai/conversations";
 import {
+  deleteMessagesAfterUserMessage,
   saveMessage,
   saveMessageIfNew,
   textFromUIMessage,
@@ -127,6 +128,13 @@ export async function POST(req: Request) {
 
         if (!text.trim()) {
           return;
+        }
+
+        if (lastUserMessage) {
+          await deleteMessagesAfterUserMessage(
+            conversationId,
+            lastUserMessage.id,
+          );
         }
 
         await saveMessage({
