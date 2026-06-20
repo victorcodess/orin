@@ -23,6 +23,7 @@ import {
 import { CommitStrategy } from "@/hooks/use-scribe";
 import {
   getScribeToken,
+  prefetchDictationToken,
   warmDictation,
 } from "@/lib/elevenlabs/scribe-token-client";
 import {
@@ -52,9 +53,11 @@ export function ChatInput({
 }: ChatInputProps) {
   const [textareaRef, isMultirow, isMultiline] = useResponsiveTextarea(input);
   const dictationBaseInputRef = useRef("");
+  const inputRef = useRef(input);
+  inputRef.current = input;
 
   useEffect(() => {
-    warmDictation();
+    prefetchDictationToken();
   }, []);
 
   return (
@@ -79,7 +82,7 @@ export function ChatInput({
           rows={isMultiline ? undefined : 1}
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          onFocus={() => warmDictation()}
+          onFocus={() => prefetchDictationToken()}
           placeholder={`Message ${assistant.name}...`}
           disabled={isSubmitting}
           className={cn(
@@ -103,7 +106,7 @@ export function ChatInput({
               getToken={getScribeToken}
               commitStrategy={CommitStrategy.VAD}
               onStart={() => {
-                dictationBaseInputRef.current = input;
+                dictationBaseInputRef.current = inputRef.current;
               }}
               onChange={({ transcript }) => {
                 setInput(

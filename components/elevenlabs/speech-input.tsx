@@ -422,6 +422,7 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       };
       scribeRef.current.clearTranscripts();
       setIsTokenPending(true);
+      onStart?.(buildData(transcriptsRef.current));
       dictationLog(session, "start requested");
 
       try {
@@ -447,7 +448,6 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
           return;
         }
         dictationLog(session, "connected, waiting for audio");
-        onStart?.(buildData(transcriptsRef.current));
       } catch (error) {
         dictationLog(session, "start failed", error);
         onError?.(error instanceof Error ? error : new Error(String(error)));
@@ -458,7 +458,27 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       }
     }, [getToken, microphone, onStart, onError]);
 
+    const cancel = React.useCallback(() => {
+      dictationLog(sessionRef.current, "cancel");
+      startRequestIdRef.current += 1;
+      setIsTokenPending(false);
+      sessionRef.current = null;
+      const data = buildData(transcriptsRef.current);
+      scribeRef.current.disconnect({ skipCommit: true });
+      scribeRef.current.clearTranscripts();
+      transcriptsRef.current = {
+        partialTranscript: "",
+        committedTranscripts: [],
+      };
+      onCancel?.(data);
+    }, [onCancel]);
+
     const stop = React.useCallback(() => {
+      if (!scribeRef.current.isConnected) {
+        cancel();
+        return;
+      }
+
       dictationLog(sessionRef.current, "stop");
       startRequestIdRef.current += 1;
       setIsTokenPending(false);
@@ -478,22 +498,7 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
 
       scribeRef.current.disconnect();
       onStop?.(data);
-    }, [onChange, onStop]);
-
-    const cancel = React.useCallback(() => {
-      dictationLog(sessionRef.current, "cancel");
-      startRequestIdRef.current += 1;
-      setIsTokenPending(false);
-      sessionRef.current = null;
-      const data = buildData(transcriptsRef.current);
-      scribeRef.current.disconnect({ skipCommit: true });
-      scribeRef.current.clearTranscripts();
-      transcriptsRef.current = {
-        partialTranscript: "",
-        committedTranscripts: [],
-      };
-      onCancel?.(data);
-    }, [onCancel]);
+    }, [onChange, onStop, cancel]);
 
     const contextValue: SpeechInputContextValue = React.useMemo(
       () => ({
