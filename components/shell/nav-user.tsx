@@ -23,7 +23,7 @@ import {
   UserCircle02Icon,
 } from "@hugeicons/core-free-icons";
 
-import { createClient } from "@/lib/supabase/client";
+import { useAuthStore, type SidebarUser } from "@/lib/stores/auth-store";
 import {
   openKeyboardShortcutsDialog,
   primaryModifierLabel,
@@ -48,7 +48,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { User } from "@supabase/supabase-js";
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -58,23 +57,6 @@ import {
 
 const TWITTER_URL = "https://x.com/orin__chat";
 const GITHUB_URL = "https://github.com/victorcodess/orin";
-
-type SidebarUser = {
-  name: string;
-  email: string;
-  avatar: string;
-};
-
-function toSidebarUser(authUser: User): SidebarUser {
-  return {
-    name:
-      (authUser.user_metadata?.full_name as string | undefined) ??
-      authUser.email?.split("@")[0] ??
-      "User",
-    email: authUser.email ?? "",
-    avatar: (authUser.user_metadata?.avatar_url as string | undefined) ?? "",
-  };
-}
 
 function ThemePreferenceMenu() {
   const [mounted, setMounted] = useState(false);
@@ -270,31 +252,15 @@ function SupportMenuGroup() {
 export function NavUser() {
   const router = useRouter();
   const { isMobile } = useSidebar();
-  const [user, setUser] = useState<SidebarUser | null | undefined>(undefined);
+  const user = useAuthStore((state) => state.user);
+  const signOut = useAuthStore((state) => state.signOut);
   const isLoading = user === undefined;
   const displayName = user?.name ?? "Guest";
   const displayEmail = user?.email ?? "Not signed in";
   const initials = displayName.slice(0, 2).toUpperCase();
 
-  useEffect(() => {
-    const supabase = createClient();
-
-    void supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ? toSidebarUser(data.user) : null);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ? toSidebarUser(session.user) : null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await signOut();
     router.push("/new");
   }
 
