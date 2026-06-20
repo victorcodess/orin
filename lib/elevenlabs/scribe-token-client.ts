@@ -49,6 +49,12 @@ export function prefetchScribeToken() {
   return prefetchPromise;
 }
 
+/** Prefetch token only — safe for mount/focus without user gesture. */
+export function prefetchDictationToken() {
+  void prefetchScribeToken().catch(() => {});
+}
+
+/** Prefetch token and warm mic — use on hover or just before dictation. */
 export function warmDictation(
   microphone: {
     echoCancellation?: boolean;
@@ -59,7 +65,7 @@ export function warmDictation(
     noiseSuppression: true,
   }
 ) {
-  prefetchScribeToken();
+  prefetchDictationToken();
   void warmMicrophoneAccess(microphone);
 }
 
@@ -84,6 +90,6 @@ export async function getScribeToken(
     token = await fetchScribeToken(session);
   }
 
-  prefetchScribeToken();
+  prefetchDictationToken();
   return token;
 }
