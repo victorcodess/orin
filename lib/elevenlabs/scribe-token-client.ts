@@ -4,7 +4,26 @@ import {
 } from "@/lib/elevenlabs/dictation-debug";
 import { warmMicrophoneAccess } from "@/lib/elevenlabs/warm-microphone";
 
-let prefetchPromise: Promise<string> | null = null;
+/** Discard prefetched tokens older than this before use. */
+const PREFETCH_TTL_MS = 60_000;
+
+type PrefetchCache = {
+  promise: Promise<string>;
+  startedAt: number;
+};
+
+let prefetchCache: PrefetchCache | null = null;
+
+function isPrefetchStale(startedAt: number) {
+  return Date.now() - startedAt > PREFETCH_TTL_MS;
+}
+
+function clearPrefetchIfStale() {
+  if (prefetchCache && isPrefetchStale(prefetchCache.startedAt)) {
+    dictationLog(null, "token prefetch expired");
+    prefetchCache = null;
+  }
+}
 
 async function fetchScribeToken(session: DictationSession | null = null) {
   dictationLog(session, "token fetch started");
@@ -32,21 +51,35 @@ async function fetchScribeToken(session: DictationSession | null = null) {
 }
 
 export function prefetchScribeToken() {
-  if (!prefetchPromise) {
+  clearPrefetchIfStale();
+
+  if (!prefetchCache) {
+    const startedAt = Date.now();
     dictationLog(null, "token prefetch started");
-    prefetchPromise = fetchScribeToken()
-      .then((token) => {
-        dictationLog(null, "token prefetch complete");
-        return token;
-      })
-      .catch((error) => {
-        prefetchPromise = null;
-        dictationLog(null, "token prefetch failed", error);
-        throw error;
-      });
+
+    prefetchCache = {
+      startedAt,
+      promise: fetchScribeToken()
+        .then((token) => {
+          if (isPrefetchStale(startedAt)) {
+            prefetchCache = null;
+            dictationLog(null, "token prefetch completed but expired");
+            throw new Error("Prefetched token expired");
+          }
+          dictationLog(null, "token prefetch complete");
+          return token;
+        })
+        .catch((error) => {
+          if (prefetchCache?.startedAt === startedAt) {
+            prefetchCache = null;
+          }
+          dictationLog(null, "token prefetch failed", error);
+          throw error;
+        }),
+    };
   }
 
-  return prefetchPromise;
+  return prefetchCache.promise;
 }
 
 /** Prefetch token only — safe for mount/focus without user gesture. */
@@ -72,15 +105,21 @@ export function warmDictation(
 export async function getScribeToken(
   session: DictationSession | null = null
 ): Promise<string> {
-  let token: string;
+  clearPrefetchIfStale();
 
-  if (prefetchPromise) {
+  let token: string;
+  const cached = prefetchCache;
+
+  if (cached) {
     dictationLog(session, "token cache hit (prefetched)");
-    const promise = prefetchPromise;
-    prefetchPromise = null;
+    prefetchCache = null;
 
     try {
-      token = await promise;
+      token = await cached.promise;
+      if (isPrefetchStale(cached.startedAt)) {
+        dictationLog(session, "prefetched token stale after resolve, refetching");
+        token = await fetchScribeToken(session);
+      }
     } catch {
       dictationLog(session, "prefetched token failed, refetching");
       token = await fetchScribeToken(session);
