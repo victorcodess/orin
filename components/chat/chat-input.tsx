@@ -27,6 +27,7 @@ import {
   warmDictation,
 } from "@/lib/elevenlabs/scribe-token-client";
 import {
+  enterLabel,
   hasPrimaryModifier,
   isKeyboardShortcutsDialogOpen,
   matchesShortcut,
@@ -137,7 +138,18 @@ export function ChatInput({
                 onPointerEnter={() => warmDictation()}
               />
             </SpeechInput>
-            <PromptInputAction asChild>
+            <PromptInputAction
+              asChild
+              tooltip={
+                isSubmitting && onStop
+                  ? undefined
+                  : {
+                      content: "Send message",
+                      side: "top",
+                      shortcut: enterLabel(),
+                    }
+              }
+            >
               {isSubmitting && onStop ? (
                 <Button
                   type="button"

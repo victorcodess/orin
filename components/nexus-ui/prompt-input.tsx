@@ -224,7 +224,7 @@ function PromptInputAction({
       </TooltipTrigger>
       <TooltipContent className="rounded-full" side={side}>
         {content}
-        {shortcut ? <Kbd className="rounded-md!">{shortcut}</Kbd> : null}
+        {shortcut ? <Kbd className="rounded-md! ml-1.5">{shortcut}</Kbd> : null}
       </TooltipContent>
     </Tooltip>
   );
