@@ -148,31 +148,33 @@ export async function POST(req: Request) {
       model: openai("gpt-4o-mini"),
       system: buildSystemPrompt(config),
       messages: modelMessages,
-      onFinish: async ({ text }) => {
-        debugLog("api/chat", "stream finished", {
-          textLength: text.length,
-          elapsedMs: Date.now() - startedAt,
-        });
+      onFinish: ({ text }) => {
+        void (async () => {
+          debugLog("api/chat", "stream finished", {
+            textLength: text.length,
+            elapsedMs: Date.now() - startedAt,
+          });
 
-        if (!text.trim()) {
-          return;
-        }
+          if (!text.trim()) {
+            return;
+          }
 
-        if (lastUserMessage) {
-          await deleteMessagesAfterUserMessage(
+          if (lastUserMessage) {
+            await deleteMessagesAfterUserMessage(
+              conversationId,
+              lastUserMessage.id,
+            );
+          }
+
+          await saveMessage({
             conversationId,
-            lastUserMessage.id,
-          );
-        }
+            role: "assistant",
+            content: text,
+            source: "text",
+          });
 
-        await saveMessage({
-          conversationId,
-          role: "assistant",
-          content: text,
-          source: "text",
-        });
-
-        debugLog("api/chat", "assistant message saved");
+          debugLog("api/chat", "assistant message saved");
+        })();
       },
     });
 

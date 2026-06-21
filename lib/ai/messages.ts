@@ -28,6 +28,32 @@ export function textFromUIMessage(message: UIMessage): string {
     .join("");
 }
 
+export function isAssistantReplyComplete(messages: UIMessage[]): boolean {
+  const lastUserIndex = messages.findLastIndex(
+    (message) => message.role === "user"
+  );
+
+  if (lastUserIndex === -1) {
+    return false;
+  }
+
+  const reply = messages
+    .slice(lastUserIndex + 1)
+    .find((message) => message.role === "assistant");
+
+  if (!reply) {
+    return false;
+  }
+
+  const textParts = reply.parts.filter(isTextUIPart);
+
+  if (textParts.some((part) => part.state === "streaming")) {
+    return false;
+  }
+
+  return textParts.some((part) => part.text.trim().length > 0);
+}
+
 export async function loadHistory(
   conversationId: string,
 ): Promise<MessageRow[]> {

@@ -22,6 +22,7 @@ import {
 } from "@/components/nexus-ui/thread";
 import { isKeyboardShortcutsDialogOpen } from "@/lib/keyboard-shortcuts";
 import { chatFetch } from "@/lib/ai/chat-fetch";
+import { isAssistantReplyComplete } from "@/lib/ai/messages";
 import { takePendingFirstMessage } from "@/lib/pending-first-message";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 import { cn } from "@/lib/utils";
@@ -140,7 +141,9 @@ export function ChatView({
       },
     });
 
-  const isComposerBusy = status === "streaming" || status === "submitted";
+  const isStreaming = status === "streaming" || status === "submitted";
+  const isReplyComplete = isAssistantReplyComplete(messages);
+  const isComposerBusy = isStreaming && !isReplyComplete;
 
   useEffect(() => {
     if (!isComposerBusy) {
