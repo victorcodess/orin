@@ -3,6 +3,18 @@ import { useConversationsStore } from "@/lib/stores/conversations-store";
 
 export const UNTITLED_CHAT_LABEL = "Untitled chat";
 
+export function titleFromUserMessage(
+  text: string,
+  assistantName = "Orin"
+): string {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return `Chat with ${assistantName}`;
+  }
+
+  return trimmed.length > 60 ? `${trimmed.slice(0, 57)}...` : trimmed;
+}
+
 export function conversationDisplayTitle(title: string | null | undefined) {
   return title?.trim() || UNTITLED_CHAT_LABEL;
 }

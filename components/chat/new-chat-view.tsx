@@ -2,14 +2,13 @@
 
 import { motion, useAnimationControls, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { useComposerStore } from "@/lib/stores/composer-store";
-import { useConversationsStore } from "@/lib/stores/conversations-store";
 import { ChatInput } from "@/components/chat/chat-input";
 import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
 import { prefetchDictationToken } from "@/lib/elevenlabs/scribe-token-client";
-import { toast } from "@/components/nexus-ui/toaster";
+import { markConversationCreatePending } from "@/lib/pending-conversation-create";
 import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 
 const EASE = [0.25, 0.1, 0.25, 1] as const;
@@ -26,8 +25,8 @@ export function NewChatView() {
   const controls = useAnimationControls();
   const setIsVisible = useComposerStore((state) => state.setIsVisible);
   const [input, setInput] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [replay, setReplay] = useState(0);
+  const submitLockRef = useRef(false);
 
   const play = useCallback(() => {
     controls.set("hidden");
@@ -36,6 +35,7 @@ export function NewChatView() {
 
   useLayoutEffect(() => {
     setIsVisible(false);
+    submitLockRef.current = false;
     play();
   }, [play, setIsVisible]);
 
@@ -46,7 +46,7 @@ export function NewChatView() {
   useEffect(() => {
     const onNewChat = () => {
       setInput("");
-      setIsSubmitting(false);
+      submitLockRef.current = false;
       setReplay((n) => n + 1);
       play();
     };
@@ -64,51 +64,29 @@ export function NewChatView() {
   };
 
   const handleSubmit = useCallback(
-    async (value?: string) => {
+    (value?: string) => {
       const trimmed = (value ?? input).trim();
-      if (!trimmed || isSubmitting) {
+      if (!trimmed || submitLockRef.current) {
         return;
       }
 
-      setIsSubmitting(true);
+      submitLockRef.current = true;
+      const conversationId = crypto.randomUUID();
 
-      try {
-        const response = await fetch("/api/conversations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          cache: "no-store",
-          body: JSON.stringify({ message: trimmed }),
-        });
-        const payload = (await response.json()) as {
-          id?: string;
-          error?: string;
-        };
-
-        if (!response.ok || !payload.id) {
-          throw new Error(payload.error ?? "Failed to create chat");
-        }
-
-        void useConversationsStore.getState().refresh();
-        setInput("");
-        router.push(
-          `/c/${payload.id}?message=${encodeURIComponent(trimmed)}`
-        );
-      } catch (error) {
-        toast.error("Couldn't start a new chat", {
-          description:
-            error instanceof Error ? error.message : "Please try again.",
-        });
-        setIsSubmitting(false);
-      }
+      markConversationCreatePending(conversationId);
+      setInput("");
+      router.push(
+        `/c/${conversationId}?message=${encodeURIComponent(trimmed)}`
+      );
     },
-    [input, isSubmitting, router, setInput]
+    [input, router, setInput]
   );
 
   const chatInputProps = {
     assistant,
     input,
     setInput,
-    isSubmitting,
+    isSubmitting: false,
     handleSubmit,
   };
 
@@ -125,7 +103,7 @@ export function NewChatView() {
           <p className="text-muted-foreground text-center text-sm font-medium tracking-normal md:hidden">
             Good morning, Victor!
           </p>
-          <h1 className="text-foreground font-heading md:leading-tighter w-full max-w-xs text-center text-[27px] leading-tight tracking-tight md:max-w-lg md:text-3xl lg:text-4xl">
+          <h1 className="text-foreground font-heading md:leading-tighter w-full max-w-xs text-center text-[27px] leading-tight tracking-tight md:max-w-lg md:text-3xl lg:text-4xl font-semibold">
             What&apos;s on your mind?
           </h1>
         </div>
@@ -134,7 +112,7 @@ export function NewChatView() {
           <ChatInput {...chatInputProps} />
           <NewChatSuggestions
             key={`d-${replay}`}
-            onSelect={setInput}
+            onSelect={handleSubmit}
             placement="bottom"
           />
         </div>
@@ -143,7 +121,7 @@ export function NewChatView() {
       <div className="mt-auto flex w-full max-w-3xl flex-col items-center gap-5 pb-5 text-center md:hidden">
         <NewChatSuggestions
           key={`m-${replay}`}
-          onSelect={setInput}
+          onSelect={handleSubmit}
           placement="top"
         />
         <ChatInput {...chatInputProps} />

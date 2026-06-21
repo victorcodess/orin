@@ -1,5 +1,6 @@
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import { saveMessage } from "@/lib/ai/messages";
+import { titleFromUserMessage } from "@/lib/conversation-title";
 import { debugLog } from "@/lib/debug";
 import { getSessionId } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -23,6 +24,8 @@ async function getAuthUserId(): Promise<string | null> {
 
 export async function createConversation(options?: {
   skipGreeting?: boolean;
+  id?: string;
+  initialMessage?: string;
 }): Promise<ConversationRow> {
   const supabase = createAdminClient();
   const userId = await getAuthUserId();
@@ -35,17 +38,29 @@ export async function createConversation(options?: {
 
   debugLog("conversations", "creating conversation", { userId, sessionId });
 
+  const title = options?.initialMessage
+    ? titleFromUserMessage(options.initialMessage, config.name)
+    : `Chat with ${config.name}`;
+
   const { data, error } = await supabase
     .from("conversations")
     .insert({
+      ...(options?.id ? { id: options.id } : {}),
       user_id: userId,
       session_id: sessionId,
-      title: `Chat with ${config.name}`,
+      title,
     })
     .select("id, user_id, session_id, title, is_favorited, created_at, updated_at")
     .single();
 
   if (error || !data) {
+    if (options?.id && error?.code === "23505") {
+      const existing = await getConversation(options.id);
+      if (existing) {
+        return existing;
+      }
+    }
+
     debugLog("conversations", "create failed", { error });
     throw error ?? new Error("Failed to create conversation");
   }
@@ -170,8 +185,7 @@ export async function maybeUpdateConversationTitle(
     return;
   }
 
-  const title =
-    trimmed.length > 60 ? `${trimmed.slice(0, 57)}...` : trimmed;
+  const title = titleFromUserMessage(trimmed, config.name);
   const supabase = createAdminClient();
 
   await supabase

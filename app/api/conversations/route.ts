@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import {
   createConversation,
   listConversations,
-  maybeUpdateConversationTitle,
 } from "@/lib/ai/conversations";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
@@ -27,8 +26,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as { message?: string };
+    const body = (await req.json()) as { message?: string; id?: string };
     const message = body.message?.trim();
+    const id = body.id?.trim() || undefined;
 
     if (!message) {
       return NextResponse.json(
@@ -44,10 +44,13 @@ export async function POST(req: Request) {
       await ensureSessionCookie();
     }
 
-    const conversation = await createConversation({ skipGreeting: true });
-    await maybeUpdateConversationTitle(conversation.id, message);
+    const conversation = await createConversation({
+      skipGreeting: true,
+      id,
+      initialMessage: message,
+    });
 
-    return NextResponse.json({ id: conversation.id }, {
+    return NextResponse.json(conversation, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {

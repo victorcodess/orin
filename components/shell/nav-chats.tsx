@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 
 import { NavChatItem } from "@/components/shell/nav-chat-item";
+import { usePendingConversationIdFromRoute } from "@/lib/hooks/use-is-conversation-pending";
 import { useIsLoggedIn } from "@/lib/stores/auth-store";
 import { useSidebarConversations } from "@/lib/stores/conversations-store";
 import { conversationDisplayTitle } from "@/lib/conversation-title";
@@ -44,6 +45,7 @@ export function NavChats() {
   const isLoggedIn = useIsLoggedIn();
   const { isMobile, setOpenMobile } = useSidebar();
   const { conversations, isLoading } = useSidebarConversations();
+  const pendingSidebarChatId = usePendingConversationIdFromRoute();
   const recentConversations = conversations.filter(
     (conversation) => !conversation.is_favorited,
   );
@@ -96,7 +98,12 @@ export function NavChats() {
             animate="show"
           >
             <SidebarMenu>
-              {recentConversations.length === 0 ? (
+              {pendingSidebarChatId ? (
+                <MotionSidebarMenuItem key={pendingSidebarChatId} variants={itemVariants}>
+                  <Skeleton className="bg-sidebar-accent/60 h-10 max-w-full animate-pulse rounded-full" />
+                </MotionSidebarMenuItem>
+              ) : null}
+              {recentConversations.length === 0 && !pendingSidebarChatId ? (
                 <MotionSidebarMenuItem variants={itemVariants}>
                   <SidebarMenuButton disabled className="text-muted-foreground">
                     <HugeiconsIcon

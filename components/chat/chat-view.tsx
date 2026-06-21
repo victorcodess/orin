@@ -2,19 +2,12 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
 
 import {
   ChatMessageList,
+  OPTIMISTIC_USER_ID,
   PENDING_ASSISTANT_ID,
 } from "@/components/chat/message-list";
 import {
@@ -30,6 +23,7 @@ import {
 } from "@/components/nexus-ui/thread";
 import { isKeyboardShortcutsDialogOpen } from "@/lib/keyboard-shortcuts";
 import { chatFetch } from "@/lib/ai/chat-fetch";
+import { ensureConversationCreated } from "@/lib/pending-conversation-create";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 import { cn } from "@/lib/utils";
 
@@ -142,14 +136,19 @@ export function ChatView({
           conversationId,
           messageCount: messages.length,
         });
-        void useConversationsStore.getState().refresh();
+        void useConversationsStore.getState().refresh({ silent: true });
       },
     });
 
   const isLoading = status === "streaming" || status === "submitted";
+  const isFirstReplyPending = Boolean(
+    initialPrompt?.trim() &&
+      !messages.some((message) => message.role === "assistant")
+  );
+  const isBusy = isLoading || isFirstReplyPending;
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isBusy) {
       return;
     }
 
@@ -164,7 +163,7 @@ export function ChatView({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isLoading, stop]);
+  }, [isBusy, stop]);
 
   useEffect(() => {
     if (!editingMessageId) {
@@ -191,8 +190,23 @@ export function ChatView({
     }
 
     sentInitialPrompt.current = true;
-    sendMessage({ text: prompt });
-    router.replace(`/c/${conversationId}`, { scroll: false });
+
+    void (async () => {
+      try {
+        const conversation = await ensureConversationCreated(
+          conversationId,
+          prompt
+        );
+        useConversationsStore.getState().prependConversation(conversation);
+        sendMessage({ text: prompt });
+        window.history.replaceState(null, "", `/c/${conversationId}`);
+      } catch (error) {
+        toastChatError(
+          error instanceof Error ? error : new Error("Failed to create chat")
+        );
+        router.push("/new");
+      }
+    })();
   }, [conversationId, initialPrompt, router, sendMessage]);
 
   useEffect(() => {
@@ -214,7 +228,7 @@ export function ChatView({
   const handleSubmit = useCallback(
     (value?: string) => {
       const trimmed = (value ?? getComposerInput()).trim();
-      if (!trimmed || isLoading) {
+      if (!trimmed || isBusy) {
         return;
       }
 
@@ -231,7 +245,7 @@ export function ChatView({
       setInput("");
       setEditingMessageId(null);
     },
-    [conversationId, editingMessageId, isLoading, sendMessage, setInput]
+    [conversationId, editingMessageId, isBusy, sendMessage, setInput]
   );
 
   const handleRetryMessage = useCallback(
@@ -264,18 +278,32 @@ export function ChatView({
     setIsVisible(true);
     setControls({
       assistant,
-      isSubmitting: isLoading,
+      isSubmitting: isBusy,
       handleSubmit,
       onStop: stop,
     });
-  }, [assistant, handleSubmit, isLoading, setControls, setIsVisible, stop]);
+  }, [assistant, handleSubmit, isBusy, setControls, setIsVisible, stop]);
 
-  const visibleMessages = useMemo(
-    () => messages.filter((message) => message.role !== "system"),
-    [messages]
-  );
+  const visibleMessages = useMemo(() => {
+    const base = messages.filter((message) => message.role !== "system");
+    const prompt = initialPrompt?.trim();
+
+    if (prompt && !base.some((message) => message.role === "user")) {
+      return [
+        {
+          id: OPTIMISTIC_USER_ID,
+          role: "user" as const,
+          parts: [{ type: "text" as const, text: prompt }],
+        },
+        ...base,
+      ];
+    }
+
+    return base;
+  }, [messages, initialPrompt]);
   const lastMessage = visibleMessages.at(-1);
-  const showPendingAssistant = isLoading && lastMessage?.role === "user";
+  const showPendingAssistant =
+    isFirstReplyPending || (isLoading && lastMessage?.role === "user");
   const displayMessages = showPendingAssistant
     ? [
         ...visibleMessages,
@@ -290,10 +318,15 @@ export function ChatView({
   const [hasMounted, setHasMounted] = useState(false);
 
   useLayoutEffect(() => {
+    if (initialPrompt?.trim()) {
+      setHasMounted(true);
+      return;
+    }
+
     setTimeout(() => {
       setHasMounted(true);
     }, 200);
-  }, []);
+  }, [initialPrompt]);
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-1 flex-col">
@@ -302,7 +335,8 @@ export function ChatView({
           "h-(--orin-thread-height) min-h-0 transition-opacity duration-300 [--orin-thread-height:calc(100dvh-133px)] md:[--orin-thread-height:calc(100dvh-156px)]",
           !hasMounted && "opacity-0"
         )}
-        initial={"instant"}
+        initial="instant"
+        // resize="instant"
         style={
           {
             "--orin-thread-content-gap": "24px",
@@ -321,8 +355,9 @@ export function ChatView({
             </div>
           ) : (
             <ChatMessageList
+              conversationId={conversationId}
               messages={displayMessages}
-              isLoading={isLoading}
+              isLoading={isBusy}
               editingMessageId={editingMessageId}
               readAloud={readAloud}
               onRetry={handleRetryMessage}

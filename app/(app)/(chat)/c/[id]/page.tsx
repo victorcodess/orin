@@ -9,6 +9,7 @@ import { verifyConversationAccess } from "@/lib/ai/conversations";
 import { loadHistory, toUIMessages } from "@/lib/ai/messages";
 import { debugLog } from "@/lib/debug";
 import { createClient } from "@/lib/supabase/server";
+import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 
 type ChatPageProps = {
   params: Promise<{ id: string }>;
@@ -19,6 +20,17 @@ async function ChatPageContent({ params, searchParams }: ChatPageProps) {
   await connection();
   const [{ id }, { message }] = await Promise.all([params, searchParams]);
   const initialPrompt = message?.trim() || undefined;
+
+  if (initialPrompt) {
+    return (
+      <ChatView
+        conversationId={id}
+        assistant={DEFAULT_ASSISTANT}
+        initialMessages={[]}
+        initialPrompt={initialPrompt}
+      />
+    );
+  }
 
   try {
     await verifyConversationAccess(id);
