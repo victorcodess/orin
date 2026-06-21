@@ -9,19 +9,12 @@ import { useEffect, useRef, useState } from "react";
 import { ChatOptionsMenuContent } from "@/components/chat/chat-options-menu";
 import { DeleteConversationDialog } from "@/components/chat/delete-conversation-dialog";
 import type { ConversationRow } from "@/lib/ai/conversations";
-import {
-  broadcastConversationTitleChange,
-  conversationDisplayTitle,
-  normalizeConversationTitleInput,
-  patchConversationTitle,
-} from "@/lib/conversation-title";
-import {
-  toggleConversationFavorite,
-} from "@/lib/conversation-favorite";
+import { conversationDisplayTitle } from "@/lib/conversation-title";
+import { toggleConversationFavorite } from "@/lib/conversation-favorite";
+import { useConversationTitleEdit } from "@/lib/hooks/use-conversation-title-edit";
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { SidebarMenuAction, SidebarMenuButton } from "@/components/ui/sidebar";
-import { toast } from "@/components/nexus-ui/toaster";
 import { cn } from "@/lib/utils";
 
 type NavChatItemProps = {
@@ -47,17 +40,21 @@ export function NavChatItem({
   const pathname = usePathname();
   const href = `/c/${conversation.id}`;
   const inputRef = useRef<HTMLInputElement>(null);
-  const pendingRenameFocusRef = useRef(false);
-  const [titleDraft, setTitleDraft] = useState(() =>
-    conversationDisplayTitle(conversation.title)
-  );
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (!isEditing) {
-      setTitleDraft(conversationDisplayTitle(conversation.title));
-    }
-  }, [conversation.title, isEditing]);
+  const {
+    titleDraft,
+    setTitleDraft,
+    handleBlur,
+    handleKeyDown,
+    startRenameFromMenu,
+    handleRenameMenuClose,
+  } = useConversationTitleEdit({
+    conversationId: conversation.id,
+    title: conversation.title,
+    isEditing,
+    onFinishEdit,
+  });
 
   useEffect(() => {
     if (!isEditing) {
@@ -71,65 +68,15 @@ export function NavChatItem({
   }, [isEditing]);
 
   const handleRename = () => {
-    pendingRenameFocusRef.current = true;
-    setTitleDraft(conversationDisplayTitle(conversation.title));
+    startRenameFromMenu();
     onStartEdit(conversation.id);
   };
 
-  const handleRenameMenuClose = (event: Event) => {
-    if (!pendingRenameFocusRef.current) {
-      return;
-    }
-
-    event.preventDefault();
-    pendingRenameFocusRef.current = false;
-    requestAnimationFrame(() => {
+  const handleRenameMenuCloseWithFocus = (event: Event) => {
+    handleRenameMenuClose(event, () => {
       inputRef.current?.focus();
       inputRef.current?.select();
     });
-  };
-
-  const handleCancelEdit = () => {
-    setTitleDraft(conversationDisplayTitle(conversation.title));
-    onFinishEdit();
-  };
-
-  const handleTitleBlur = async () => {
-    if (pendingRenameFocusRef.current) {
-      return;
-    }
-
-    if (!isEditing) {
-      return;
-    }
-
-    const nextTitle = normalizeConversationTitleInput(titleDraft);
-    const currentTitle = conversation.title?.trim() || null;
-
-    if (nextTitle === currentTitle) {
-      handleCancelEdit();
-      return;
-    }
-
-    const previousTitle = conversation.title;
-    broadcastConversationTitleChange(conversation.id, nextTitle);
-    onFinishEdit();
-
-    try {
-      const updated = await patchConversationTitle(conversation.id, titleDraft);
-      broadcastConversationTitleChange(conversation.id, updated.title);
-    } catch {
-      broadcastConversationTitleChange(conversation.id, previousTitle);
-      toast.error("Couldn't rename chat");
-    }
-  };
-
-  const handleDelete = () => {
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleFavorite = () => {
-    toggleConversationFavorite(conversation.id);
   };
 
   if (isEditing) {
@@ -138,17 +85,8 @@ export function NavChatItem({
         ref={inputRef}
         value={titleDraft}
         onChange={(event) => setTitleDraft(event.target.value)}
-        onBlur={handleTitleBlur}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            handleCancelEdit();
-            event.currentTarget.blur();
-          }
-
-          if (event.key === "Enter") {
-            event.currentTarget.blur();
-          }
-        }}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
         aria-label="Chat title"
         className={cn(
           "focus-visible:ring-ring/50 h-10 w-full rounded-full border-none bg-sidebar-accent px-4 text-sm font-medium shadow-none focus-visible:ring-2"
@@ -189,9 +127,9 @@ export function NavChatItem({
           isLoggedIn={isLoggedIn}
           isFavorited={conversation.is_favorited}
           onRename={handleRename}
-          onFavorite={handleFavorite}
-          onDelete={handleDelete}
-          onCloseAutoFocus={handleRenameMenuClose}
+          onFavorite={() => toggleConversationFavorite(conversation.id)}
+          onDelete={() => setIsDeleteDialogOpen(true)}
+          onCloseAutoFocus={handleRenameMenuCloseWithFocus}
         />
       </DropdownMenu>
       <DeleteConversationDialog
