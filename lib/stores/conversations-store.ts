@@ -9,15 +9,31 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 type ConversationsState = {
   userId: string | null | undefined;
   conversations: ConversationRow[];
+  deletedConversationIds: Set<string>;
   isLoading: boolean;
   init: () => () => void;
   syncForUser: (userId: string | null) => Promise<void>;
-  refresh: () => Promise<void>;
+  refresh: (options?: { silent?: boolean }) => Promise<void>;
+  prependConversation: (conversation: ConversationRow) => void;
   renameConversation: (conversationId: string, title: string | null) => void;
   setFavorite: (conversationId: string, isFavorited: boolean) => void;
   removeConversation: (conversationId: string) => void;
+  undoConversationDelete: (conversationId: string) => void;
   getConversation: (conversationId: string) => ConversationRow | undefined;
 };
+
+function withoutDeletedConversations(
+  conversations: ConversationRow[],
+  deletedConversationIds: Set<string>
+) {
+  if (deletedConversationIds.size === 0) {
+    return conversations;
+  }
+
+  return conversations.filter(
+    (conversation) => !deletedConversationIds.has(conversation.id)
+  );
+}
 
 async function fetchConversations() {
   const response = await fetch("/api/conversations", {
@@ -34,6 +50,7 @@ async function fetchConversations() {
 export const useConversationsStore = create<ConversationsState>((set, get) => ({
   userId: undefined,
   conversations: [],
+  deletedConversationIds: new Set(),
   isLoading: true,
 
   init: () => {
@@ -62,14 +79,20 @@ export const useConversationsStore = create<ConversationsState>((set, get) => ({
       return;
     }
 
-    set({ userId, conversations: [], isLoading: true });
+    set({ userId, conversations: [], deletedConversationIds: new Set(), isLoading: true });
 
     try {
       const conversations = await fetchConversations();
       debugLog("sidebar", "supabase conversations", conversations);
 
       if (get().userId === userId) {
-        set({ conversations, isLoading: false });
+        set({
+          conversations: withoutDeletedConversations(
+            conversations,
+            get().deletedConversationIds
+          ),
+          isLoading: false,
+        });
       }
     } catch {
       if (get().userId === userId) {
@@ -78,20 +101,45 @@ export const useConversationsStore = create<ConversationsState>((set, get) => ({
     }
   },
 
-  refresh: async () => {
+  refresh: async (options) => {
     const { userId } = get();
     if (userId === undefined) {
       return;
     }
 
-    set({ isLoading: true });
+    if (!options?.silent) {
+      set({ isLoading: true });
+    }
 
     try {
       const conversations = await fetchConversations();
-      set({ conversations, isLoading: false });
+      set({
+        conversations: withoutDeletedConversations(
+          conversations,
+          get().deletedConversationIds
+        ),
+        isLoading: false,
+      });
     } catch {
-      set({ isLoading: false });
+      if (!options?.silent) {
+        set({ isLoading: false });
+      }
     }
+  },
+
+  prependConversation: (conversation) => {
+    set((state) => {
+      if (state.deletedConversationIds.has(conversation.id)) {
+        return state;
+      }
+
+      return {
+        conversations: [
+          conversation,
+          ...state.conversations.filter((item) => item.id !== conversation.id),
+        ],
+      };
+    });
   },
 
   renameConversation: (conversationId, title) => {
@@ -124,10 +172,21 @@ export const useConversationsStore = create<ConversationsState>((set, get) => ({
 
   removeConversation: (conversationId) => {
     set((state) => ({
+      deletedConversationIds: new Set(state.deletedConversationIds).add(
+        conversationId
+      ),
       conversations: state.conversations.filter(
         (conversation) => conversation.id !== conversationId
       ),
     }));
+  },
+
+  undoConversationDelete: (conversationId) => {
+    set((state) => {
+      const deletedConversationIds = new Set(state.deletedConversationIds);
+      deletedConversationIds.delete(conversationId);
+      return { deletedConversationIds };
+    });
   },
 
   getConversation: (conversationId) => {

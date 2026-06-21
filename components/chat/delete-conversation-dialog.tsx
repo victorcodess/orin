@@ -45,6 +45,7 @@ export function DeleteConversationDialog({
     onDeleted?.();
 
     void deleteConversationById(conversationId).catch(() => {
+      useConversationsStore.getState().undoConversationDelete(conversationId);
       void useConversationsStore.getState().refresh();
       toast.error("Couldn't delete chat");
     });
