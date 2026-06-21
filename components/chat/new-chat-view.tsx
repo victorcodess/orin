@@ -7,9 +7,11 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useComposerStore } from "@/lib/stores/composer-store";
 import { ChatInput } from "@/components/chat/chat-input";
 import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
+import { titleFromUserMessage } from "@/lib/conversation-title";
 import { prefetchDictationToken } from "@/lib/elevenlabs/scribe-token-client";
-import { markConversationCreatePending } from "@/lib/pending-conversation-create";
+import { setPendingFirstMessage } from "@/lib/pending-first-message";
 import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
+import { useConversationsStore } from "@/lib/stores/conversations-store";
 
 const EASE = [0.25, 0.1, 0.25, 1] as const;
 const NEW_CHAT = "orin:new-chat";
@@ -72,14 +74,22 @@ export function NewChatView() {
 
       submitLockRef.current = true;
       const conversationId = crypto.randomUUID();
+      const now = new Date().toISOString();
 
-      markConversationCreatePending(conversationId);
+      useConversationsStore.getState().prependConversation({
+        id: conversationId,
+        user_id: null,
+        session_id: null,
+        title: titleFromUserMessage(trimmed, assistant.name),
+        is_favorited: false,
+        created_at: now,
+        updated_at: now,
+      });
+      setPendingFirstMessage(conversationId, trimmed);
       setInput("");
-      router.push(
-        `/c/${conversationId}?message=${encodeURIComponent(trimmed)}`
-      );
+      router.push(`/c/${conversationId}?new=1`);
     },
-    [input, router, setInput]
+    [assistant.name, input, router, setInput]
   );
 
   const chatInputProps = {

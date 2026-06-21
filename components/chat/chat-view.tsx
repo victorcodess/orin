@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 
 import {
   ChatMessageList,
-  OPTIMISTIC_USER_ID,
   PENDING_ASSISTANT_ID,
 } from "@/components/chat/message-list";
 import {
@@ -23,7 +22,7 @@ import {
 } from "@/components/nexus-ui/thread";
 import { isKeyboardShortcutsDialogOpen } from "@/lib/keyboard-shortcuts";
 import { chatFetch } from "@/lib/ai/chat-fetch";
-import { ensureConversationCreated } from "@/lib/pending-conversation-create";
+import { takePendingFirstMessage } from "@/lib/pending-first-message";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 import { cn } from "@/lib/utils";
 
@@ -87,20 +86,19 @@ type ChatViewProps = {
   conversationId: string;
   assistant: AssistantConfig;
   initialMessages: UIMessage[];
-  initialPrompt?: string;
 };
 
 export function ChatView({
   conversationId,
   assistant,
   initialMessages,
-  initialPrompt,
 }: ChatViewProps) {
   const router = useRouter();
   const setInput = useComposerStore((state) => state.setInput);
   const setControls = useComposerStore((state) => state.setControls);
   const setIsVisible = useComposerStore((state) => state.setIsVisible);
   const sentInitialPrompt = useRef(false);
+  const isNewChat = useRef(initialMessages.length === 0);
   const [activeReadAloudMessageId, setActiveReadAloudMessageId] = useState<
     string | null
   >(null);
@@ -121,7 +119,7 @@ export function ChatView({
     [conversationId]
   );
 
-  const { messages, sendMessage, regenerate, status, stop, error, clearError } =
+  const { messages, sendMessage, regenerate, status, stop, clearError } =
     useChat({
       transport,
       messages: initialMessages,
@@ -130,25 +128,22 @@ export function ChatView({
         console.error("[orin:chat-view] useChat error", chatError);
         toastChatError(chatError);
         clearError();
+
+        if (isNewChat.current) {
+          useConversationsStore.getState().removeConversation(conversationId);
+          router.push("/new");
+        }
       },
       onFinish: () => {
-        console.log("[orin:chat-view] stream finished", {
-          conversationId,
-          messageCount: messages.length,
-        });
+        isNewChat.current = false;
         void useConversationsStore.getState().refresh({ silent: true });
       },
     });
 
-  const isLoading = status === "streaming" || status === "submitted";
-  const isFirstReplyPending = Boolean(
-    initialPrompt?.trim() &&
-      !messages.some((message) => message.role === "assistant")
-  );
-  const isBusy = isLoading || isFirstReplyPending;
+  const isComposerBusy = status === "streaming" || status === "submitted";
 
   useEffect(() => {
-    if (!isBusy) {
+    if (!isComposerBusy) {
       return;
     }
 
@@ -163,7 +158,7 @@ export function ChatView({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isBusy, stop]);
+  }, [isComposerBusy, stop]);
 
   useEffect(() => {
     if (!editingMessageId) {
@@ -183,41 +178,16 @@ export function ChatView({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [cancelEditing, editingMessageId]);
 
-  useEffect(() => {
-    const prompt = initialPrompt?.trim();
+  useLayoutEffect(() => {
+    const prompt = takePendingFirstMessage(conversationId);
     if (!prompt || sentInitialPrompt.current) {
       return;
     }
 
     sentInitialPrompt.current = true;
-
-    void (async () => {
-      try {
-        const conversation = await ensureConversationCreated(
-          conversationId,
-          prompt
-        );
-        useConversationsStore.getState().prependConversation(conversation);
-        sendMessage({ text: prompt });
-        window.history.replaceState(null, "", `/c/${conversationId}`);
-      } catch (error) {
-        toastChatError(
-          error instanceof Error ? error : new Error("Failed to create chat")
-        );
-        router.push("/new");
-      }
-    })();
-  }, [conversationId, initialPrompt, router, sendMessage]);
-
-  useEffect(() => {
-    if (process.env.NODE_ENV !== "development") return;
-    console.log("[orin:chat-view] status", {
-      conversationId,
-      status,
-      messageCount: messages.length,
-      hasError: Boolean(error),
-    });
-  }, [conversationId, status, messages.length, error]);
+    sendMessage({ text: prompt });
+    window.history.replaceState(null, "", `/c/${conversationId}`);
+  }, [conversationId, sendMessage]);
 
   useEffect(() => {
     return () => {
@@ -228,15 +198,10 @@ export function ChatView({
   const handleSubmit = useCallback(
     (value?: string) => {
       const trimmed = (value ?? getComposerInput()).trim();
-      if (!trimmed || isBusy) {
+      if (!trimmed || isComposerBusy) {
         return;
       }
 
-      console.log("[orin:chat-view] sending message", {
-        conversationId,
-        preview: trimmed.slice(0, 80),
-        editingMessageId,
-      });
       sendMessage(
         editingMessageId
           ? { text: trimmed, messageId: editingMessageId }
@@ -245,7 +210,7 @@ export function ChatView({
       setInput("");
       setEditingMessageId(null);
     },
-    [conversationId, editingMessageId, isBusy, sendMessage, setInput]
+    [editingMessageId, isComposerBusy, sendMessage, setInput]
   );
 
   const handleRetryMessage = useCallback(
@@ -278,32 +243,18 @@ export function ChatView({
     setIsVisible(true);
     setControls({
       assistant,
-      isSubmitting: isBusy,
+      isSubmitting: isComposerBusy,
       handleSubmit,
       onStop: stop,
     });
-  }, [assistant, handleSubmit, isBusy, setControls, setIsVisible, stop]);
+  }, [assistant, handleSubmit, isComposerBusy, setControls, setIsVisible, stop]);
 
-  const visibleMessages = useMemo(() => {
-    const base = messages.filter((message) => message.role !== "system");
-    const prompt = initialPrompt?.trim();
-
-    if (prompt && !base.some((message) => message.role === "user")) {
-      return [
-        {
-          id: OPTIMISTIC_USER_ID,
-          role: "user" as const,
-          parts: [{ type: "text" as const, text: prompt }],
-        },
-        ...base,
-      ];
-    }
-
-    return base;
-  }, [messages, initialPrompt]);
+  const visibleMessages = useMemo(
+    () => messages.filter((message) => message.role !== "system"),
+    [messages]
+  );
   const lastMessage = visibleMessages.at(-1);
-  const showPendingAssistant =
-    isFirstReplyPending || (isLoading && lastMessage?.role === "user");
+  const showPendingAssistant = isComposerBusy && lastMessage?.role === "user";
   const displayMessages = showPendingAssistant
     ? [
         ...visibleMessages,
@@ -315,18 +266,17 @@ export function ChatView({
       ]
     : visibleMessages;
 
-  const [hasMounted, setHasMounted] = useState(false);
+  const [hasMounted, setHasMounted] = useState(initialMessages.length === 0);
 
   useLayoutEffect(() => {
-    if (initialPrompt?.trim()) {
-      setHasMounted(true);
+    if (initialMessages.length === 0) {
       return;
     }
 
     setTimeout(() => {
       setHasMounted(true);
     }, 200);
-  }, [initialPrompt]);
+  }, [initialMessages.length]);
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-1 flex-col">
@@ -336,7 +286,6 @@ export function ChatView({
           !hasMounted && "opacity-0"
         )}
         initial="instant"
-        // resize="instant"
         style={
           {
             "--orin-thread-content-gap": "24px",
@@ -346,7 +295,7 @@ export function ChatView({
         }
       >
         <ThreadContent className="mx-auto w-full max-w-3xl items-stretch gap-(--orin-thread-content-gap) pt-7.5 pb-30 md:pt-10 md:pb-(--orin-thread-content-bottom-padding)">
-          {visibleMessages.length === 0 ? (
+          {visibleMessages.length === 0 && !isComposerBusy ? (
             <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-24 text-center">
               <p className="text-foreground text-lg font-medium">
                 {assistant.name}
@@ -357,7 +306,7 @@ export function ChatView({
             <ChatMessageList
               conversationId={conversationId}
               messages={displayMessages}
-              isLoading={isBusy}
+              isLoading={isComposerBusy}
               editingMessageId={editingMessageId}
               readAloud={readAloud}
               onRetry={handleRetryMessage}

@@ -9,7 +9,6 @@ import { ChatOptionsMenuContent } from "@/components/chat/chat-options-menu";
 import { DeleteConversationDialog } from "@/components/chat/delete-conversation-dialog";
 import { toggleConversationFavorite } from "@/lib/conversation-favorite";
 import { useConversationTitleEdit } from "@/lib/hooks/use-conversation-title-edit";
-import { useIsConversationPending } from "@/lib/hooks/use-is-conversation-pending";
 import {
   useConversation,
   useConversationsStore,
@@ -34,9 +33,7 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
   );
   const chatTitle = conversation?.title ?? null;
   const isFavorited = conversation?.is_favorited ?? false;
-  const isPendingCreate = useIsConversationPending(conversationId);
-  const isTitleLoaded =
-    !isPendingCreate && (!isLoading || conversation !== undefined);
+  const isTitleLoaded = !isLoading || conversation !== undefined;
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -56,10 +53,10 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
   });
 
   useEffect(() => {
-    if (!isLoading && !conversation && !isDeleted && !isPendingCreate) {
+    if (!isLoading && !conversation && !isDeleted) {
       void useConversationsStore.getState().refresh({ silent: true });
     }
-  }, [conversation, conversationId, isDeleted, isLoading, isPendingCreate]);
+  }, [conversation, conversationId, isDeleted, isLoading]);
 
   useEffect(() => {
     setIsEditingTitle(false);

@@ -13,21 +13,20 @@ import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 
 type ChatPageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ message?: string }>;
+  searchParams: Promise<{ new?: string }>;
 };
 
 async function ChatPageContent({ params, searchParams }: ChatPageProps) {
   await connection();
-  const [{ id }, { message }] = await Promise.all([params, searchParams]);
-  const initialPrompt = message?.trim() || undefined;
+  const [{ id }, { new: isNew }] = await Promise.all([params, searchParams]);
+  const isNewChat = isNew === "1";
 
-  if (initialPrompt) {
+  if (isNewChat) {
     return (
       <ChatView
         conversationId={id}
         assistant={DEFAULT_ASSISTANT}
         initialMessages={[]}
-        initialPrompt={initialPrompt}
       />
     );
   }
@@ -56,7 +55,6 @@ async function ChatPageContent({ params, searchParams }: ChatPageProps) {
       conversationId={id}
       assistant={assistant}
       initialMessages={toUIMessages(history)}
-      initialPrompt={initialPrompt}
     />
   );
 }

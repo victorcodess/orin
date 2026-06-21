@@ -3,6 +3,8 @@ import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import {
+  createConversation,
+  getConversation,
   maybeUpdateConversationTitle,
   verifyConversationAccess,
 } from "@/lib/ai/conversations";
@@ -16,6 +18,7 @@ import {
 import { buildSystemPrompt } from "@/lib/ai/prompts";
 import { debugError, debugLog } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
+import { ensureSessionCookie } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
 export const maxDuration = 60;
@@ -63,7 +66,36 @@ export async function POST(req: Request) {
       );
     }
 
-    const conversation = await verifyConversationAccess(conversationId);
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((m) => m.role === "user");
+
+    let conversation = await getConversation(conversationId);
+
+    if (!conversation) {
+      if (!lastUserMessage) {
+        return Response.json(
+          { error: "conversationId and messages are required" },
+          { status: 400 }
+        );
+      }
+
+      const supabase = await createClient();
+      const { data: authData } = await supabase.auth.getUser();
+
+      if (!authData.user) {
+        await ensureSessionCookie();
+      }
+
+      conversation = await createConversation({
+        id: conversationId,
+        skipGreeting: true,
+        initialMessage: textFromUIMessage(lastUserMessage),
+      });
+    } else {
+      conversation = await verifyConversationAccess(conversationId);
+    }
+
     debugLog("api/chat", "access verified", {
       conversationId: conversation.id,
       userId: conversation.user_id,
@@ -78,10 +110,6 @@ export async function POST(req: Request) {
       name: config.name,
       authUserId: authData.user?.id ?? null,
     });
-
-    const lastUserMessage = [...messages]
-      .reverse()
-      .find((m) => m.role === "user");
 
     if (lastUserMessage) {
       const userText = textFromUIMessage(lastUserMessage);
