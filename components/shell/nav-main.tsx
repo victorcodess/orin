@@ -26,7 +26,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 
 function NavMenuShortcut({ keys }: { keys: string[] }) {
   return (
-    <KbdGroup className="ml-auto shrink-0 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 group-data-[collapsible=icon]:hidden max-md:hidden md:opacity-0">
+    <KbdGroup className="ml-auto shrink-0 group-hover/menu-item:opacity-100 group-data-[collapsible=icon]:hidden max-md:hidden md:opacity-0">
       {keys.map((key, index) => (
         <Kbd key={`${key}-${index}`} className="bg-sidebar dark:bg-muted">
           {key}
