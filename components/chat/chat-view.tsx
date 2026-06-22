@@ -4,6 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
+import { useStickToBottomContext } from "use-stick-to-bottom";
 
 import {
   ChatMessageList,
@@ -88,6 +89,24 @@ type ChatViewProps = {
   assistant: AssistantConfig;
   initialMessages: UIMessage[];
 };
+
+function PinThreadBottom({
+  active,
+  conversationId,
+}: {
+  active: boolean;
+  conversationId: string;
+}) {
+  const { scrollRef } = useStickToBottomContext();
+
+  useLayoutEffect(() => {
+    if (!active) return;
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [active, conversationId, scrollRef]);
+
+  return null;
+}
 
 export function ChatView({
   conversationId,
@@ -328,6 +347,10 @@ export function ChatView({
             />
           )}
         </ThreadContent>
+        <PinThreadBottom
+          active={visibleMessages.length > 0}
+          conversationId={conversationId}
+        />
         <ThreadScrollToBottom className="bottom-9 shadow-2xl md:bottom-18" />
       </Thread>
     </div>

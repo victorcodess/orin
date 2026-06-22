@@ -33,6 +33,7 @@ export function ChatRoute({ conversationId, isNew }: ChatRouteProps) {
   if (isNew) {
     return (
       <ChatView
+        key={conversationId}
         conversationId={conversationId}
         assistant={DEFAULT_ASSISTANT}
         initialMessages={[]}
@@ -46,6 +47,7 @@ export function ChatRoute({ conversationId, isNew }: ChatRouteProps) {
 
   return (
     <ChatView
+      key={conversationId}
       conversationId={conversationId}
       assistant={cached.assistant}
       initialMessages={cached.messages}
