@@ -1,9 +1,8 @@
 "use client";
 
-import type { User } from "@supabase/supabase-js";
 import { create } from "zustand";
 
-import { createClient } from "@/lib/supabase/client";
+import { signOut as signOutAction } from "@/app/auth/actions";
 
 export type SidebarUser = {
   name: string;
@@ -11,24 +10,27 @@ export type SidebarUser = {
   avatar: string;
 };
 
-function toSidebarUser(authUser: User): SidebarUser {
-  return {
-    name:
-      (authUser.user_metadata?.full_name as string | undefined) ??
-      authUser.email?.split("@")[0] ??
-      "User",
-    email: authUser.email ?? "",
-    avatar: (authUser.user_metadata?.avatar_url as string | undefined) ?? "",
-  };
-}
-
 type AuthState = {
   user: SidebarUser | null | undefined;
   userId: string | null | undefined;
   isLoggedIn: boolean;
   init: () => () => void;
+  syncSession: () => Promise<void>;
   signOut: () => Promise<void>;
 };
+
+async function fetchSession() {
+  const response = await fetch("/api/auth/session", { cache: "no-store" });
+
+  if (!response.ok) {
+    throw new Error("Failed to load session");
+  }
+
+  return (await response.json()) as {
+    user: SidebarUser | null;
+    userId: string | null;
+  };
+}
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: undefined,
@@ -36,36 +38,57 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoggedIn: false,
 
   init: () => {
-    const supabase = createClient();
-
-    void supabase.auth.getUser().then(({ data }) => {
-      const authUser = data.user;
-
-      set({
-        user: authUser ? toSidebarUser(authUser) : null,
-        userId: authUser?.id ?? null,
-        isLoggedIn: Boolean(authUser),
+    void fetchSession()
+      .then(({ user, userId }) => {
+        set({
+          user,
+          userId,
+          isLoggedIn: Boolean(user),
+        });
+      })
+      .catch(() => {
+        set({
+          user: null,
+          userId: null,
+          isLoggedIn: false,
+        });
       });
-    });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      const authUser = session?.user;
+    const onFocus = () => {
+      void useAuthStore.getState().syncSession();
+    };
 
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+    };
+  },
+
+  syncSession: async () => {
+    try {
+      const { user, userId } = await fetchSession();
       set({
-        user: authUser ? toSidebarUser(authUser) : null,
-        userId: authUser?.id ?? null,
-        isLoggedIn: Boolean(authUser),
+        user,
+        userId,
+        isLoggedIn: Boolean(user),
       });
-    });
-
-    return () => subscription.unsubscribe();
+    } catch {
+      set({
+        user: null,
+        userId: null,
+        isLoggedIn: false,
+      });
+    }
   },
 
   signOut: async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await signOutAction();
+    set({
+      user: null,
+      userId: null,
+      isLoggedIn: false,
+    });
   },
 }));
 
