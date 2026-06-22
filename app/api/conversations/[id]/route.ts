@@ -5,12 +5,42 @@ import {
   updateConversationFavorite,
   updateConversationTitle,
 } from "@/lib/ai/conversations";
+import { loadConversationData } from "@/lib/ai/load-conversation";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage, isValidUuid } from "@/lib/errors";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
+
+export async function GET(_req: Request, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+
+    if (!isValidUuid(id)) {
+      return NextResponse.json({ error: "Invalid conversation id" }, { status: 400 });
+    }
+
+    const data = await loadConversationData(id);
+
+    return NextResponse.json(data, {
+      headers: { "Cache-Control": "private, no-store" },
+    });
+  } catch (error) {
+    const message = getErrorMessage(error);
+
+    if (message === "Conversation not found") {
+      return NextResponse.json({ error: message }, { status: 404 });
+    }
+
+    if (message === "Forbidden") {
+      return NextResponse.json({ error: message }, { status: 403 });
+    }
+
+    debugError("api/conversations/[id]", "load failed", error);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
 
 export async function DELETE(_req: Request, context: RouteContext) {
   try {

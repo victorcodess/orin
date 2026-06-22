@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import {
   DEFAULT_ASSISTANT,
   type AssistantConfig,
@@ -20,7 +22,7 @@ function mapRow(row: AssistantConfigRow): AssistantConfig {
   };
 }
 
-export async function getAssistantConfig(
+export const getAssistantConfig = cache(async function getAssistantConfig(
   userId?: string | null,
 ): Promise<AssistantConfig> {
   const supabase = createAdminClient();
@@ -48,4 +50,4 @@ export async function getAssistantConfig(
   }
 
   return DEFAULT_ASSISTANT;
-}
+});
