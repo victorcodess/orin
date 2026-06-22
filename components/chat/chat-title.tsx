@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
@@ -25,16 +25,31 @@ type ChatTitleProps = {
 };
 
 export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
+  const pathname = usePathname();
+  const prevPathRef = useRef<string | null>(null);
+  const fadeInRef = useRef(true);
+
+  if (prevPathRef.current !== pathname) {
+    const prev = prevPathRef.current;
+    prevPathRef.current = pathname;
+    fadeInRef.current = prev === null || !/^\/c\/[^/]+$/.test(prev);
+  }
+
   return (
     <ChatTitleEditor
       key={conversationId}
       conversationId={conversationId}
       isLoggedIn={isLoggedIn}
+      fadeIn={fadeInRef.current}
     />
   );
 }
 
-function ChatTitleEditor({ conversationId, isLoggedIn }: ChatTitleProps) {
+function ChatTitleEditor({
+  conversationId,
+  isLoggedIn,
+  fadeIn,
+}: ChatTitleProps & { fadeIn: boolean }) {
   const router = useRouter();
   const conversation = useConversation(conversationId);
   const isLoading = useConversationsStore((state) => state.isLoading);
@@ -107,7 +122,13 @@ function ChatTitleEditor({ conversationId, isLoggedIn }: ChatTitleProps) {
   return (
     <div className="flex items-center -space-x-1.5">
       {!isTitleLoaded ? (
-        <Skeleton className="h-8 w-40 bg-accent/60 dark:bg-muted/60 animate-in fade-in-0" aria-hidden />
+        <Skeleton
+          className={cn(
+            "h-8 w-40 bg-accent/60 dark:bg-muted/60",
+            fadeIn && "animate-in fade-in-0"
+          )}
+          aria-hidden
+        />
       ) : (
         <>
           <Input
@@ -120,7 +141,8 @@ function ChatTitleEditor({ conversationId, isLoggedIn }: ChatTitleProps) {
             onKeyDown={handleKeyDown}
             aria-label="Chat title"
             className={cn(
-              "field-sizing-content h-8 max-w-80 min-w-0 rounded-full border-none px-2.5 text-sm font-medium shadow-none outline-none md:text-sm animate-in fade-in-0 cursor-text",
+              "field-sizing-content h-8 max-w-80 min-w-0 rounded-full border-none px-2.5 text-sm font-medium shadow-none outline-none md:text-sm cursor-text",
+              fadeIn && "animate-in fade-in-0",
               isEditingTitle
                 ? "focus-visible:ring-ring/50 bg-accent dark:bg-muted transition-[color,box-shadow] focus-visible:ring-2"
                 : cn(
