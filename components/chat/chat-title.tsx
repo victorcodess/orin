@@ -25,6 +25,16 @@ type ChatTitleProps = {
 };
 
 export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
+  return (
+    <ChatTitleEditor
+      key={conversationId}
+      conversationId={conversationId}
+      isLoggedIn={isLoggedIn}
+    />
+  );
+}
+
+function ChatTitleEditor({ conversationId, isLoggedIn }: ChatTitleProps) {
   const router = useRouter();
   const conversation = useConversation(conversationId);
   const isLoading = useConversationsStore((state) => state.isLoading);
@@ -57,10 +67,6 @@ export function ChatTitle({ conversationId, isLoggedIn }: ChatTitleProps) {
       void useConversationsStore.getState().refresh({ silent: true });
     }
   }, [conversation, conversationId, isDeleted, isLoading]);
-
-  useEffect(() => {
-    setIsEditingTitle(false);
-  }, [conversationId]);
 
   const focusTitleInput = useCallback(() => {
     const input = document.getElementById(

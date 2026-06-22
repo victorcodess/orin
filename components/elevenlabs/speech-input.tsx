@@ -82,20 +82,27 @@ function useBarBackgroundVisible(
   isActive: boolean,
   reduceMotion: boolean | null
 ) {
-  const [visible, setVisible] = React.useState(false);
+  const [keepVisible, setKeepVisible] = React.useState(isActive);
+  const [prevIsActive, setPrevIsActive] = React.useState(isActive);
+
+  if (isActive !== prevIsActive) {
+    setPrevIsActive(isActive);
+    if (isActive) {
+      setKeepVisible(true);
+    }
+  }
 
   React.useEffect(() => {
     if (isActive) {
-      setVisible(true);
       return;
     }
 
     const delay = reduceMotion ? 0 : BAR_CLOSE_TOTAL * 1000;
-    const id = window.setTimeout(() => setVisible(false), delay);
+    const id = window.setTimeout(() => setKeepVisible(false), delay);
     return () => window.clearTimeout(id);
   }, [isActive, reduceMotion]);
 
-  return visible;
+  return keepVisible;
 }
 
 function micIconMotion(reduceMotion: boolean | null) {
@@ -120,26 +127,27 @@ function useTrailingSlotMode(
   isActive: boolean,
   reduceMotion: boolean | null
 ) {
-  const [mode, setMode] = React.useState<TrailingSlotMode>("mic");
-  const modeRef = React.useRef(mode);
-  modeRef.current = mode;
+  const [idleMode, setIdleMode] = React.useState<TrailingSlotMode>("mic");
+  const [prevIsActive, setPrevIsActive] = React.useState(isActive);
+
+  if (isActive !== prevIsActive) {
+    setPrevIsActive(isActive);
+    if (isActive) {
+      setIdleMode("cancel");
+    }
+  }
 
   React.useEffect(() => {
-    if (isActive) {
-      setMode("cancel");
+    if (isActive || idleMode === "mic") {
       return;
     }
 
-    if (modeRef.current === "cancel") {
-      const delay = reduceMotion ? 0 : MIC_REAPPEAR_DELAY * 1000;
-      const id = window.setTimeout(() => setMode("mic"), delay);
-      return () => window.clearTimeout(id);
-    }
+    const delay = reduceMotion ? 0 : MIC_REAPPEAR_DELAY * 1000;
+    const id = window.setTimeout(() => setIdleMode("mic"), delay);
+    return () => window.clearTimeout(id);
+  }, [isActive, idleMode, reduceMotion]);
 
-    setMode("mic");
-  }, [isActive, reduceMotion]);
-
-  return mode;
+  return isActive ? "cancel" : idleMode;
 }
 
 function previewLabel({
