@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/nexus-ui/toaster";
 import { useConversationsStore } from "@/lib/stores/conversations-store";
+import { useMessagesStore } from "@/lib/stores/messages-store";
 import {
   broadcastConversationDelete,
   conversationDisplayTitle,
@@ -41,6 +42,7 @@ export function DeleteConversationDialog({
 
   const handleDelete = () => {
     broadcastConversationDelete(conversationId);
+    useMessagesStore.getState().remove(conversationId);
     onOpenChange(false);
     onDeleted?.();
 

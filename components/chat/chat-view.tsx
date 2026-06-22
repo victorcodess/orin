@@ -14,6 +14,7 @@ import {
   useComposerStore,
 } from "@/lib/stores/composer-store";
 import { useConversationsStore } from "@/lib/stores/conversations-store";
+import { useMessagesStore } from "@/lib/stores/messages-store";
 import { toast } from "@/components/nexus-ui/toaster";
 import {
   Thread,
@@ -25,7 +26,6 @@ import { chatFetch } from "@/lib/ai/chat-fetch";
 import { isAssistantReplyComplete } from "@/lib/ai/messages";
 import { takePendingFirstMessage } from "@/lib/pending-first-message";
 import type { AssistantConfig } from "@/lib/orin/defaults";
-import { cn } from "@/lib/utils";
 
 function focusComposerInput() {
   requestAnimationFrame(() => {
@@ -100,6 +100,7 @@ export function ChatView({
   const setIsVisible = useComposerStore((state) => state.setIsVisible);
   const sentInitialPrompt = useRef(false);
   const isNewChat = useRef(initialMessages.length === 0);
+  const messagesRef = useRef(initialMessages);
   const [activeReadAloudMessageId, setActiveReadAloudMessageId] = useState<
     string | null
   >(null);
@@ -132,14 +133,26 @@ export function ChatView({
 
         if (isNewChat.current) {
           useConversationsStore.getState().removeConversation(conversationId);
+          useMessagesStore.getState().remove(conversationId);
           router.push("/new");
         }
       },
       onFinish: () => {
         isNewChat.current = false;
         void useConversationsStore.getState().refresh({ silent: true });
+        const visible = messagesRef.current.filter(
+          (message) => message.role !== "system"
+        );
+        if (visible.length > 0) {
+          useMessagesStore.getState().set(conversationId, {
+            assistant,
+            messages: visible,
+          });
+        }
       },
     });
+
+  messagesRef.current = messages;
 
   const isStreaming = status === "streaming" || status === "submitted";
   const isReplyComplete = isAssistantReplyComplete(messages);
@@ -195,8 +208,20 @@ export function ChatView({
   useEffect(() => {
     return () => {
       window.speechSynthesis?.cancel();
+      const visible = messagesRef.current.filter(
+        (message) => message.role !== "system"
+      );
+      if (visible.length === 0) {
+        return;
+      }
+
+      const store = useMessagesStore.getState();
+      store.set(conversationId, {
+        assistant: store.get(conversationId)?.assistant ?? assistant,
+        messages: visible,
+      });
     };
-  }, []);
+  }, [assistant, conversationId]);
 
   const handleSubmit = useCallback(
     (value?: string) => {
@@ -269,25 +294,10 @@ export function ChatView({
       ]
     : visibleMessages;
 
-  const [hasMounted, setHasMounted] = useState(initialMessages.length === 0);
-
-  useLayoutEffect(() => {
-    if (initialMessages.length === 0) {
-      return;
-    }
-
-    setTimeout(() => {
-      setHasMounted(true);
-    }, 200);
-  }, [initialMessages.length]);
-
   return (
     <div className="relative flex h-full min-h-0 w-full flex-1 flex-col">
       <Thread
-        className={cn(
-          "h-(--orin-thread-height) min-h-0 transition-opacity duration-300 [--orin-thread-height:calc(100dvh-133px)] md:[--orin-thread-height:calc(100dvh-156px)]",
-          !hasMounted && "opacity-0"
-        )}
+        className="h-(--orin-thread-height) min-h-0 [--orin-thread-height:calc(100dvh-133px)] md:[--orin-thread-height:calc(100dvh-156px)]"
         initial="instant"
         style={
           {

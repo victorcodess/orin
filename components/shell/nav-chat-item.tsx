@@ -12,6 +12,7 @@ import type { ConversationRow } from "@/lib/ai/conversations";
 import { conversationDisplayTitle } from "@/lib/conversation-title";
 import { toggleConversationFavorite } from "@/lib/conversation-favorite";
 import { useConversationTitleEdit } from "@/lib/hooks/use-conversation-title-edit";
+import { useMessagesStore } from "@/lib/stores/messages-store";
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { SidebarMenuAction, SidebarMenuButton } from "@/components/ui/sidebar";
@@ -102,7 +103,12 @@ export function NavChatItem({
         isActive={isActive}
         className="group-hover/menu-item:bg-sidebar-accent/60 group-hover/menu-item:text-sidebar-accent-foreground group-has-data-[state=open]/menu-item:bg-sidebar-accent/60 group-has-data-[state=open]/menu-item:text-sidebar-accent-foreground"
       >
-        <Link href={href} onClick={onNavigate}>
+        <Link
+          href={href}
+          onClick={onNavigate}
+          onMouseEnter={() => useMessagesStore.getState().prefetch(conversation.id)}
+          onFocus={() => useMessagesStore.getState().prefetch(conversation.id)}
+        >
           <span className="truncate">
             {conversationDisplayTitle(conversation.title)}
           </span>
