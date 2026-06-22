@@ -1,6 +1,6 @@
 /** Change this string to try any Google Font — e.g. "Playfair Display", "Fraunces", "Syne" */
 export const HEADING_FONT_NAME =
-  process.env.NEXT_PUBLIC_HEADING_FONT ?? "Fraunces";
+  process.env.NEXT_PUBLIC_HEADING_FONT ?? "Crimson Text";
 
 export function getHeadingFontStylesheetUrl(): string {
   const family = HEADING_FONT_NAME.trim().replace(/\s+/g, "+");
