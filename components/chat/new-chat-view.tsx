@@ -59,8 +59,6 @@ export function NewChatView() {
 
       useConversationsStore.getState().prependConversation({
         id: conversationId,
-        user_id: null,
-        session_id: null,
         title: titleFromUserMessage(trimmed, assistant.name),
         is_favorited: false,
         created_at: now,

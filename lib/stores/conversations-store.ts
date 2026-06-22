@@ -2,28 +2,31 @@
 
 import { create } from "zustand";
 
-import type { ConversationRow } from "@/lib/ai/conversations";
+import {
+  type SidebarConversation,
+  toSidebarConversation,
+} from "@/lib/conversations/sidebar-conversation";
 import { debugLog } from "@/lib/debug";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
 type ConversationsState = {
   userId: string | null | undefined;
-  conversations: ConversationRow[];
+  conversations: SidebarConversation[];
   deletedConversationIds: Set<string>;
   isLoading: boolean;
   init: () => () => void;
   syncForUser: (userId: string | null) => Promise<void>;
   refresh: (options?: { silent?: boolean }) => Promise<void>;
-  prependConversation: (conversation: ConversationRow) => void;
+  prependConversation: (conversation: SidebarConversation) => void;
   renameConversation: (conversationId: string, title: string | null) => void;
   setFavorite: (conversationId: string, isFavorited: boolean) => void;
   removeConversation: (conversationId: string) => void;
   undoConversationDelete: (conversationId: string) => void;
-  getConversation: (conversationId: string) => ConversationRow | undefined;
+  getConversation: (conversationId: string) => SidebarConversation | undefined;
 };
 
 function withoutDeletedConversations(
-  conversations: ConversationRow[],
+  conversations: SidebarConversation[],
   deletedConversationIds: Set<string>
 ) {
   if (deletedConversationIds.size === 0) {
@@ -44,7 +47,11 @@ async function fetchConversations() {
     throw new Error("Failed to load conversations");
   }
 
-  return (await response.json()) as ConversationRow[];
+  const rows = (await response.json()) as Parameters<
+    typeof toSidebarConversation
+  >[0][];
+
+  return rows.map(toSidebarConversation);
 }
 
 export const useConversationsStore = create<ConversationsState>((set, get) => ({
@@ -83,7 +90,7 @@ export const useConversationsStore = create<ConversationsState>((set, get) => ({
 
     try {
       const conversations = await fetchConversations();
-      debugLog("sidebar", "supabase conversations", conversations);
+      debugLog("sidebar", "conversations", conversations);
 
       if (get().userId === userId) {
         set({

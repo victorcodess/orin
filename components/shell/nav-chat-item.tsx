@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { ChatOptionsMenuContent } from "@/components/chat/chat-options-menu";
 import { DeleteConversationDialog } from "@/components/chat/delete-conversation-dialog";
-import type { ConversationRow } from "@/lib/ai/conversations";
+import type { SidebarConversation } from "@/lib/conversations/sidebar-conversation";
 import { conversationDisplayTitle } from "@/lib/conversation-title";
 import { toggleConversationFavorite } from "@/lib/conversation-favorite";
 import { useConversationTitleEdit } from "@/lib/hooks/use-conversation-title-edit";
@@ -19,7 +19,7 @@ import { SidebarMenuAction, SidebarMenuButton } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 type NavChatItemProps = {
-  conversation: ConversationRow;
+  conversation: SidebarConversation;
   isActive: boolean;
   isEditing: boolean;
   isLoggedIn: boolean;
