@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { toast } from "@/components/nexus-ui/toaster";
 import {
@@ -25,22 +25,25 @@ export function useConversationTitleEdit({
 }: UseConversationTitleEditOptions) {
   const skipBlurSaveRef = useRef(false);
   const pendingRenameFocusRef = useRef(false);
-  const [titleDraft, setTitleDraft] = useState(() =>
-    conversationDisplayTitle(title)
-  );
-
   const displayTitle = conversationDisplayTitle(title);
+  const [editDraft, setEditDraft] = useState<string | null>(null);
+  const [prevIsEditing, setPrevIsEditing] = useState(isEditing);
 
-  useEffect(() => {
-    if (!isEditing) {
-      setTitleDraft(displayTitle);
+  if (isEditing !== prevIsEditing) {
+    setPrevIsEditing(isEditing);
+    if (isEditing) {
+      setEditDraft(displayTitle);
+    } else {
+      setEditDraft(null);
     }
-  }, [displayTitle, isEditing]);
+  }
+
+  const titleDraft = isEditing ? (editDraft ?? displayTitle) : displayTitle;
+  const setTitleDraft = setEditDraft;
 
   const cancelEdit = useCallback(() => {
-    setTitleDraft(displayTitle);
     onFinishEdit();
-  }, [displayTitle, onFinishEdit]);
+  }, [onFinishEdit]);
 
   const handleBlur = useCallback(async () => {
     if (pendingRenameFocusRef.current) {
@@ -97,7 +100,7 @@ export function useConversationTitleEdit({
 
   const startRenameFromMenu = useCallback(() => {
     pendingRenameFocusRef.current = true;
-    setTitleDraft(displayTitle);
+    setEditDraft(displayTitle);
   }, [displayTitle]);
 
   const handleRenameMenuClose = useCallback(

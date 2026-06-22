@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { useStickToBottomContext } from "use-stick-to-bottom";
@@ -135,6 +135,9 @@ export function ChatView({
     setEditingMessageId(null);
     setInput("");
   }, [setInput]);
+  const onCancelEditing = useEffectEvent(() => {
+    cancelEditing();
+  });
 
   const transport = useMemo(
     () =>
@@ -212,12 +215,12 @@ export function ChatView({
       }
 
       event.preventDefault();
-      cancelEditing();
+      onCancelEditing();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [cancelEditing, editingMessageId]);
+  }, [editingMessageId]);
 
   useLayoutEffect(() => {
     const prompt = takePendingFirstMessage(conversationId);
@@ -231,6 +234,8 @@ export function ChatView({
   }, [conversationId, sendMessage]);
 
   useEffect(() => {
+    const conversationKey = conversationId;
+
     return () => {
       window.speechSynthesis?.cancel();
       const visible = messagesRef.current.filter(
@@ -241,8 +246,8 @@ export function ChatView({
       }
 
       const store = useMessagesStore.getState();
-      store.set(conversationId, {
-        assistant: store.get(conversationId)?.assistant ?? assistant,
+      store.set(conversationKey, {
+        assistant: store.get(conversationKey)?.assistant ?? assistant,
         messages: visible,
       });
     };
