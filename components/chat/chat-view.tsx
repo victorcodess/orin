@@ -25,7 +25,7 @@ import {
 } from "@/components/nexus-ui/thread";
 import { isKeyboardShortcutsDialogOpen } from "@/lib/keyboard-shortcuts";
 import { chatFetch } from "@/lib/ai/chat-fetch";
-import { isAssistantReplyComplete } from "@/lib/ai/messages";
+import { isAssistantReplyComplete } from "@/lib/ai/message-utils";
 import { takePendingFirstMessage } from "@/lib/pending-first-message";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 

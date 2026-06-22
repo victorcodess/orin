@@ -1,4 +1,4 @@
-import type { ConversationRow } from "@/lib/ai/conversations";
+import type { ConversationRow } from "@/lib/ai/conversation-types";
 import { toast } from "@/components/nexus-ui/toaster";
 import { useConversationsStore } from "@/lib/stores/conversations-store";
 

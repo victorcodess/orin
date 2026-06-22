@@ -1,4 +1,4 @@
-import type { ConversationRow } from "@/lib/ai/conversations";
+import type { ConversationRow } from "@/lib/ai/conversation-types";
 import { useConversationsStore } from "@/lib/stores/conversations-store";
 
 export const UNTITLED_CHAT_LABEL = "Untitled chat";

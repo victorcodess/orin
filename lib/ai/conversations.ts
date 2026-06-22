@@ -1,4 +1,7 @@
+import "server-only";
+
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
+import type { ConversationRow } from "@/lib/ai/conversation-types";
 import { saveMessage } from "@/lib/ai/messages";
 import { titleFromUserMessage } from "@/lib/conversation-title";
 import { debugLog } from "@/lib/debug";
@@ -6,15 +9,7 @@ import { getSessionId } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export type ConversationRow = {
-  id: string;
-  user_id: string | null;
-  session_id: string | null;
-  title: string | null;
-  is_favorited: boolean;
-  created_at: string;
-  updated_at: string;
-};
+export type { ConversationRow } from "@/lib/ai/conversation-types";
 
 async function getAuthUserId(): Promise<string | null> {
   const supabase = await createClient();
