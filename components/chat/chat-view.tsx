@@ -4,6 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { useStickToBottomContext } from "use-stick-to-bottom";
 
 import {
@@ -27,6 +28,8 @@ import { chatFetch } from "@/lib/ai/chat-fetch";
 import { isAssistantReplyComplete } from "@/lib/ai/messages";
 import { takePendingFirstMessage } from "@/lib/pending-first-message";
 import type { AssistantConfig } from "@/lib/orin/defaults";
+
+const EASE = [0.25, 0.1, 0.25, 1] as const;
 
 function focusComposerInput() {
   requestAnimationFrame(() => {
@@ -88,6 +91,7 @@ type ChatViewProps = {
   conversationId: string;
   assistant: AssistantConfig;
   initialMessages: UIMessage[];
+  fadeIn?: boolean;
 };
 
 function PinThreadBottom({
@@ -112,8 +116,11 @@ export function ChatView({
   conversationId,
   assistant,
   initialMessages,
+  fadeIn = false,
 }: ChatViewProps) {
   const router = useRouter();
+  const reduceMotion = useReducedMotion();
+  const shouldFade = fadeIn && !reduceMotion;
   const setInput = useComposerStore((state) => state.setInput);
   const setControls = useComposerStore((state) => state.setControls);
   const setIsVisible = useComposerStore((state) => state.setIsVisible);
@@ -287,14 +294,14 @@ export function ChatView({
   );
 
   useLayoutEffect(() => {
-    setIsVisible(true);
+    setIsVisible(true, { fadeIn });
     setControls({
       assistant,
       isSubmitting: isComposerBusy,
       handleSubmit,
       onStop: stop,
     });
-  }, [assistant, handleSubmit, isComposerBusy, setControls, setIsVisible, stop]);
+  }, [assistant, fadeIn, handleSubmit, isComposerBusy, setControls, setIsVisible, stop]);
 
   const visibleMessages = useMemo(
     () => messages.filter((message) => message.role !== "system"),
@@ -314,7 +321,15 @@ export function ChatView({
     : visibleMessages;
 
   return (
-    <div className="relative flex h-full min-h-0 w-full flex-1 flex-col">
+    <motion.div
+      className="relative flex h-full min-h-0 w-full flex-1 flex-col"
+      initial={{ opacity: shouldFade ? 0 : 1 }}
+      animate={{ opacity: 1 }}
+      transition={{
+        duration: shouldFade ? 0.35 : 0,
+        ease: EASE,
+      }}
+    >
       <Thread
         className="h-(--orin-thread-height) min-h-0 [--orin-thread-height:calc(100dvh-133px)] md:[--orin-thread-height:calc(100dvh-156px)]"
         initial="instant"
@@ -353,6 +368,6 @@ export function ChatView({
         />
         <ThreadScrollToBottom className="bottom-9 shadow-2xl md:bottom-18" />
       </Thread>
-    </div>
+    </motion.div>
   );
 }

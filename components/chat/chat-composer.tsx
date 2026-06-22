@@ -18,7 +18,9 @@ export function ChatComposerDock() {
   const setInput = useComposerStore((state) => state.setInput);
   const controls = useComposerStore((state) => state.controls);
   const isVisible = useComposerStore((state) => state.isVisible);
+  const fadeIn = useComposerStore((state) => state.fadeIn);
   const reduceMotion = useReducedMotion();
+  const shouldFade = fadeIn && !reduceMotion;
 
   useEffect(() => {
     if (isVisible) {
@@ -39,11 +41,10 @@ export function ChatComposerDock() {
   return (
     <motion.div
       className="relative w-full shrink-0"
-      initial={{ opacity: reduceMotion ? 1 : 0 }}
+      initial={{ opacity: shouldFade ? 0 : 1 }}
       animate={{ opacity: 1 }}
       transition={{
-        duration: reduceMotion ? 0 : 0.35,
-        delay: reduceMotion ? 0 : 0.05,
+        duration: shouldFade ? 0.35 : 0,
         ease: EASE,
       }}
     >
