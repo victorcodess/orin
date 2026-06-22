@@ -43,6 +43,7 @@ export async function signUpWithPassword(
   _prev: AuthActionResult,
   formData: FormData,
 ): Promise<AuthActionResult> {
+  const supabase = await createClient();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const repeatPassword = String(formData.get("repeatPassword") ?? "");
@@ -55,7 +56,6 @@ export async function signUpWithPassword(
     return { error: "Passwords do not match" };
   }
 
-  const supabase = await createClient();
   const origin = await siteOrigin();
   const { error } = await supabase.auth.signUp({
     email,
@@ -76,13 +76,13 @@ export async function requestPasswordReset(
   _prev: PasswordResetResult,
   formData: FormData,
 ): Promise<PasswordResetResult> {
+  const supabase = await createClient();
   const email = String(formData.get("email") ?? "").trim();
 
   if (!email) {
     return { error: "Email is required" };
   }
 
-  const supabase = await createClient();
   const origin = await siteOrigin();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/update-password`,
@@ -99,13 +99,21 @@ export async function updatePassword(
   _prev: AuthActionResult,
   formData: FormData,
 ): Promise<AuthActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Your reset link expired. Request a new password reset." };
+  }
+
   const password = String(formData.get("password") ?? "");
 
   if (!password) {
     return { error: "Password is required" };
   }
 
-  const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {
@@ -117,5 +125,13 @@ export async function updatePassword(
 
 export async function signOut() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return;
+  }
+
   await supabase.auth.signOut();
 }
