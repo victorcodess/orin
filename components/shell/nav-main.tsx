@@ -67,16 +67,14 @@ export function NavMain() {
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
-          <SidebarMenuButton asChild>
-            <Link href="/new" onClick={closeMobileSidebar}>
-              <HugeiconsIcon
-                icon={Search01Icon}
-                strokeWidth={2}
-                className="size-4 shrink-0"
-              />
-              <span>Search chats</span>
-              <NavMenuShortcut keys={[modifier, "K"]} />
-            </Link>
+          <SidebarMenuButton className="cursor-pointer">
+            <HugeiconsIcon
+              icon={Search01Icon}
+              strokeWidth={2}
+              className="size-4 shrink-0"
+            />
+            <span>Search chats</span>
+            <NavMenuShortcut keys={[modifier, "K"]} />
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
