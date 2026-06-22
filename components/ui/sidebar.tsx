@@ -8,6 +8,8 @@ import { motion } from "motion/react";
 import { Slot } from "radix-ui";
 
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
+import { useKeyboardShortcutLabels } from "@/lib/hooks/use-keyboard-shortcut-labels";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
@@ -208,7 +210,7 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none";
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
-  const [isMounted, setIsMounted] = React.useState(false);
+  const hydrated = useHydrated();
   const [hoverMode, setHoverMode] = React.useState<"hidden" | "peek" | "open">(
     "hidden"
   );
@@ -229,10 +231,6 @@ function Sidebar({
   const isHoverOverlay =
     enableHoverPeek &&
     (hoverChromeMode === "peek" || hoverChromeMode === "open");
-
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   React.useEffect(() => {
     setHoverMode("hidden");
@@ -335,7 +333,7 @@ function Sidebar({
     );
   }
 
-  if (isMobile && isMounted) {
+  if (isMobile && hydrated) {
     return (
       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
         <SheetContent
@@ -424,15 +422,8 @@ function Sidebar({
 }
 
 function useSidebarShortcutModifier() {
-  const [modifierKey, setModifierKey] = React.useState("Ctrl");
-
-  React.useEffect(() => {
-    setModifierKey(
-      /Mac|iPhone|iPod|iPad/i.test(navigator.userAgent) ? "⌘" : "Ctrl"
-    );
-  }, []);
-
-  return modifierKey;
+  const { modifier } = useKeyboardShortcutLabels();
+  return modifier;
 }
 
 function useMinWidth(px: number) {
@@ -576,6 +567,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
 
   return (
     <button
+      type="button"
       data-sidebar="rail"
       data-slot="sidebar-rail"
       aria-label="Toggle Sidebar"

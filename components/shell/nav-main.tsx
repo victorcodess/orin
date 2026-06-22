@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import {
   Add01Icon,
   Home01Icon,
@@ -18,10 +17,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  primaryModifierLabel,
-  shiftLabel,
-} from "@/lib/keyboard-shortcuts";
+import { useKeyboardShortcutLabels } from "@/lib/hooks/use-keyboard-shortcut-labels";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 function NavMenuShortcut({ keys }: { keys: string[] }) {
@@ -39,13 +35,7 @@ function NavMenuShortcut({ keys }: { keys: string[] }) {
 export function NavMain() {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
-  const [modifier, setModifier] = useState("⌘");
-  const [shift, setShift] = useState("⇧");
-
-  useEffect(() => {
-    setModifier(primaryModifierLabel());
-    setShift(shiftLabel());
-  }, []);
+  const { modifier, shift } = useKeyboardShortcutLabels();
 
   const closeMobileSidebar = () => {
     if (isMobile) {

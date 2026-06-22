@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
 import {
   ArrowUpRight01Icon,
   ChatFeedback01Icon,
@@ -26,9 +25,9 @@ import {
 import { useAuthStore, type SidebarUser } from "@/lib/stores/auth-store";
 import {
   openKeyboardShortcutsDialog,
-  primaryModifierLabel,
-  shiftLabel,
 } from "@/lib/keyboard-shortcuts";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
+import { useKeyboardShortcutLabels } from "@/lib/hooks/use-keyboard-shortcut-labels";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -72,24 +71,12 @@ function MenuShortcutKeys({ keys }: { keys: string[] }) {
 }
 
 function useShortcutLabels() {
-  const [modifier, setModifier] = useState("⌘");
-  const [shift, setShift] = useState("⇧");
-
-  useEffect(() => {
-    setModifier(primaryModifierLabel());
-    setShift(shiftLabel());
-  }, []);
-
-  return { modifier, shift };
+  return useKeyboardShortcutLabels();
 }
 
 function ThemePreferenceMenu() {
-  const [mounted, setMounted] = useState(false);
+  const hydrated = useHydrated();
   const { theme, setTheme } = useTheme();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     <DropdownMenuSub>
@@ -103,7 +90,7 @@ function ThemePreferenceMenu() {
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
         <DropdownMenuRadioGroup
-          value={mounted ? theme : "system"}
+          value={hydrated ? theme : "system"}
           onValueChange={setTheme}
         >
           <DropdownMenuRadioItem value="system">

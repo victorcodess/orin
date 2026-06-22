@@ -2,24 +2,19 @@
 
 import { Moon02Icon, Sun01Icon } from "@hugeicons/core-free-icons";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@/lib/utils";
 
 const ThemeSwitcher = ({className}: {className?: string}) => {
-  const [mounted, setMounted] = useState(false);
+  const hydrated = useHydrated();
   const { resolvedTheme, setTheme } = useTheme();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
+  if (!hydrated) {
     return null;
   }
-
 
   const isDark = resolvedTheme === "dark";
 
