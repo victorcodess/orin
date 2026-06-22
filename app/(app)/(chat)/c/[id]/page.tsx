@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-
 import { ChatPageClient } from "@/components/chat/chat-page-client";
 
 type ChatPageProps = {
@@ -8,9 +6,5 @@ type ChatPageProps = {
 };
 
 export default function ChatPage(props: ChatPageProps) {
-  return (
-    <Suspense fallback={null}>
-      <ChatPageClient {...props} />
-    </Suspense>
-  );
+  return <ChatPageClient {...props} />;
 }
