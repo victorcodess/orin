@@ -123,7 +123,6 @@ export function ChatView({
   const shouldFade = fadeIn && !reduceMotion;
   const setInput = useComposerStore((state) => state.setInput);
   const setControls = useComposerStore((state) => state.setControls);
-  const setIsVisible = useComposerStore((state) => state.setIsVisible);
   const sentInitialPrompt = useRef(false);
   const isNewChat = useRef(initialMessages.length === 0);
   const messagesRef = useRef(initialMessages);
@@ -294,14 +293,15 @@ export function ChatView({
   );
 
   useLayoutEffect(() => {
-    setIsVisible(true, { fadeIn });
     setControls({
       assistant,
       isSubmitting: isComposerBusy,
       handleSubmit,
       onStop: stop,
     });
-  }, [assistant, fadeIn, handleSubmit, isComposerBusy, setControls, setIsVisible, stop]);
+
+    return () => setControls(null);
+  }, [assistant, handleSubmit, isComposerBusy, setControls, stop]);
 
   const visibleMessages = useMemo(
     () => messages.filter((message) => message.role !== "system"),

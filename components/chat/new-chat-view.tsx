@@ -1,10 +1,9 @@
 "use client";
 
-import { motion, useAnimationControls, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
-import { useComposerStore } from "@/lib/stores/composer-store";
 import { ChatInput } from "@/components/chat/chat-input";
 import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
 import { titleFromUserMessage } from "@/lib/conversation-title";
@@ -24,22 +23,13 @@ export function NewChatView() {
   const assistant = DEFAULT_ASSISTANT;
   const router = useRouter();
   const reduceMotion = useReducedMotion();
-  const controls = useAnimationControls();
-  const setIsVisible = useComposerStore((state) => state.setIsVisible);
   const [input, setInput] = useState("");
   const [replay, setReplay] = useState(0);
   const submitLockRef = useRef(false);
 
-  const play = useCallback(() => {
-    controls.set("hidden");
-    void controls.start("show");
-  }, [controls]);
-
   useLayoutEffect(() => {
-    setIsVisible(false);
     submitLockRef.current = false;
-    play();
-  }, [play, setIsVisible]);
+  }, []);
 
   useEffect(() => {
     prefetchDictationToken();
@@ -50,20 +40,11 @@ export function NewChatView() {
       setInput("");
       submitLockRef.current = false;
       setReplay((n) => n + 1);
-      play();
     };
 
     window.addEventListener(NEW_CHAT, onNewChat);
     return () => window.removeEventListener(NEW_CHAT, onNewChat);
-  }, [play, setInput]);
-
-  const fade = {
-    hidden: { opacity: reduceMotion ? 1 : 0 },
-    show: {
-      opacity: 1,
-      transition: { duration: reduceMotion ? 0 : 0.35, ease: EASE },
-    },
-  };
+  }, []);
 
   const handleSubmit = useCallback(
     (value?: string) => {
@@ -89,7 +70,7 @@ export function NewChatView() {
       setInput("");
       router.push(`/c/${conversationId}?new=1`);
     },
-    [assistant.name, input, router, setInput]
+    [assistant.name, input, router]
   );
 
   const chatInputProps = {
@@ -103,9 +84,12 @@ export function NewChatView() {
   return (
     <motion.div
       className="relative flex h-full min-h-0 flex-1 flex-col items-center justify-center p-4 pb-0"
-      initial={false}
-      // animate={controls}
-      variants={fade}
+      initial={{ opacity: reduceMotion ? 1 : 0 }}
+      animate={{ opacity: 1 }}
+      transition={{
+        duration: reduceMotion ? 0 : 0.35,
+        ease: EASE,
+      }}
     >
       <div className="absolute inset-0 bottom-0 size-full bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_60%,#f97015_280%)] md:dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]" />
       <div className="absolute top-[calc(50%-138px)] left-1/2 -mt-10 flex w-full -translate-x-1/2 flex-col items-center justify-center gap-12 px-10 md:top-[calc(50%-103.5px)] md:px-20">
