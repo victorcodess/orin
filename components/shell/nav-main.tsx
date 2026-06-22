@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   Add01Icon,
   Home01Icon,
@@ -9,7 +10,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 import { signalNewChat } from "@/components/chat/new-chat-view";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import {
   SidebarGroup,
   SidebarMenu,
@@ -17,10 +18,34 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  primaryModifierLabel,
+  shiftLabel,
+} from "@/lib/keyboard-shortcuts";
+import { HugeiconsIcon } from "@hugeicons/react";
+
+function NavMenuShortcut({ keys }: { keys: string[] }) {
+  return (
+    <KbdGroup className="ml-auto shrink-0 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 group-data-[collapsible=icon]:hidden max-md:hidden md:opacity-0">
+      {keys.map((key, index) => (
+        <Kbd key={`${key}-${index}`} className="bg-sidebar dark:bg-muted">
+          {key}
+        </Kbd>
+      ))}
+    </KbdGroup>
+  );
+}
 
 export function NavMain() {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
+  const [modifier, setModifier] = useState("⌘");
+  const [shift, setShift] = useState("⇧");
+
+  useEffect(() => {
+    setModifier(primaryModifierLabel());
+    setShift(shiftLabel());
+  }, []);
 
   const closeMobileSidebar = () => {
     if (isMobile) {
@@ -47,6 +72,7 @@ export function NavMain() {
                 className="size-4 shrink-0"
               />
               <span>New chat</span>
+              <NavMenuShortcut keys={[shift, modifier, "O"]} />
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
@@ -59,6 +85,7 @@ export function NavMain() {
                 className="size-4 shrink-0"
               />
               <span>Search chats</span>
+              <NavMenuShortcut keys={[modifier, "K"]} />
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>

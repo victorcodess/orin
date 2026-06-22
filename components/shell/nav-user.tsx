@@ -27,6 +27,7 @@ import { useAuthStore, type SidebarUser } from "@/lib/stores/auth-store";
 import {
   openKeyboardShortcutsDialog,
   primaryModifierLabel,
+  shiftLabel,
 } from "@/lib/keyboard-shortcuts";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,12 +41,12 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { HugeiconsIcon, IconSvgElement } from "@hugeicons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -57,6 +58,30 @@ import {
 
 const TWITTER_URL = "https://x.com/orin__chat";
 const GITHUB_URL = "https://github.com/victorcodess/orin";
+
+function MenuShortcutKeys({ keys }: { keys: string[] }) {
+  return (
+    <KbdGroup className="ml-auto shrink-0">
+      {keys.map((key, index) => (
+        <Kbd key={`${key}-${index}`} className="bg-sidebar dark:bg-muted">
+          {key}
+        </Kbd>
+      ))}
+    </KbdGroup>
+  );
+}
+
+function useShortcutLabels() {
+  const [modifier, setModifier] = useState("⌘");
+  const [shift, setShift] = useState("⇧");
+
+  useEffect(() => {
+    setModifier(primaryModifierLabel());
+    setShift(shiftLabel());
+  }, []);
+
+  return { modifier, shift };
+}
 
 function ThemePreferenceMenu() {
   const [mounted, setMounted] = useState(false);
@@ -191,13 +216,7 @@ function UserMenuHeader({
 }
 
 function LearnMoreMenu() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const shortcutsLabel = mounted ? `${primaryModifierLabel()}/` : "⌘/";
+  const { modifier } = useShortcutLabels();
 
   return (
     <DropdownMenuSub>
@@ -217,7 +236,7 @@ function LearnMoreMenu() {
         <ExternalMenuItem href={GITHUB_URL}>GitHub</ExternalMenuItem>
         <DropdownMenuDeferredItem onSelect={openKeyboardShortcutsDialog}>
           Keyboard shortcuts
-          <DropdownMenuShortcut>{shortcutsLabel}</DropdownMenuShortcut>
+          <MenuShortcutKeys keys={[modifier, "/"]} />
         </DropdownMenuDeferredItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -252,6 +271,7 @@ function SupportMenuGroup() {
 export function NavUser() {
   const router = useRouter();
   const { isMobile } = useSidebar();
+  const { modifier, shift } = useShortcutLabels();
   const user = useAuthStore((state) => state.user);
   const signOut = useAuthStore((state) => state.signOut);
   const isLoading = user === undefined;
@@ -381,7 +401,7 @@ export function NavUser() {
                               className="size-4 shrink-0"
                             />
                             Settings
-                            <DropdownMenuShortcut>⇧⌘,</DropdownMenuShortcut>
+                            <MenuShortcutKeys keys={[shift, modifier, ","]} />
                           </Link>
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
