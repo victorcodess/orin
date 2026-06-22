@@ -1,6 +1,7 @@
 "use client";
 
 import { isTextUIPart, type UIMessage } from "ai";
+import { useReducedMotion } from "motion/react";
 import {
   useCallback,
   useLayoutEffect,
@@ -53,8 +54,22 @@ export function ChatMessageList({
   onEdit,
   onCancelEdit,
 }: ChatMessageListProps) {
+  const reduceMotion = useReducedMotion();
+  const initialLastId = useRef<{ conv: string; id: string | null }>({
+    conv: conversationId,
+    id: messages.at(-1)?.id ?? null,
+  });
   const previousUserMessageRef = useRef<HTMLDivElement | null>(null);
   const [previousUserMessageHeight, setPreviousUserMessageHeight] = useState(0);
+
+  if (initialLastId.current.conv !== conversationId) {
+    initialLastId.current = {
+      conv: conversationId,
+      id: messages.at(-1)?.id ?? null,
+    };
+  } else if (initialLastId.current.id === null && messages.at(-1)?.id) {
+    initialLastId.current.id = messages.at(-1)?.id ?? null;
+  }
 
   const lastIndex = messages.length - 1;
   const editingMessageIndex = editingMessageId
@@ -104,6 +119,27 @@ export function ChatMessageList({
   }, [previousUserMessageIndex]);
 
   const firstUserIndex = messages.findIndex((message) => message.role === "user");
+  const messageKeys = messages.map((message, index) => {
+    const isAssistant = message.role === "assistant";
+    const precedingUserMessage = isAssistant
+      ? messages
+          .slice(0, index)
+          .findLast((item) => item.role === "user")
+      : undefined;
+    const assistantMessageIndex = isAssistant
+      ? messages
+          .slice(0, index + 1)
+          .filter((item) => item.role === "assistant").length
+      : 0;
+
+    return message.role === "user" && index === firstUserIndex
+      ? `${conversationId}::user`
+      : isAssistant && precedingUserMessage
+        ? assistantMessageIndex === 1
+          ? `${conversationId}::assistant`
+          : `${precedingUserMessage.id}::assistant`
+        : message.id;
+  });
 
   return (
     <>
@@ -122,25 +158,14 @@ export function ChatMessageList({
         const isUser = message.role === "user";
         const showActions = isUser
           ? text.trim().length > 0
-          : text.trim().length > 0 && message.id !== PENDING_ASSISTANT_ID;
-        const precedingUserMessage = isAssistant
-          ? messages
-              .slice(0, index)
-              .findLast((item) => item.role === "user")
-          : undefined;
-        const assistantMessageIndex = isAssistant
-          ? messages
-              .slice(0, index + 1)
-              .filter((item) => item.role === "assistant").length
-          : 0;
-        const messageKey =
-          message.role === "user" && index === firstUserIndex
-            ? `${conversationId}::user`
-            : isAssistant && precedingUserMessage
-              ? assistantMessageIndex === 1
-                ? `${conversationId}::assistant`
-                : `${precedingUserMessage.id}::assistant`
-              : message.id;
+          : text.trim().length > 0 &&
+            message.id !== PENDING_ASSISTANT_ID &&
+            !(isLoading && isLast);
+        const messageKey = messageKeys[index];
+        const shouldFade =
+          isLast &&
+          !reduceMotion &&
+          message.id !== initialLastId.current.id;
 
         return (
           <Message
@@ -169,20 +194,22 @@ export function ChatMessageList({
           >
             <MessageStack>
               <MessageContent
-                className={
-                  isEditingMessage
-                    ? "animate-pulse outline-1 outline-dashed outline-primary [&_svg]:opacity-0"
-                    : undefined
-                }
-              >
-                {showTyping ? (
-                  <TextShimmer className="text-muted-foreground text-sm">
-                    Thinking...
-                  </TextShimmer>
-                ) : (
-                  <MessageMarkdown>{text}</MessageMarkdown>
-                )}
-              </MessageContent>
+                  className={cn(
+                    isEditingMessage &&
+                      "animate-pulse outline-1 outline-dashed outline-primary [&_svg]:opacity-0",
+                    shouldFade &&
+                      "animate-in fade-in-0 fill-mode-both duration-200",
+                    shouldFade && isAssistant && "delay-150"
+                  )}
+                >
+                  {showTyping ? (
+                    <TextShimmer className="text-muted-foreground text-sm">
+                      Thinking...
+                    </TextShimmer>
+                  ) : (
+                    <MessageMarkdown>{text}</MessageMarkdown>
+                  )}
+                </MessageContent>
               {showActions ? (
                 <ChatMessageActions
                   from={message.role === "user" ? "user" : "assistant"}
@@ -194,6 +221,11 @@ export function ChatMessageList({
                   onRetry={onRetry}
                   onEdit={onEdit}
                   onCancelEdit={onCancelEdit}
+                  className={cn(
+                    shouldFade &&
+                      isAssistant &&
+                      "animate-in fade-in-0 fill-mode-both duration-200 delay-[120ms]"
+                  )}
                 />
               ) : null}
             </MessageStack>

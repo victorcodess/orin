@@ -48,6 +48,7 @@ type ChatMessageActionsProps = {
   onRetry: (messageId: string) => void;
   onEdit: (messageId: string, text: string) => void;
   onCancelEdit: () => void;
+  className?: string;
 };
 
 function CopyMessageAction({ text }: { text: string }) {
@@ -186,6 +187,7 @@ export function ChatMessageActions({
   onRetry,
   onEdit,
   onCancelEdit,
+  className,
 }: ChatMessageActionsProps) {
   const isAssistant = from === "assistant";
 
@@ -193,6 +195,7 @@ export function ChatMessageActions({
     <MessageActions
       className={cn(
         "transition-opacity duration-150",
+        className,
         isAssistant
           ? "opacity-100"
           : "md:opacity-0 group-hover/message:opacity-100 focus-within:opacity-100"
