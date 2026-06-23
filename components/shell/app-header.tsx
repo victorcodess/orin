@@ -2,13 +2,11 @@
 
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
-import {
-  BubbleChatTemporaryIcon,
-  Share01Icon,
-} from "@hugeicons/core-free-icons";
+import { BubbleChatTemporaryIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 import { ChatTitle } from "@/components/chat/chat-title";
+import { VoiceCallButton } from "@/components/voice/voice-call-button";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
@@ -36,12 +34,8 @@ export function AppHeader() {
   const isLoggedIn = useIsLoggedIn();
   const { isEmptyChat, conversationId } = useMemo(
     () => getChatContext(pathname),
-    [pathname]
+    [pathname],
   );
-  const isActiveChat = Boolean(conversationId);
-
-  const showTemporaryChatAction = isEmptyChat;
-  const showShareAction = isActiveChat;
 
   return (
     <header className="to-background from-background/0 flex h-16 pb-2 shrink-0 items-center justify-between gap-2 bg-linear-to-t to-25% px-4 absolute inset-x-0 top-0 z-2">
@@ -54,31 +48,8 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2">
-        {showShareAction ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex">
-                <Button
-                  variant="ghost"
-                  size="icon-lg"
-                  className="hover:bg-accent hover:dark:bg-muted"
-                  disabled={!isLoggedIn}
-                  aria-label="Share chat"
-                >
-                  <HugeiconsIcon
-                    icon={Share01Icon}
-                    strokeWidth={2}
-                    className="size-4.75 shrink-0"
-                  />
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" align="center">
-              {isLoggedIn ? "Share chat" : "Sign in to share"}
-            </TooltipContent>
-          </Tooltip>
-        ) : null}
-        {showTemporaryChatAction ? (
+        {conversationId ? <VoiceCallButton conversationId={conversationId} /> : null}
+        {isEmptyChat ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

@@ -1,0 +1,83 @@
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+
+import { getAssistantConfig } from "@/lib/ai/assistant-config";
+import { verifyConversationAccess } from "@/lib/ai/conversations";
+import { debugError } from "@/lib/debug";
+import { getErrorMessage } from "@/lib/errors";
+import { markVoiceCallPending } from "@/lib/voice/conversation-binding";
+import { createClient } from "@/lib/supabase/server";
+
+type VoiceTokenRequest = {
+  conversationId?: string;
+};
+
+export async function POST(req: Request) {
+  try {
+    const body = (await req.json()) as VoiceTokenRequest;
+    const { conversationId } = body;
+
+    if (!conversationId) {
+      return Response.json({ error: "conversationId is required" }, { status: 400 });
+    }
+
+    const apiKey = process.env.ELEVENLABS_API_KEY;
+    const engineId = process.env.ELEVENLABS_SPEECH_ENGINE_ID;
+
+    if (!apiKey || apiKey.includes("your-")) {
+      return Response.json(
+        {
+          error:
+            "ELEVENLABS_API_KEY is not configured. Set it in .env.local and restart the dev server.",
+        },
+        { status: 500 },
+      );
+    }
+
+    if (!engineId || engineId.includes("your-")) {
+      return Response.json(
+        {
+          error:
+            "ELEVENLABS_SPEECH_ENGINE_ID is not configured. Create a Speech Engine resource and set the id in .env.local.",
+        },
+        { status: 500 },
+      );
+    }
+
+    await verifyConversationAccess(conversationId);
+
+    const supabase = await createClient();
+    const { data: authData } = await supabase.auth.getUser();
+    const assistant = await getAssistantConfig(authData.user?.id);
+    const pendingToken = await markVoiceCallPending(conversationId);
+
+    const elevenlabs = new ElevenLabsClient({ apiKey });
+    const { token } = await elevenlabs.conversationalAi.conversations.getWebrtcToken({
+      agentId: engineId,
+    });
+
+    return Response.json(
+      {
+        token,
+        pendingToken,
+        assistant: {
+          name: assistant.name,
+          voiceId: assistant.voiceId,
+          firstMessage: assistant.firstMessage,
+        },
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    debugError("api/voice/token", "request failed", error);
+
+    const message = getErrorMessage(error);
+    const status =
+      message === "Forbidden"
+        ? 403
+        : message === "Conversation not found"
+          ? 404
+          : 500;
+
+    return Response.json({ error: message }, { status });
+  }
+}

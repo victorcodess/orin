@@ -48,6 +48,7 @@ export function ChatRoute({ conversationId, isNew }: ChatRouteProps) {
         conversationId={conversationId}
         assistant={DEFAULT_ASSISTANT}
         initialMessages={[]}
+        initialMessageSources={{}}
       />
     );
   }
@@ -63,6 +64,7 @@ export function ChatRoute({ conversationId, isNew }: ChatRouteProps) {
       conversationId={conversationId}
       assistant={cached.assistant}
       initialMessages={cached.messages}
+      initialMessageSources={cached.messageSources ?? {}}
     />
   );
 }

@@ -10,6 +10,8 @@ import {
   type CSSProperties,
 } from "react";
 
+import { Call02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Message,
   MessageContent,
@@ -17,6 +19,7 @@ import {
   MessageStack,
 } from "@/components/nexus-ui/message";
 import { TextShimmer } from "@/components/nexus-ui/text-shimmer";
+import type { MessageRow } from "@/lib/ai/message-utils";
 import { cn } from "@/lib/utils";
 import {
   ChatMessageActions,
@@ -29,12 +32,19 @@ export const OPTIMISTIC_USER_ID = "__orin-optimistic-user__";
 type ChatMessageListProps = {
   conversationId: string;
   messages: UIMessage[];
+  messageSources?: Record<string, MessageRow["source"]>;
   isLoading: boolean;
   editingMessageId: string | null;
   readAloud: ReadAloudState;
   onRetry: (messageId: string) => void;
   onEdit: (messageId: string, text: string) => void;
   onCancelEdit: () => void;
+  /**
+   * Message id that should never play the entry fade. Used after a voice call
+   * ends: the live transcript is replaced by the canonical DB thread (new ids),
+   * and without this the last bubble would re-fade as if it were brand new.
+   */
+  noFadeMessageId?: string | null;
 };
 
 function textFromMessage(message: UIMessage) {
@@ -47,12 +57,14 @@ function textFromMessage(message: UIMessage) {
 export function ChatMessageList({
   conversationId,
   messages,
+  messageSources = {},
   isLoading,
   editingMessageId,
   readAloud,
   onRetry,
   onEdit,
   onCancelEdit,
+  noFadeMessageId = null,
 }: ChatMessageListProps) {
   const reduceMotion = useReducedMotion();
   const initialLastId = useRef<{ conv: string; id: string | null }>({
@@ -118,27 +130,22 @@ export function ChatMessageList({
     return () => resizeObserver.disconnect();
   }, [previousUserMessageIndex]);
 
+  // Stable keys for the first user/assistant bubble keep the new-chat intro
+  // animation smooth across the optimistic→persisted swap. Everything else keys
+  // on the (unique) message id, avoiding the duplicate-key collisions that
+  // happened when consecutive assistant turns shared a preceding user message.
   const firstUserIndex = messages.findIndex((message) => message.role === "user");
+  const firstAssistantIndex = messages.findIndex(
+    (message) => message.role === "assistant",
+  );
   const messageKeys = messages.map((message, index) => {
-    const isAssistant = message.role === "assistant";
-    const precedingUserMessage = isAssistant
-      ? messages
-          .slice(0, index)
-          .findLast((item) => item.role === "user")
-      : undefined;
-    const assistantMessageIndex = isAssistant
-      ? messages
-          .slice(0, index + 1)
-          .filter((item) => item.role === "assistant").length
-      : 0;
-
-    return message.role === "user" && index === firstUserIndex
-      ? `${conversationId}::user`
-      : isAssistant && precedingUserMessage
-        ? assistantMessageIndex === 1
-          ? `${conversationId}::assistant`
-          : `${precedingUserMessage.id}::assistant`
-        : message.id;
+    if (message.role === "user" && index === firstUserIndex) {
+      return `${conversationId}::user`;
+    }
+    if (message.role === "assistant" && index === firstAssistantIndex) {
+      return `${conversationId}::assistant`;
+    }
+    return message.id;
   });
 
   return (
@@ -162,10 +169,12 @@ export function ChatMessageList({
             message.id !== PENDING_ASSISTANT_ID &&
             !(isLoading && isLast);
         const messageKey = messageKeys[index];
+        const isVoiceMessage = messageSources[message.id] === "voice";
         const shouldFade =
           isLast &&
           !reduceMotion &&
-          message.id !== initialLastId.current.id;
+          message.id !== initialLastId.current.id &&
+          message.id !== noFadeMessageId;
 
         return (
           <Message
@@ -207,7 +216,19 @@ export function ChatMessageList({
                       Thinking...
                     </TextShimmer>
                   ) : (
-                    <MessageMarkdown>{text}</MessageMarkdown>
+                    <>
+                      {isVoiceMessage ? (
+                        <div className="text-muted-foreground mb-2 flex items-center gap-1.5 text-xs font-medium">
+                          <HugeiconsIcon
+                            icon={Call02Icon}
+                            strokeWidth={2}
+                            className="size-3.5 shrink-0"
+                          />
+                          <span>Spoken</span>
+                        </div>
+                      ) : null}
+                      <MessageMarkdown>{text}</MessageMarkdown>
+                    </>
                   )}
                 </MessageContent>
               {showActions ? (

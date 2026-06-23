@@ -1,7 +1,11 @@
 {
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently -n web,voice -c blue,magenta \"next dev\" \"npm run dev:voice\"",
+    "dev:web": "next dev",
+    "dev:voice": "node --require ./server/stubs/register-server-only.cjs --import tsx server/index.ts",
+    "dev:tunnel": "cloudflared tunnel --url http://localhost:3001",
+    "verify:voice": "tsx scripts/verify-voice-setup.mts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -47,6 +51,9 @@
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
+  "overrides": {
+    "livekit-client": "2.16.1"
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
@@ -56,11 +63,14 @@
     "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
+    "concurrently": "^9.2.1",
+    "dotenv": "^17.2.3",
     "postcss": "^8",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "supabase": "^2.105.0",
     "tailwindcss": "^4.3.0",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

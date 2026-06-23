@@ -55,6 +55,8 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/c/") ||
     pathname.startsWith("/api/chat") ||
     pathname.startsWith("/api/conversations") ||
+    pathname.startsWith("/api/voice") ||
+    pathname.startsWith("/api/elevenlabs") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth");

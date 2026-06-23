@@ -4,12 +4,15 @@ Orin is a voice-enabled AI companion you can text and call. Orin acts like a fri
 
 ## Current status
 
-**Phase 1 is complete.** Phase 2 (voice sidecar + call overlay) is next.
+**Phase 2 in progress:** voice calls with inline or fullscreen UI, Speech Engine sidecar, and live voice transcripts in chat.
 
 Shipped so far:
 
 - Landing page, app shell, inset sidebar with chat history
 - Text chat with streaming replies (`/api/chat`, Vercel AI SDK)
+- Speech-to-text dictation in composer (ElevenLabs Scribe)
+- Read aloud for assistant messages
+- Voice calls: header call button, inline/fullscreen overlay, `/api/voice/token`, voice sidecar
 - Conversation persistence (anon `orin_session` cookie or authed `user_id`)
 - Favorites, title editing, message regenerate/edit
 - Generated Supabase types in `types/database.ts`
@@ -42,6 +45,8 @@ Shipped so far:
 | `/c/[id]` | Conversation thread |
 | `/api/chat` | Streaming text chat |
 | `/api/conversations` | List / create conversations |
+| `/api/voice/token` | Mint WebRTC token for voice calls |
+| `/api/voice/bind` | Bind ElevenLabs session to Orin conversation |
 
 Anonymous reads and writes for conversations go through server routes using the service role where RLS does not cover anon access.
 
@@ -70,7 +75,7 @@ See [docs/adr/](docs/adr/) for architecture decisions. Build order:
 |-------|-------|--------|
 | 0 | Foundation — Tailwind v4, Nexus UI, schema, rebrand | Done |
 | 1 | Text chat MVP — stream, persist, default Orin | Done |
-| 2 | Voice calls + live transcript in chat | Next |
+| 2 | Voice calls + live transcript in chat | In progress |
 | 3 | Customization (name, personality, voice) | Planned |
 | 4 | Auth + free tier limits | Planned |
 | 5 | Credits + payments | Planned |

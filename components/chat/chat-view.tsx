@@ -6,6 +6,7 @@ import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRe
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { useStickToBottomContext } from "use-stick-to-bottom";
+import { useShallow } from "zustand/react/shallow";
 
 import {
   ChatMessageList,
@@ -25,9 +26,18 @@ import {
 } from "@/components/nexus-ui/thread";
 import { isKeyboardShortcutsDialogOpen } from "@/lib/keyboard-shortcuts";
 import { chatFetch } from "@/lib/ai/chat-fetch";
+import { registerChatCopyProvider } from "@/lib/chat/chat-copy-registry";
+import { formatChatForCopy } from "@/lib/chat/format-chat-for-copy";
 import { isAssistantReplyComplete } from "@/lib/ai/message-utils";
+import type { MessageRow } from "@/lib/ai/message-utils";
 import { useReadAloud } from "@/lib/hooks/use-read-aloud";
 import { takePendingFirstMessage } from "@/lib/pending-first-message";
+import { useIsVoiceCallActive, useVoiceCallStore } from "@/lib/stores/voice-call-store";
+import {
+  EMPTY_VOICE_LIVE_MESSAGES,
+  useVoiceLiveMessagesStore,
+  voiceLiveMessagesToUi,
+} from "@/lib/stores/voice-live-messages-store";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 
 const EASE = [0.25, 0.1, 0.25, 1] as const;
@@ -92,15 +102,18 @@ type ChatViewProps = {
   conversationId: string;
   assistant: AssistantConfig;
   initialMessages: UIMessage[];
+  initialMessageSources?: Record<string, MessageRow["source"]>;
   fadeIn?: boolean;
 };
 
 function PinThreadBottom({
   active,
   conversationId,
+  messageCount,
 }: {
   active: boolean;
   conversationId: string;
+  messageCount: number;
 }) {
   const { scrollRef } = useStickToBottomContext();
 
@@ -108,7 +121,7 @@ function PinThreadBottom({
     if (!active) return;
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [active, conversationId, scrollRef]);
+  }, [active, conversationId, messageCount, scrollRef]);
 
   return null;
 }
@@ -117,6 +130,7 @@ export function ChatView({
   conversationId,
   assistant,
   initialMessages,
+  initialMessageSources = {},
   fadeIn = false,
 }: ChatViewProps) {
   const router = useRouter();
@@ -128,6 +142,8 @@ export function ChatView({
   const isNewChat = useRef(initialMessages.length === 0);
   const messagesRef = useRef(initialMessages);
   const readAloud = useReadAloud(assistant.voiceId);
+  const [messageSources, setMessageSources] = useState(initialMessageSources);
+  const messageSourcesRef = useRef(messageSources);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const cancelEditing = useCallback(() => {
     setEditingMessageId(null);
@@ -147,7 +163,7 @@ export function ChatView({
     [conversationId]
   );
 
-  const { messages, sendMessage, regenerate, status, stop, clearError } =
+  const { messages, sendMessage, regenerate, status, stop, clearError, setMessages } =
     useChat({
       transport,
       messages: initialMessages,
@@ -173,12 +189,86 @@ export function ChatView({
           useMessagesStore.getState().set(conversationId, {
             assistant,
             messages: visible,
+            messageSources: messageSourcesRef.current,
           });
         }
       },
     });
 
   messagesRef.current = messages;
+  messageSourcesRef.current = messageSources;
+
+  const voiceCallActive = useIsVoiceCallActive(conversationId);
+  const voiceCallStatus = useVoiceCallStore((state) =>
+    state.conversationId === conversationId ? state.status : "idle",
+  );
+  const liveVoiceMessages = useVoiceLiveMessagesStore(
+    useShallow((state) =>
+      state.conversationId === conversationId
+        ? state.messages
+        : EMPTY_VOICE_LIVE_MESSAGES,
+    ),
+  );
+  const liveAgentStreaming = liveVoiceMessages.some((message) => message.streaming);
+
+  const prevVoiceCallStatusRef = useRef(voiceCallStatus);
+  // After a voice call, the live transcript is swapped for the canonical DB
+  // thread (fresh ids). Remember the last id so the message list doesn't
+  // re-animate a bubble that was already on screen.
+  const [noFadeMessageId, setNoFadeMessageId] = useState<string | null>(null);
+
+  // When a call ends, the canonical thread lives in the DB (the sidecar persists
+  // each voice turn). Reload it and replace the ephemeral live transcript so the
+  // chat shows the full, correctly-ordered text + voice history.
+  useEffect(() => {
+    const previous = prevVoiceCallStatusRef.current;
+    prevVoiceCallStatusRef.current = voiceCallStatus;
+
+    const endedCall = previous !== "idle" && voiceCallStatus === "idle";
+
+    if (!endedCall) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const response = await fetch(`/api/conversations/${conversationId}`);
+        if (!response.ok || cancelled) {
+          return;
+        }
+
+        const data = (await response.json()) as {
+          messages?: UIMessage[];
+          messageSources?: Record<string, MessageRow["source"]>;
+        };
+
+        if (cancelled || !data.messages) {
+          return;
+        }
+
+        setNoFadeMessageId(data.messages.at(-1)?.id ?? null);
+        setMessages(data.messages);
+        setMessageSources(data.messageSources ?? {});
+        useMessagesStore.getState().set(conversationId, {
+          assistant,
+          messages: data.messages,
+          messageSources: data.messageSources ?? {},
+        });
+      } catch (error) {
+        console.error("[orin:chat-view] failed to sync voice messages", error);
+      } finally {
+        if (!cancelled) {
+          useVoiceLiveMessagesStore.getState().reset();
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [assistant, conversationId, setMessages, voiceCallStatus]);
 
   const isStreaming = status === "streaming" || status === "submitted";
   const isReplyComplete = isAssistantReplyComplete(messages);
@@ -246,6 +336,7 @@ export function ChatView({
       store.set(conversationKey, {
         assistant: store.get(conversationKey)?.assistant ?? assistant,
         messages: visible,
+        messageSources: messageSourcesRef.current,
       });
     };
   }, [assistant, conversationId]);
@@ -301,20 +392,62 @@ export function ChatView({
 
   const visibleMessages = useMemo(
     () => messages.filter((message) => message.role !== "system"),
-    [messages]
+    [messages],
   );
-  const lastMessage = visibleMessages.at(-1);
+  const liveVoiceUiMessages = useMemo(
+    () => voiceLiveMessagesToUi(liveVoiceMessages),
+    [liveVoiceMessages],
+  );
+  const mergedVisibleMessages = useMemo(
+    () => [...visibleMessages, ...liveVoiceUiMessages],
+    [liveVoiceUiMessages, visibleMessages],
+  );
+  const lastMessage = mergedVisibleMessages.at(-1);
   const showPendingAssistant = isComposerBusy && lastMessage?.role === "user";
   const displayMessages = showPendingAssistant
     ? [
-        ...visibleMessages,
+        ...mergedVisibleMessages,
         {
           id: PENDING_ASSISTANT_ID,
           role: "assistant" as const,
           parts: [],
         },
       ]
-    : visibleMessages;
+    : mergedVisibleMessages;
+
+  const displayMessageSources = useMemo(() => {
+    const sources = { ...messageSources };
+
+    for (const message of liveVoiceUiMessages) {
+      sources[message.id] = "voice";
+    }
+
+    return sources;
+  }, [liveVoiceUiMessages, messageSources]);
+
+  const copyChatRef = useRef({
+    conversationId,
+    assistantName: assistant.name,
+    messages: mergedVisibleMessages,
+    messageSources: displayMessageSources,
+    voiceCallStatus,
+  });
+
+  copyChatRef.current = {
+    conversationId,
+    assistantName: assistant.name,
+    messages: mergedVisibleMessages,
+    messageSources: displayMessageSources,
+    voiceCallStatus,
+  };
+
+  useEffect(() => {
+    registerChatCopyProvider(conversationId, () =>
+      formatChatForCopy(copyChatRef.current),
+    );
+
+    return () => registerChatCopyProvider(conversationId, null);
+  }, [conversationId]);
 
   return (
     <motion.div
@@ -338,7 +471,7 @@ export function ChatView({
         }
       >
         <ThreadContent className="mx-auto w-full max-w-3xl items-stretch gap-(--orin-thread-content-gap) pt-15 md:pt-10 pb-30 md:pb-(--orin-thread-content-bottom-padding)">
-          {visibleMessages.length === 0 && !isComposerBusy ? (
+          {mergedVisibleMessages.length === 0 && !isComposerBusy ? (
             <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-24 text-center">
               <p className="text-foreground text-lg font-medium">
                 {assistant.name}
@@ -349,18 +482,21 @@ export function ChatView({
             <ChatMessageList
               conversationId={conversationId}
               messages={displayMessages}
-              isLoading={isComposerBusy}
+              messageSources={displayMessageSources}
+              isLoading={isComposerBusy || liveAgentStreaming}
               editingMessageId={editingMessageId}
               readAloud={readAloud}
               onRetry={handleRetryMessage}
               onEdit={handleEditMessage}
               onCancelEdit={cancelEditing}
+              noFadeMessageId={noFadeMessageId}
             />
           )}
         </ThreadContent>
         <PinThreadBottom
-          active={visibleMessages.length > 0}
+          active={mergedVisibleMessages.length > 0 || voiceCallActive}
           conversationId={conversationId}
+          messageCount={mergedVisibleMessages.length}
         />
         <ThreadScrollToBottom className="bottom-9 shadow-2xl md:bottom-18" />
       </Thread>

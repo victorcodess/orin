@@ -4,10 +4,12 @@ import type { UIMessage } from "ai";
 import { create } from "zustand";
 
 import type { AssistantConfig } from "@/lib/orin/defaults";
+import type { MessageRow } from "@/lib/ai/message-utils";
 
 export type ConversationCache = {
   assistant: AssistantConfig;
   messages: UIMessage[];
+  messageSources: Record<string, MessageRow["source"]>;
 };
 
 type MessagesState = {
