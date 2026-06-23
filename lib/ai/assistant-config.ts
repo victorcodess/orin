@@ -39,15 +39,16 @@ export const getAssistantConfig = cache(async function getAssistantConfig(
     }
   }
 
-  const { data: defaultConfig } = await supabase
-    .from("assistant_configs")
-    .select("name, personality, voice_id, first_message")
-    .eq("is_default", true)
-    .maybeSingle();
+  // const { data: defaultConfig } = await supabase
+  //   .from("assistant_configs")
+  //   .select("name, personality, voice_id, first_message")
+  //   .eq("is_default", true)
+  //   .maybeSingle();
+  //
+  // if (defaultConfig) {
+  //   return mapRow(defaultConfig);
+  // }
 
-  if (defaultConfig) {
-    return mapRow(defaultConfig);
-  }
-
+  // Platform default lives in code until Phase 3 user customization.
   return DEFAULT_ASSISTANT;
 });
