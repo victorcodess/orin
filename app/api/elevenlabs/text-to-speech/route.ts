@@ -1,4 +1,10 @@
-const TTS_MODEL = "eleven_flash_v2_5";
+import { debugLog } from "@/lib/debug";
+import { READ_ALOUD_TTS_MODEL } from "@/lib/elevenlabs/tts-config";
+import {
+  downloadCachedReadAloudAudio,
+  getReadAloudOwnerId,
+  uploadCachedReadAloudAudio,
+} from "@/lib/elevenlabs/read-aloud-storage";
 
 type TextToSpeechRequestBody = {
   text?: string;
@@ -6,6 +12,7 @@ type TextToSpeechRequestBody = {
 };
 
 export async function POST(req: Request) {
+  const startedAt = Date.now();
   const apiKey = process.env.ELEVENLABS_API_KEY;
 
   if (!apiKey || apiKey.includes("your-")) {
@@ -30,6 +37,34 @@ export async function POST(req: Request) {
     return Response.json({ error: "Voice ID is required" }, { status: 400 });
   }
 
+  let ownerId: string | null = null;
+
+  try {
+    ownerId = await getReadAloudOwnerId();
+    const cachedAudio = await downloadCachedReadAloudAudio({
+      ownerId,
+      text,
+      voiceId,
+    });
+
+    if (cachedAudio) {
+      debugLog("api/tts", "cache hit", {
+        ownerId,
+        elapsedMs: Date.now() - startedAt,
+      });
+
+      return new Response(cachedAudio, {
+        headers: {
+          "Content-Type": "audio/mpeg",
+          "Cache-Control": "private, max-age=31536000, immutable",
+          "X-Read-Aloud-Cache": "hit",
+        },
+      });
+    }
+  } catch (error) {
+    debugLog("api/tts", "cache lookup failed, continuing without cache", error);
+  }
+
   const response = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`,
     {
@@ -41,7 +76,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         text,
-        model_id: TTS_MODEL,
+        model_id: READ_ALOUD_TTS_MODEL,
         output_format: "mp3_44100_128",
       }),
       cache: "no-store",
@@ -55,10 +90,30 @@ export async function POST(req: Request) {
     );
   }
 
-  return new Response(response.body, {
+  const audio = await response.arrayBuffer();
+
+  if (ownerId) {
+    try {
+      await uploadCachedReadAloudAudio({
+        ownerId,
+        text,
+        voiceId,
+        audio,
+      });
+      debugLog("api/tts", "cache stored", {
+        ownerId,
+        elapsedMs: Date.now() - startedAt,
+      });
+    } catch (error) {
+      debugLog("api/tts", "cache store failed", error);
+    }
+  }
+
+  return new Response(audio, {
     headers: {
       "Content-Type": "audio/mpeg",
-      "Cache-Control": "no-store",
+      "Cache-Control": "private, max-age=31536000, immutable",
+      "X-Read-Aloud-Cache": "miss",
     },
   });
 }
