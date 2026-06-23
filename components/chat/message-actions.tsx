@@ -3,40 +3,27 @@
 import {
   Copy01Icon,
   Edit03Icon,
+  Loading03Icon,
   PauseIcon,
   PlayIcon,
   Refresh04Icon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   MessageAction,
   MessageActionGroup,
   MessageActions,
 } from "@/components/nexus-ui/message";
-import { toast } from "@/components/nexus-ui/toaster";
 import { Button } from "@/components/ui/button";
+import type { ReadAloudState } from "@/lib/hooks/use-read-aloud";
 import { cn } from "@/lib/utils";
 
 const COPIED_RESET_MS = 1500;
 const messageActionButtonClassName =
   "text-muted-foreground hover:text-foreground hover:bg-muted/70 hover:dark:bg-secondary/70";
-
-type ReadAloudState = {
-  activeMessageId: string | null;
-  isPaused: boolean;
-  setActiveMessageId: Dispatch<SetStateAction<string | null>>;
-  setIsPaused: Dispatch<SetStateAction<boolean>>;
-};
 
 type ChatMessageActionsProps = {
   from: "user" | "assistant";
@@ -107,70 +94,53 @@ function ReadAloudMessageAction({
   readAloud: ReadAloudState;
 }) {
   const isReading = readAloud.activeMessageId === messageId;
-  const isPlaying = isReading && !readAloud.isPaused;
+  const isLoadingAudio = isReading && readAloud.isLoading;
+  const isPlaying = isReading && !readAloud.isPaused && !readAloud.isLoading;
 
   const handleReadAloud = useCallback(() => {
-    if (!("speechSynthesis" in window)) {
-      toast.error("Read aloud isn't supported in this browser");
-      return;
-    }
-
-    if (isPlaying) {
-      window.speechSynthesis.pause();
-      readAloud.setIsPaused(true);
-      return;
-    }
-
-    if (isReading && readAloud.isPaused) {
-      window.speechSynthesis.resume();
-      readAloud.setIsPaused(false);
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.onend = () => {
-      readAloud.setActiveMessageId((current) =>
-        current === messageId ? null : current
-      );
-      readAloud.setIsPaused(false);
-    };
-    utterance.onerror = () => {
-      readAloud.setActiveMessageId((current) =>
-        current === messageId ? null : current
-      );
-      readAloud.setIsPaused(false);
-    };
-
-    readAloud.setActiveMessageId(messageId);
-    readAloud.setIsPaused(false);
-    window.speechSynthesis.speak(utterance);
-  }, [isPlaying, isReading, messageId, readAloud, text]);
+    void readAloud.toggle(messageId, text);
+  }, [messageId, readAloud, text]);
 
   return (
     <MessageAction
       asChild
-      tooltip={isPlaying ? "Pause" : isReading ? "Resume" : "Read aloud"}
+      tooltip={
+        isLoadingAudio
+          ? "Loading audio"
+          : isPlaying
+            ? "Pause"
+            : isReading
+              ? "Resume"
+              : "Read aloud"
+      }
     >
       <Button
         type="button"
         variant="ghost"
         size="icon-sm"
-        className={messageActionButtonClassName}
+        className={cn(
+          messageActionButtonClassName,
+          isPlaying && "text-foreground"
+        )}
         aria-label={
-          isPlaying
-            ? "Pause reading message"
-            : isReading
-              ? "Resume reading message"
-              : "Read message aloud"
+          isLoadingAudio
+            ? "Loading audio"
+            : isPlaying
+              ? "Pause reading message"
+              : isReading
+                ? "Resume reading message"
+                : "Read message aloud"
         }
+        aria-busy={isLoadingAudio}
+        disabled={isLoadingAudio}
         onClick={handleReadAloud}
       >
         <HugeiconsIcon
-          icon={isPlaying ? PauseIcon : PlayIcon}
+          icon={
+            isLoadingAudio ? Loading03Icon : isPlaying ? PauseIcon : PlayIcon
+          }
           strokeWidth={1.75}
-          className="size-4.5"
+          className={cn("size-4.5", isLoadingAudio && "animate-spin")}
         />
       </Button>
     </MessageAction>
@@ -259,4 +229,4 @@ export function ChatMessageActions({
   );
 }
 
-export type { ReadAloudState };
+export type { ReadAloudState } from "@/lib/hooks/use-read-aloud";

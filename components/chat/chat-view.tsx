@@ -26,6 +26,7 @@ import {
 import { isKeyboardShortcutsDialogOpen } from "@/lib/keyboard-shortcuts";
 import { chatFetch } from "@/lib/ai/chat-fetch";
 import { isAssistantReplyComplete } from "@/lib/ai/message-utils";
+import { useReadAloud } from "@/lib/hooks/use-read-aloud";
 import { takePendingFirstMessage } from "@/lib/pending-first-message";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 
@@ -126,10 +127,7 @@ export function ChatView({
   const sentInitialPrompt = useRef(false);
   const isNewChat = useRef(initialMessages.length === 0);
   const messagesRef = useRef(initialMessages);
-  const [activeReadAloudMessageId, setActiveReadAloudMessageId] = useState<
-    string | null
-  >(null);
-  const [isReadAloudPaused, setIsReadAloudPaused] = useState(false);
+  const readAloud = useReadAloud(assistant.voiceId);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const cancelEditing = useCallback(() => {
     setEditingMessageId(null);
@@ -237,7 +235,6 @@ export function ChatView({
     const conversationKey = conversationId;
 
     return () => {
-      window.speechSynthesis?.cancel();
       const visible = messagesRef.current.filter(
         (message) => message.role !== "system"
       );
@@ -287,15 +284,9 @@ export function ChatView({
     [setInput]
   );
 
-  const readAloud = useMemo(
-    () => ({
-      activeMessageId: activeReadAloudMessageId,
-      isPaused: isReadAloudPaused,
-      setActiveMessageId: setActiveReadAloudMessageId,
-      setIsPaused: setIsReadAloudPaused,
-    }),
-    [activeReadAloudMessageId, isReadAloudPaused]
-  );
+  useEffect(() => {
+    readAloud.stop();
+  }, [conversationId, readAloud.stop]);
 
   useLayoutEffect(() => {
     setControls({
