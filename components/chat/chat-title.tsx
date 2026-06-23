@@ -7,6 +7,8 @@ import { HugeiconsIcon } from "@hugeicons/react";
 
 import { ChatOptionsMenuContent } from "@/components/chat/chat-options-menu";
 import { DeleteConversationDialog } from "@/components/chat/delete-conversation-dialog";
+import { toast } from "@/components/nexus-ui/toaster";
+import { copyChatToClipboard } from "@/lib/chat/chat-copy-registry";
 import { toggleConversationFavorite } from "@/lib/conversation-favorite";
 import { useConversationTitleEdit } from "@/lib/hooks/use-conversation-title-edit";
 import {
@@ -119,6 +121,22 @@ function ChatTitleEditor({
     handleRenameMenuClose(event, focusTitleInput);
   };
 
+  const handleCopyChat = () => {
+    void copyChatToClipboard(conversationId).then((result) => {
+      if (result.ok) {
+        toast.success("Chat copied to clipboard");
+        return;
+      }
+
+      if (result.reason === "empty") {
+        toast.error("Nothing to copy yet");
+        return;
+      }
+
+      toast.error("Chat isn't ready to copy yet");
+    });
+  };
+
   return (
     <div className="flex items-center -space-x-1.5">
       {!isTitleLoaded ? (
@@ -180,6 +198,7 @@ function ChatTitleEditor({
               isFavorited={isFavorited}
               onRename={handleRename}
               onFavorite={() => toggleConversationFavorite(conversationId)}
+              onCopyChat={handleCopyChat}
               onDelete={() => setIsDeleteDialogOpen(true)}
               onCloseAutoFocus={handleRenameMenuCloseWithFocus}
             />

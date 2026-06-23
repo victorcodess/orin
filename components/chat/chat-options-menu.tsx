@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Copy01Icon,
   Delete02Icon,
   Edit02Icon,
 } from "@hugeicons/core-free-icons";
@@ -20,6 +21,7 @@ type ChatOptionsMenuContentProps = {
   isFavorited?: boolean;
   onRename?: () => void;
   onFavorite?: () => void;
+  onCopyChat?: () => void;
   onDelete?: () => void;
   onCloseAutoFocus?: (event: Event) => void;
 };
@@ -29,6 +31,7 @@ export function ChatOptionsMenuContent({
   isFavorited = false,
   onRename,
   onFavorite,
+  onCopyChat,
   onDelete,
   onCloseAutoFocus,
 }: ChatOptionsMenuContentProps) {
@@ -49,6 +52,14 @@ export function ChatOptionsMenuContent({
       <DropdownMenuDeferredItem disabled={!isLoggedIn} onSelect={() => onFavorite?.()}>
         <FavoriteHeartIcon filled={isFavorited} />
         {isFavorited ? "Unfavorite" : "Favorite"}
+      </DropdownMenuDeferredItem>
+      <DropdownMenuDeferredItem onSelect={() => onCopyChat?.()}>
+        <HugeiconsIcon
+          icon={Copy01Icon}
+          strokeWidth={2}
+          className="size-4 shrink-0"
+        />
+        Copy chat
       </DropdownMenuDeferredItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem
