@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { toast } from "@/components/nexus-ui/toaster";
+import {
+  getReadAloudAudioCache,
+  readAloudCacheKey,
+  setReadAloudAudioCache,
+} from "@/lib/elevenlabs/read-aloud-cache";
 import { fetchReadAloudAudio } from "@/lib/elevenlabs/read-aloud-client";
-
-function readAloudCacheKey(messageId: string, voiceId: string) {
-  return `${messageId}:${voiceId}`;
-}
 
 export function useReadAloud(voiceId: string) {
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
@@ -15,19 +16,10 @@ export function useReadAloud(voiceId: string) {
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const requestIdRef = useRef(0);
-  const sessionRef = useRef(0);
-  const cacheRef = useRef(new Map<string, string>());
 
   const detachAudio = useCallback(() => {
     audioRef.current?.pause();
     audioRef.current = null;
-  }, []);
-
-  const clearCache = useCallback(() => {
-    for (const objectUrl of cacheRef.current.values()) {
-      URL.revokeObjectURL(objectUrl);
-    }
-    cacheRef.current.clear();
   }, []);
 
   const resetPlayback = useCallback(() => {
@@ -37,12 +29,6 @@ export function useReadAloud(voiceId: string) {
     setIsPaused(false);
     setIsLoading(false);
   }, [detachAudio]);
-
-  const stop = useCallback(() => {
-    resetPlayback();
-    clearCache();
-    sessionRef.current += 1;
-  }, [clearCache, resetPlayback]);
 
   const playFromUrl = useCallback(
     async (objectUrl: string, requestId: number) => {
@@ -96,7 +82,7 @@ export function useReadAloud(voiceId: string) {
       setActiveMessageId(messageId);
       setIsPaused(false);
 
-      const cachedUrl = cacheRef.current.get(cacheKey);
+      const cachedUrl = getReadAloudAudioCache(cacheKey);
       const requestId = ++requestIdRef.current;
 
       if (cachedUrl) {
@@ -112,22 +98,15 @@ export function useReadAloud(voiceId: string) {
       }
 
       setIsLoading(true);
-      const sessionAtStart = sessionRef.current;
 
       try {
         const objectUrl = await fetchReadAloudAudio(text, voiceId);
-
-        if (sessionRef.current !== sessionAtStart) {
-          URL.revokeObjectURL(objectUrl);
-          return;
-        }
+        setReadAloudAudioCache(cacheKey, objectUrl);
 
         if (requestIdRef.current !== requestId) {
-          cacheRef.current.set(cacheKey, objectUrl);
           return;
         }
 
-        cacheRef.current.set(cacheKey, objectUrl);
         await playFromUrl(objectUrl, requestId);
       } catch (error) {
         if (requestIdRef.current === requestId) {
@@ -149,14 +128,14 @@ export function useReadAloud(voiceId: string) {
     ]
   );
 
-  useEffect(() => stop, [stop]);
+  useEffect(() => resetPlayback, [resetPlayback]);
 
   return {
     activeMessageId,
     isPaused,
     isLoading,
     toggle,
-    stop,
+    stop: resetPlayback,
   };
 }
 
