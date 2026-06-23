@@ -10,6 +10,7 @@ import {
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
@@ -24,6 +25,30 @@ import { cn } from "@/lib/utils";
 const COPIED_RESET_MS = 1500;
 const messageActionButtonClassName =
   "text-muted-foreground hover:text-foreground hover:bg-muted/70 hover:dark:bg-secondary/70";
+
+const SPEECH_UI_EASE = [0.25, 0.1, 0.25, 1] as const;
+
+function speechUiTransition(reduceMotion: boolean | null, duration = 0.2) {
+  return reduceMotion ? { duration: 0 } : { duration, ease: SPEECH_UI_EASE };
+}
+
+function speechUiIconMotion(reduceMotion: boolean | null) {
+  const blur = reduceMotion ? "blur(0px)" : "blur(1px)";
+
+  return {
+    initial: { opacity: 0, scale: 0.9, filter: blur },
+    animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
+    exit: {
+      opacity: 0,
+      scale: 0.9,
+      filter: blur,
+      transition: speechUiTransition(reduceMotion, 0.15),
+    },
+    transition: speechUiTransition(reduceMotion, 0.2),
+  } as const;
+}
+
+type ReadAloudIconState = "loading" | "pause" | "play";
 
 type ChatMessageActionsProps = {
   from: "user" | "assistant";
@@ -96,6 +121,12 @@ function ReadAloudMessageAction({
   const isReading = readAloud.activeMessageId === messageId;
   const isLoadingAudio = isReading && readAloud.isLoading;
   const isPlaying = isReading && !readAloud.isPaused && !readAloud.isLoading;
+  const reduceMotion = useReducedMotion();
+  const iconState: ReadAloudIconState = isLoadingAudio
+    ? "loading"
+    : isPlaying
+      ? "pause"
+      : "play";
 
   const handleReadAloud = useCallback(() => {
     void readAloud.toggle(messageId, text);
@@ -135,13 +166,47 @@ function ReadAloudMessageAction({
         disabled={isLoadingAudio}
         onClick={handleReadAloud}
       >
-        <HugeiconsIcon
-          icon={
-            isLoadingAudio ? Loading03Icon : isPlaying ? PauseIcon : PlayIcon
-          }
-          strokeWidth={1.75}
-          className={cn("size-4.5", isLoadingAudio && "animate-spin")}
-        />
+        <span className="relative flex size-4.5 items-center justify-center">
+          <AnimatePresence mode="wait" initial={false}>
+            {iconState === "loading" ? (
+              <motion.span
+                key="loading"
+                {...speechUiIconMotion(reduceMotion)}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={1.75}
+                  className="size-4.5 animate-spin"
+                />
+              </motion.span>
+            ) : iconState === "pause" ? (
+              <motion.span
+                key="pause"
+                {...speechUiIconMotion(reduceMotion)}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <HugeiconsIcon
+                  icon={PauseIcon}
+                  strokeWidth={1.75}
+                  className="size-4.5"
+                />
+              </motion.span>
+            ) : (
+              <motion.span
+                key="play"
+                {...speechUiIconMotion(reduceMotion)}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <HugeiconsIcon
+                  icon={PlayIcon}
+                  strokeWidth={1.75}
+                  className="size-4.5"
+                />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </span>
       </Button>
     </MessageAction>
   );
