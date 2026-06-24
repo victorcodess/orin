@@ -74,7 +74,7 @@ async function main() {
   if (apiKey && engineId && !engineId.includes("your-")) {
     const elevenlabs = new ElevenLabsClient({ apiKey });
     const engine = await elevenlabs.speechEngine.get(engineId);
-    const configuredWsUrl = engine.config.speechEngine.wsUrl;
+    const configuredWsUrl = engine.config?.speechEngine?.wsUrl;
 
     if (configuredWsUrl !== publicWsUrl) {
       fail(
@@ -84,7 +84,7 @@ async function main() {
       ok("Speech Engine wsUrl matches .env.local");
     }
 
-    const headers = engine.config.speechEngine.requestHeaders ?? {};
+    const headers = engine.config?.speechEngine?.requestHeaders ?? {};
     if (publicWsUrl?.includes("ngrok") && !headers["ngrok-skip-browser-warning"]) {
       fail(
         "ngrok tunnel detected but Speech Engine has no ngrok-skip-browser-warning header. Run: npx tsx update-engine.mts",
