@@ -308,7 +308,7 @@ export function ChatView({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [editingMessageId]);
+  }, [editingMessageId, onCancelEditing]);
 
   useLayoutEffect(() => {
     const prompt = takePendingFirstMessage(conversationId);
@@ -377,7 +377,7 @@ export function ChatView({
 
   useEffect(() => {
     readAloud.stop();
-  }, [conversationId, readAloud.stop]);
+  }, [conversationId, readAloud, readAloud.stop]);
 
   useLayoutEffect(() => {
     setControls({
