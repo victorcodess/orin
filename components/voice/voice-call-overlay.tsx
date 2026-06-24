@@ -13,6 +13,11 @@ import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "@/components/nexus-ui/toaster";
 import {
   useVoiceCallStore,
@@ -22,6 +27,13 @@ import { useVoiceLiveMessagesStore } from "@/lib/stores/voice-live-messages-stor
 import { cn } from "@/lib/utils";
 
 type VoiceActivity = "connecting" | "idle" | "listening" | "talking";
+
+// A muted WebRTC mic still sends silence frames, which ElevenLabs occasionally
+// emits as an empty "..." user turn. Ignore turns with no letters/digits so a
+// muted (or silent) mic never surfaces a bubble.
+function hasSpeech(text: string): boolean {
+  return /[\p{L}\p{N}]/u.test(text);
+}
 
 const activityStyles: Record<
   VoiceActivity,
@@ -163,52 +175,73 @@ function VoiceOrb({ activity }: { activity: VoiceActivity }) {
 
 function VoiceCallControls({
   mode,
+  canToggleMute,
   onToggleMode,
   onEnd,
 }: {
   mode: VoiceCallMode;
+  canToggleMute: boolean;
   onToggleMode: () => void;
   onEnd: () => void;
 }) {
   const { isMuted, setMuted } = useConversationInput();
 
+  const muteLabel = isMuted ? "Unmute microphone" : "Mute microphone";
+  const modeLabel = mode === "fullscreen" ? "Minimize call" : "Expand call";
+
   return (
     <div className="flex items-center gap-2">
-      <Button
-        type="button"
-        variant="secondary"
-        size="icon-lg"
-        aria-label={isMuted ? "Unmute microphone" : "Mute microphone"}
-        onClick={() => setMuted(!isMuted)}
-      >
-        <HugeiconsIcon
-          icon={isMuted ? MicOff01Icon : Mic01Icon}
-          strokeWidth={2}
-          className="size-4.75 shrink-0"
-        />
-      </Button>
-      <Button
-        type="button"
-        variant="secondary"
-        size="icon-lg"
-        aria-label={mode === "fullscreen" ? "Minimize call" : "Expand call"}
-        onClick={onToggleMode}
-      >
-        <HugeiconsIcon
-          icon={mode === "fullscreen" ? Minimize01Icon : Maximize01Icon}
-          strokeWidth={2}
-          className="size-4.75 shrink-0"
-        />
-      </Button>
-      <Button
-        type="button"
-        variant="destructive"
-        size="icon-lg"
-        aria-label="End call"
-        onClick={onEnd}
-      >
-        <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4.75 shrink-0" />
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon-lg"
+            disabled={!canToggleMute}
+            aria-label={muteLabel}
+            onClick={() => setMuted(!isMuted)}
+          >
+            <HugeiconsIcon
+              icon={isMuted ? MicOff01Icon : Mic01Icon}
+              strokeWidth={2}
+              className="size-4.75 shrink-0"
+            />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{muteLabel}</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon-lg"
+            aria-label={modeLabel}
+            onClick={onToggleMode}
+          >
+            <HugeiconsIcon
+              icon={mode === "fullscreen" ? Minimize01Icon : Maximize01Icon}
+              strokeWidth={2}
+              className="size-4.75 shrink-0"
+            />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{modeLabel}</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon-lg"
+            aria-label="End call"
+            onClick={onEnd}
+          >
+            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4.75 shrink-0" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>End call</TooltipContent>
+      </Tooltip>
     </div>
   );
 }
@@ -240,7 +273,12 @@ function VoiceCallPanel({
         <p className="text-foreground text-base font-medium">{assistantName}</p>
         <VoiceActivityIndicator activity={activity} />
       </div>
-      <VoiceCallControls mode={mode} onToggleMode={onToggleMode} onEnd={onEnd} />
+      <VoiceCallControls
+        mode={mode}
+        canToggleMute={activity !== "connecting"}
+        onToggleMode={onToggleMode}
+        onEnd={onEnd}
+      />
     </div>
   );
 }
@@ -276,7 +314,11 @@ export function VoiceCallOverlay() {
   const conversation = useConversation({
     onMessage: ({ role, message }) => {
       if (role === "user") {
-        setUserTranscript(message);
+        // Drop empty/silence turns (e.g. from a muted mic) so they never flash
+        // a bubble; the server ignores them too.
+        if (hasSpeech(message)) {
+          setUserTranscript(message);
+        }
         return;
       }
 

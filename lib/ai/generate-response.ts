@@ -118,17 +118,32 @@ function enqueueWrite(
  * same-role duplicates so the speech-to-text refinements ElevenLabs streams
  * don't pollute the model's context.
  */
+/**
+ * ElevenLabs emits a turn for silence / non-speech (e.g. "..." when the mic is
+ * muted or the user goes quiet). Those carry no letters or digits — treat them
+ * as "no input" so they never trigger a reply or get persisted.
+ */
+function hasSpeech(text: string): boolean {
+  return /[\p{L}\p{N}]/u.test(text);
+}
+
 function transcriptToUiMessages(transcript: TranscriptEntry[]): UIMessage[] {
   const messages: UIMessage[] = [];
   let previous: { role: "user" | "assistant"; text: string } | null = null;
 
   for (const entry of transcript) {
     const text = entry.content.trim();
+    const role = entry.role === "agent" ? "assistant" : "user";
+
+    // Drop silent/non-speech user turns so they don't pollute the prompt.
+    if (role === "user" && !hasSpeech(text)) {
+      continue;
+    }
+
     if (!text) {
       continue;
     }
 
-    const role = entry.role === "agent" ? "assistant" : "user";
     if (previous && previous.role === role && previous.text === text) {
       continue;
     }
@@ -144,14 +159,17 @@ function transcriptToUiMessages(transcript: TranscriptEntry[]): UIMessage[] {
   return messages;
 }
 
+/**
+ * The text of the latest user turn, or "" when that turn is silence/non-speech.
+ * Only the most recent user turn matters — we never reach back past a silent
+ * turn to re-answer an older one.
+ */
 function latestUserText(transcript: TranscriptEntry[]): string {
   for (let index = transcript.length - 1; index >= 0; index -= 1) {
     const entry = transcript[index];
     if (entry.role === "user") {
       const text = entry.content.trim();
-      if (text) {
-        return text;
-      }
+      return hasSpeech(text) ? text : "";
     }
   }
 
@@ -234,25 +252,32 @@ export async function handleVoiceTranscript({
       }
 
       await enqueueWrite(conversationId, async () => {
-        if (lastUserByConversation.get(conversationId) !== userText) {
-          await saveMessage({
-            conversationId,
-            role: "user",
-            content: userText,
-            source: "voice",
-          });
-          lastUserByConversation.set(conversationId, userText);
+        // Persist the user turn and its reply as one atomic pair. Skip only an
+        // exact repeat of the previous pair (the interruption/re-send loop).
+        // Saving them together — never one without the other — keeps the thread
+        // a clean user→assistant alternation.
+        if (
+          lastUserByConversation.get(conversationId) === userText &&
+          lastAssistantByConversation.get(conversationId) === assistantText
+        ) {
+          return;
         }
 
-        if (lastAssistantByConversation.get(conversationId) !== assistantText) {
-          await saveMessage({
-            conversationId,
-            role: "assistant",
-            content: assistantText,
-            source: "voice",
-          });
-          lastAssistantByConversation.set(conversationId, assistantText);
-        }
+        await saveMessage({
+          conversationId,
+          role: "user",
+          content: userText,
+          source: "voice",
+        });
+        await saveMessage({
+          conversationId,
+          role: "assistant",
+          content: assistantText,
+          source: "voice",
+        });
+
+        lastUserByConversation.set(conversationId, userText);
+        lastAssistantByConversation.set(conversationId, assistantText);
       });
     },
   };
