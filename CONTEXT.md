@@ -50,6 +50,19 @@ Shipped so far:
 
 Anonymous reads and writes for conversations go through server routes using the service role where RLS does not cover anon access.
 
+## Deployment
+
+Two processes, deployed separately:
+
+- **Next.js app → Vercel.** Serves the UI and the `/api/voice/*` routes.
+- **Voice sidecar (`server/`) → an always-on host** (Railway, Fly, Render, a VM…). It is a long-lived inbound WebSocket server that ElevenLabs dials into, which Vercel's serverless functions cannot host. Build with `docker build -f server/Dockerfile -t orin-voice .` and run `npm run start:voice`.
+
+The two coordinate only through Supabase (`conversations.active_voice_session_id`), so they don't need to be co-located. The browser talks to ElevenLabs (WebRTC) and Vercel; it never connects to the sidecar directly.
+
+Sidecar env: `ELEVENLABS_API_KEY`, `ELEVENLABS_SPEECH_ENGINE_ID`, `OPENAI_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `VOICE_SERVER_PUBLIC_URL` (the `wss://<host>/ws` it's reachable at).
+
+A Speech Engine resource points at a single `wsUrl`, so use a **separate engine per environment**. After deploying the sidecar, set `VOICE_SERVER_PUBLIC_URL` and run `npx tsx update-engine.mts` to point that environment's engine at it.
+
 ## Database types
 
 Generated from the linked Supabase project:

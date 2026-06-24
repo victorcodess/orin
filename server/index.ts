@@ -4,7 +4,9 @@ import { config } from "dotenv";
 
 config({ path: resolve(process.cwd(), ".env.local") });
 
-const port = Number(process.env.VOICE_SERVER_PORT ?? 3001);
+// Most PaaS hosts (Railway, Render, Fly) inject PORT and route public traffic
+// to it; fall back to VOICE_SERVER_PORT for local dev.
+const port = Number(process.env.PORT ?? process.env.VOICE_SERVER_PORT ?? 3001);
 const path = process.env.VOICE_SERVER_PATH ?? "/ws";
 const publicWsUrl = process.env.VOICE_SERVER_PUBLIC_URL;
 const engineId = process.env.ELEVENLABS_SPEECH_ENGINE_ID;
@@ -38,9 +40,14 @@ async function main() {
         "[orin:voice] VOICE_SERVER_PUBLIC_URL is not set — update-engine/create-engine cannot configure ElevenLabs",
       );
     }
-    console.log(
-      "[orin:voice] tunnel required: run `ngrok http 3001` or `npm run dev:tunnel`, then `npx tsx update-engine.mts`",
-    );
+
+    // In production the sidecar sits behind a real always-on host, so only the
+    // local dev flow needs the tunnel reminder.
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        "[orin:voice] tunnel required: run `ngrok http 3001` or `npm run dev:tunnel`, then `npx tsx update-engine.mts`",
+      );
+    }
   });
 }
 
