@@ -27,46 +27,6 @@ export async function markVoiceCallPending(conversationId: string) {
   return pendingToken;
 }
 
-export async function bindLatestPendingVoiceSession(voiceSessionId: string) {
-  const supabase = createAdminClient();
-
-  const { data, error } = await supabase
-    .from("conversations")
-    .select("id, active_voice_session_id")
-    .like("active_voice_session_id", "pending:%")
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  if (!data?.active_voice_session_id?.startsWith(PENDING_PREFIX)) {
-    return null;
-  }
-
-  const pendingToken = data.active_voice_session_id.slice(PENDING_PREFIX.length);
-
-  const { data: updated, error: updateError } = await supabase
-    .from("conversations")
-    .update({ active_voice_session_id: voiceSessionId })
-    .eq("id", data.id)
-    .eq("active_voice_session_id", data.active_voice_session_id)
-    .select("id")
-    .maybeSingle();
-
-  if (updateError) {
-    throw updateError;
-  }
-
-  if (!updated) {
-    return null;
-  }
-
-  return { conversationId: updated.id, pendingToken };
-}
-
 export async function bindVoiceSession({
   conversationId,
   pendingToken,

@@ -6,10 +6,14 @@ import {
   handleVoiceTranscript,
 } from "@/lib/ai/generate-response";
 import {
-  bindLatestPendingVoiceSession,
   clearVoiceSession,
   resolveConversationByVoiceSession,
 } from "@/lib/voice/conversation-binding";
+
+const BIND_RETRY_ATTEMPTS = 10;
+const BIND_RETRY_DELAY_MS = 200;
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const engineId = process.env.ELEVENLABS_SPEECH_ENGINE_ID;
 const apiKey = process.env.ELEVENLABS_API_KEY;
@@ -38,44 +42,30 @@ export async function attachSpeechEngine(httpServer: HttpServer, path = "/ws") {
       return cached;
     }
 
-    let conversation = await resolveConversationByVoiceSession(voiceSessionId);
-
-    if (!conversation) {
-      const bound = await bindLatestPendingVoiceSession(voiceSessionId);
-      if (bound?.conversationId) {
-        conversation = await resolveConversationByVoiceSession(voiceSessionId);
+    // The browser binds this session to its conversation via /api/voice/bind on
+    // connect (keyed by a per-call pending token). That request can land a beat
+    // after the sidecar starts handling the session, so retry briefly. We never
+    // guess "the latest pending conversation" — that races across concurrent
+    // callers and could attach a session to the wrong user's chat.
+    for (let attempt = 0; attempt < BIND_RETRY_ATTEMPTS; attempt += 1) {
+      const conversation = await resolveConversationByVoiceSession(voiceSessionId);
+      if (conversation) {
+        conversationByVoiceSession.set(voiceSessionId, conversation);
+        return conversation;
       }
+
+      await delay(BIND_RETRY_DELAY_MS);
     }
 
-    if (!conversation) {
-      return null;
-    }
-
-    conversationByVoiceSession.set(voiceSessionId, conversation);
-    return conversation;
+    return null;
   }
 
   return elevenlabs.speechEngine.attach(engineId, httpServer, path, {
     debug: true,
-    async onInit(voiceSessionId) {
+    onInit(voiceSessionId) {
+      // The browser binds this session to its conversation via /api/voice/bind;
+      // nothing to do here but log.
       console.log(`[orin:voice] session init ${voiceSessionId}`);
-
-      try {
-        const bound = await bindLatestPendingVoiceSession(voiceSessionId);
-
-        if (bound) {
-          console.log(
-            `[orin:voice] bound session ${voiceSessionId} to conversation ${bound.conversationId}`,
-          );
-          return;
-        }
-
-        console.warn(
-          `[orin:voice] no pending conversation to bind for session ${voiceSessionId}`,
-        );
-      } catch (error) {
-        console.error("[orin:voice] failed to bind session on init", error);
-      }
     },
     async onTranscript(transcript, signal, session) {
       const voiceSessionId = session.conversationId;
