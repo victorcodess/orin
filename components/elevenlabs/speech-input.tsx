@@ -835,6 +835,7 @@ const SpeechInputCancelButton = React.forwardRef<
           <Button
             ref={ref}
             type="button"
+            // size="icon-xl"
             variant={variant}
             onClick={(e) => {
               if (trailingMode === "mic") {
@@ -885,7 +886,7 @@ const SpeechInputCancelButton = React.forwardRef<
                     <HugeiconsIcon
                       icon={Mic02Icon}
                       strokeWidth={2}
-                      className="h-4 w-4"
+                      className="size-4.5"
                     />
                   </motion.span>
                 )}

@@ -42,7 +42,7 @@ export function VoiceCallButton({
             <HugeiconsIcon
               icon={Call02Icon}
               strokeWidth={2}
-              className="size-4.75 shrink-0"
+              className="size-5 shrink-0"
             />
           </Button>
         </span>
