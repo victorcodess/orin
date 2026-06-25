@@ -1,6 +1,14 @@
 "use client";
 
-import { ArrowUp01Icon, StopIcon } from "@hugeicons/core-free-icons";
+import { useConversationInput } from "@elevenlabs/react";
+import {
+  ArrowUp01Icon,
+  StopIcon,
+  Mic01Icon,
+  MicOff01Icon,
+  ExpandIcon,
+  Cancel01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -20,6 +28,8 @@ import {
   PromptInputActions,
   PromptInputTextarea,
 } from "@/components/nexus-ui/prompt-input";
+import { useVoiceOrb } from "@/components/voice/use-voice-orb";
+import { VoicePill } from "@/components/voice/voice-pill";
 import { CommitStrategy } from "@/hooks/use-scribe";
 import {
   getScribeToken,
@@ -33,6 +43,7 @@ import {
   matchesShortcut,
 } from "@/lib/keyboard-shortcuts";
 import { AssistantConfig } from "@/lib/orin/defaults";
+import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 import { cn } from "@/lib/utils";
 
 type ChatInputProps = {
@@ -57,13 +68,24 @@ export function ChatInput({
   const inputRef = useRef(input);
   inputRef.current = input;
 
+  const callStatus = useVoiceCallStore((state) => state.status);
+  const toggleMode = useVoiceCallStore((state) => state.toggleMode);
+  const setDisconnecting = useVoiceCallStore((state) => state.setDisconnecting);
+  // Render the call panel whenever a call is live (any mode). In fullscreen it
+  // sits behind the overlay so collapsing back reveals it without a flash.
+  const isCallActive = callStatus !== "idle";
+  // const isCallActive = true;
+
+  const { isMuted, setMuted } = useConversationInput();
+  const { agentState, getInputVolume, getOutputVolume } = useVoiceOrb();
+
   useEffect(() => {
     prefetchDictationToken();
   }, []);
 
   return (
     <form
-      className="w-full"
+      className="relative w-full"
       onSubmit={(event) => {
         event.preventDefault();
         void handleSubmit();
@@ -72,10 +94,11 @@ export function ChatInput({
       <PromptInput
         onSubmit={(value) => void handleSubmit(value)}
         className={cn(
-          "bg-sidebar dark:bg-border/90 shadow-sidebar-foreground/5 dark:shadow-sidebar-border/5 border-none shadow-md dark:shadow-sm backdrop-blur-lg",
+          "bg-sidebar dark:bg-border/90 shadow-sidebar-foreground/5 dark:shadow-sidebar-border/5 border-none shadow-md backdrop-blur-lg transition-opacity duration-200 ease-out dark:shadow-sm",
           isMultirow
             ? "flex-col rounded-3xl"
-            : "flex-row items-end justify-end rounded-4xl"
+            : "flex-row items-end justify-end rounded-4xl",
+          isCallActive && "pointer-events-none opacity-0"
         )}
       >
         <PromptInputTextarea
@@ -87,7 +110,7 @@ export function ChatInput({
           placeholder={`Message ${assistant.name}...`}
           disabled={isSubmitting}
           className={cn(
-            "text-foreground w-full px-6 pt-3 pb-3 text-base leading-7 font-[450] md:text-[15px] placeholder:text-sm placeholder:leading-7",
+            "text-foreground w-full px-6 pt-3 pb-3 text-base leading-7 font-[450] placeholder:text-sm placeholder:leading-7 md:text-[15px]",
             isMultiline
               ? "field-sizing-content max-h-40 min-h-0! flex-1 shrink-0 overflow-y-auto"
               : "field-sizing-fixed! max-h-none min-h-0! overflow-hidden"
@@ -182,6 +205,65 @@ export function ChatInput({
           </PromptInputActionGroup>
         </PromptInputActions>
       </PromptInput>
+
+      <div
+        className={cn(
+          "absolute inset-0 flex items-center gap-2 transition-opacity duration-200 ease-out",
+          isCallActive ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+        aria-hidden={!isCallActive}
+      >
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon-xl"
+          aria-label={isMuted ? "Unmute microphone" : "Mute microphone"}
+          onClick={() => setMuted(!isMuted)}
+        >
+          <HugeiconsIcon
+            icon={isMuted ? MicOff01Icon : Mic01Icon}
+            strokeWidth={2}
+            className="size-5.5 shrink-0"
+          />
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon-xl"
+          aria-label="Expand call"
+          onClick={toggleMode}
+        >
+          <HugeiconsIcon
+            icon={ExpandIcon}
+            strokeWidth={2}
+            className="size-5.5 shrink-0"
+          />
+        </Button>
+        {isCallActive ? (
+          <VoicePill
+            state={agentState}
+            getInputVolume={getInputVolume}
+            getOutputVolume={getOutputVolume}
+            colors={["#f97015", "#fcf8f3"]}
+            className="h-14 w-full"
+          />
+        ) : (
+          <div className="h-14 w-full" />
+        )}
+        <Button
+          type="button"
+          variant="destructive"
+          size="icon-xl"
+          aria-label="End call"
+          onClick={() => setDisconnecting()}
+        >
+          <HugeiconsIcon
+            icon={Cancel01Icon}
+            strokeWidth={2}
+            className="size-5.5 shrink-0"
+          />
+        </Button>
+      </div>
     </form>
   );
 }

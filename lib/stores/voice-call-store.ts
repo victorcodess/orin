@@ -10,7 +10,11 @@ export type VoiceCallAssistant = Pick<
 >;
 
 export type VoiceCallMode = "inline" | "fullscreen";
-export type VoiceCallStatus = "idle" | "connecting" | "active" | "disconnecting";
+export type VoiceCallStatus =
+  | "idle"
+  | "connecting"
+  | "active"
+  | "disconnecting";
 
 type VoiceCallState = {
   status: VoiceCallStatus;
@@ -20,7 +24,10 @@ type VoiceCallState = {
   assistant: VoiceCallAssistant | null;
   error: string | null;
   requestStart: (conversationId: string) => void;
-  setPendingToken: (pendingToken: string, assistant: VoiceCallAssistant) => void;
+  setPendingToken: (
+    pendingToken: string,
+    assistant: VoiceCallAssistant
+  ) => void;
   setActive: () => void;
   setDisconnecting: () => void;
   reset: () => void;
@@ -66,6 +73,6 @@ export function useIsVoiceCallActive(conversationId: string) {
       state.conversationId === conversationId &&
       (state.status === "connecting" ||
         state.status === "active" ||
-        state.status === "disconnecting"),
+        state.status === "disconnecting")
   );
 }

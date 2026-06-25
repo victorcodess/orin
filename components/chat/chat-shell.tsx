@@ -3,17 +3,13 @@
 import { usePathname } from "next/navigation";
 
 import { ChatComposerDock } from "@/components/chat/chat-composer";
-import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 
 export function ChatComposerDockGate() {
   const pathname = usePathname();
-  const voiceStatus = useVoiceCallStore((state) => state.status);
-  const voiceMode = useVoiceCallStore((state) => state.mode);
-  const showComposer =
-    pathname !== "/new" &&
-    !(voiceStatus === "active" && voiceMode === "fullscreen");
 
-  if (!showComposer) {
+  // Keep the composer mounted during fullscreen calls (the overlay covers it),
+  // so collapsing back to inline reveals the call panel without a flash.
+  if (pathname === "/new") {
     return null;
   }
 
