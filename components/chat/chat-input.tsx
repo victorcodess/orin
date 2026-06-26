@@ -35,6 +35,7 @@ import {
   voiceCallModeKeys,
   voiceCallMuteKeys,
 } from "@/components/voice/voice-call-keyboard-shortcuts";
+import { VoiceActivityIndicator } from "@/components/voice/voice-activity-indicator";
 import { VoicePill } from "@/components/voice/voice-pill";
 import { CommitStrategy } from "@/hooks/use-scribe";
 import {
@@ -83,7 +84,7 @@ export function ChatInput({
   // const isCallActive = true;
 
   const { isMuted, setMuted } = useConversationInput();
-  const { agentState, getInputVolume, getOutputVolume } = useVoiceOrb();
+  const { activity, agentState, getInputVolume, getOutputVolume } = useVoiceOrb();
 
   useEffect(() => {
     prefetchDictationToken();
@@ -253,13 +254,19 @@ export function ChatInput({
           </Button>
         </VoiceCallTooltip>
         {isCallActive ? (
-          <VoicePill
-            state={agentState}
-            getInputVolume={getInputVolume}
-            getOutputVolume={getOutputVolume}
-            colors={["#f97015", "#fcf8f3"]}
-            className="h-14 w-full"
-          />
+          <div className="relative h-14 w-full">
+            <VoiceActivityIndicator
+              activity={activity}
+              className="absolute bottom-full left-1/2 mb-6 -translate-x-1/2"
+            />
+            <VoicePill
+              state={agentState}
+              getInputVolume={getInputVolume}
+              getOutputVolume={getOutputVolume}
+              colors={["#f97015", "#fcf8f3"]}
+              className="h-14 w-full"
+            />
+          </div>
         ) : (
           <div className="h-14 w-full" />
         )}

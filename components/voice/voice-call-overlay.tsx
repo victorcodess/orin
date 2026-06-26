@@ -23,6 +23,7 @@ import {
   voiceCallModeKeys,
   voiceCallMuteKeys,
 } from "@/components/voice/voice-call-keyboard-shortcuts";
+import { VoiceActivityIndicator } from "@/components/voice/voice-activity-indicator";
 import { VoiceSilenceWarning } from "@/components/voice/voice-silence-warning";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/nexus-ui/toaster";
@@ -38,65 +39,6 @@ import { cn } from "@/lib/utils";
 // muted (or silent) mic never surfaces a bubble.
 function hasSpeech(text: string): boolean {
   return /[\p{L}\p{N}]/u.test(text);
-}
-
-const activityStyles: Record<
-  VoiceActivity,
-  { label: string; dotClass: string; ringClass: string }
-> = {
-  connecting: {
-    label: "Connecting",
-    dotClass: "bg-muted-foreground",
-    ringClass: "bg-muted-foreground/15 dark:bg-muted-foreground/30",
-  },
-  idle: {
-    label: "Ready",
-    dotClass: "bg-muted-foreground",
-    ringClass: "bg-muted-foreground/15 dark:bg-muted-foreground/30",
-  },
-  listening: {
-    label: "Listening",
-    dotClass: "bg-chart-2",
-    ringClass: "bg-chart-2/15 dark:bg-chart-2/25",
-  },
-  talking: {
-    label: "Speaking",
-    dotClass: "bg-chart-3",
-    ringClass: "bg-chart-3/15 dark:bg-chart-3/25",
-  },
-};
-
-function VoiceActivityIndicator({ activity }: { activity: VoiceActivity }) {
-  const styles = activityStyles[activity];
-  const pulse = activity === "listening" || activity === "talking";
-
-  return (
-    <div
-      className={cn(
-        "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium",
-        styles.ringClass
-      )}
-      aria-live="polite"
-    >
-      <span className="relative flex size-2">
-        {pulse ? (
-          <span
-            className={cn(
-              "absolute inline-flex size-full animate-ping rounded-full opacity-60",
-              styles.dotClass
-            )}
-          />
-        ) : null}
-        <span
-          className={cn(
-            "relative inline-flex size-2 rounded-full",
-            styles.dotClass
-          )}
-        />
-      </span>
-      <span className="text-foreground">{styles.label}</span>
-    </div>
-  );
 }
 
 function VoiceCallControls({
