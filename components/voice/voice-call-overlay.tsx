@@ -13,7 +13,10 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef } from "react";
 
 import { Orb } from "@/components/elevenlabs/orb";
-import { useVoiceOrb, type VoiceActivity } from "@/components/voice/use-voice-orb";
+import {
+  useVoiceOrb,
+  type VoiceActivity,
+} from "@/components/voice/use-voice-orb";
 import {
   VoiceCallTooltip,
   voiceCallEndKeys,
@@ -71,7 +74,7 @@ function VoiceActivityIndicator({ activity }: { activity: VoiceActivity }) {
     <div
       className={cn(
         "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium",
-        styles.ringClass,
+        styles.ringClass
       )}
       aria-live="polite"
     >
@@ -80,14 +83,14 @@ function VoiceActivityIndicator({ activity }: { activity: VoiceActivity }) {
           <span
             className={cn(
               "absolute inline-flex size-full animate-ping rounded-full opacity-60",
-              styles.dotClass,
+              styles.dotClass
             )}
           />
         ) : null}
         <span
           className={cn(
             "relative inline-flex size-2 rounded-full",
-            styles.dotClass,
+            styles.dotClass
           )}
         />
       </span>
@@ -113,7 +116,7 @@ function VoiceCallControls({
   const modeLabel = mode === "fullscreen" ? "Minimize call" : "Expand call";
 
   return (
-    <div className="absolute inset-x-0 bottom-0 flex w-full items-center justify-between gap-2 pb-13.5 px-6 lg:pb-16 lg:px-12">
+    <div className="absolute inset-x-0 bottom-0 flex w-full items-center justify-between gap-2 px-6 pb-13.5 lg:px-12 lg:pb-16">
       <div className="flex items-center gap-2">
         <VoiceCallTooltip label={muteLabel} keys={voiceCallMuteKeys()}>
           <Button
@@ -195,7 +198,7 @@ function VoiceCallPanel({
         "flex flex-col items-center gap-4",
         isFullscreen
           ? "relative h-full w-full justify-center px-6 py-10"
-          : "px-4 pt-3 pb-4",
+          : "px-4 pt-3 pb-4"
       )}
     >
       <div className="-mt-40 flex flex-col items-center gap-10">
@@ -203,7 +206,7 @@ function VoiceCallPanel({
           className={cn(
             "size-32",
             isFullscreen && "size-64",
-            "outline-border/10 rounded-full outline-10",
+            "outline-border/10 rounded-full outline-10"
           )}
           agentState={agentState}
           volumeMode={volumeMode}
@@ -241,16 +244,16 @@ export function VoiceCallOverlay() {
   const toggleMode = useVoiceCallStore((state) => state.toggleMode);
   const setDisconnecting = useVoiceCallStore((state) => state.setDisconnecting);
   const bindLiveConversation = useVoiceLiveMessagesStore(
-    (state) => state.bindConversation,
+    (state) => state.bindConversation
   );
   const setUserTranscript = useVoiceLiveMessagesStore(
-    (state) => state.setUserTranscript,
+    (state) => state.setUserTranscript
   );
   const applyAgentPart = useVoiceLiveMessagesStore(
-    (state) => state.applyAgentPart,
+    (state) => state.applyAgentPart
   );
   const setAgentTranscript = useVoiceLiveMessagesStore(
-    (state) => state.setAgentTranscript,
+    (state) => state.setAgentTranscript
   );
 
   const pendingTokenRef = useRef<string | null>(null);
@@ -310,7 +313,7 @@ export function VoiceCallOverlay() {
       } catch (error) {
         conversation.endSession();
         setError(
-          error instanceof Error ? error.message : "Failed to start call",
+          error instanceof Error ? error.message : "Failed to start call"
         );
         toast.error("Could not start voice call");
       }
@@ -396,7 +399,7 @@ export function VoiceCallOverlay() {
         setPendingToken(
           data.pendingToken,
           data.assistant,
-          data.silenceEndCallTimeout ?? null,
+          data.silenceEndCallTimeout ?? null
         );
         await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -472,23 +475,23 @@ export function VoiceCallOverlay() {
     <>
       {status !== "idle" ? <VoiceSilenceWarning /> : null}
       <AnimatePresence>
-      {showFullscreen ? (
-        <motion.div
-          key="voice-fullscreen"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.18, ease: "easeOut" }}
-          className="bg-background fixed inset-0 z-50 flex items-center justify-center backdrop-blur-3xl"
-        >
-          <FullscreenCallPanel
-            assistantName={assistantName}
-            onToggleMode={toggleMode}
-            onEnd={handleEnd}
-          />
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
+        {showFullscreen ? (
+          <motion.div
+            key="voice-fullscreen"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="bg-background fixed inset-0 z-50 flex items-center justify-center backdrop-blur-3xl"
+          >
+            <FullscreenCallPanel
+              assistantName={assistantName}
+              onToggleMode={toggleMode}
+              onEnd={handleEnd}
+            />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </>
   );
 }

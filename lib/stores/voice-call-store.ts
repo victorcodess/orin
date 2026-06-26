@@ -30,7 +30,7 @@ type VoiceCallState = {
   setPendingToken: (
     pendingToken: string,
     assistant: VoiceCallAssistant,
-    silenceEndCallTimeout?: number | null,
+    silenceEndCallTimeout?: number | null
   ) => void;
   setActive: () => void;
   setAgentListening: (listening: boolean) => void;
@@ -68,7 +68,12 @@ export const useVoiceCallStore = create<VoiceCallState>((set, get) => ({
       agentListening: true,
     }),
   setPendingToken: (pendingToken, assistant, silenceEndCallTimeout = null) =>
-    set({ pendingToken, assistant, silenceEndCallTimeout, lastUserSpeechAt: null }),
+    set({
+      pendingToken,
+      assistant,
+      silenceEndCallTimeout,
+      lastUserSpeechAt: null,
+    }),
   setActive: () =>
     set({ status: "active", error: null, lastUserSpeechAt: Date.now() }),
   setAgentListening: (listening) => set({ agentListening: listening }),
