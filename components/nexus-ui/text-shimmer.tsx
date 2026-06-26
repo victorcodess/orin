@@ -119,21 +119,23 @@ export function TextShimmer({
   return (
     <>
       {!disableShimmer ? <style>{keyframes}</style> : null}
-      <Comp
-        data-nx-text-shimmer={keyframeName}
-        className={cn(
-          !disableShimmer && "bg-size-[200%_auto] bg-clip-text",
-          className,
-        )}
-        style={{
-          ...shimmerVariables,
-          ...shimmerStyle,
-          ...style,
-        } as React.CSSProperties}
-        {...props}
-      >
-        {children}
-      </Comp>
+      {React.createElement(
+        Comp,
+        {
+          "data-nx-text-shimmer": keyframeName,
+          className: cn(
+            !disableShimmer && "bg-size-[200%_auto] bg-clip-text",
+            className,
+          ),
+          style: {
+            ...shimmerVariables,
+            ...shimmerStyle,
+            ...style,
+          } as React.CSSProperties,
+          ...props,
+        },
+        children,
+      )}
     </>
   );
 }
