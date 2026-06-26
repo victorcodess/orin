@@ -106,14 +106,16 @@ type ChatViewProps = {
   fadeIn?: boolean;
 };
 
+// Jump to the bottom instantly only when a conversation first becomes active
+// (mount / chat switch). New messages are intentionally NOT pinned here so that
+// StickToBottom's smooth resize scroll can slide the just-sent user message to
+// the top as the min-height assistant box expands, then track the stream.
 function PinThreadBottom({
   active,
   conversationId,
-  messageCount,
 }: {
   active: boolean;
   conversationId: string;
-  messageCount: number;
 }) {
   const { scrollRef } = useStickToBottomContext();
 
@@ -121,7 +123,7 @@ function PinThreadBottom({
     if (!active) return;
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [active, conversationId, messageCount, scrollRef]);
+  }, [active, conversationId, scrollRef]);
 
   return null;
 }
@@ -403,7 +405,14 @@ export function ChatView({
     [liveVoiceUiMessages, visibleMessages],
   );
   const lastMessage = mergedVisibleMessages.at(-1);
-  const showPendingAssistant = isComposerBusy && lastMessage?.role === "user";
+  // Insert the pending assistant row (the min-height box that scrolls the user
+  // message to the top) as soon as the user's turn lands — for text while the
+  // composer is busy, and during a live call in the gap after the user speaks
+  // but before the agent's reply starts streaming. Without the voice case the
+  // box only appears once the agent streams, delaying the scroll-to-top.
+  const showPendingAssistant =
+    (isComposerBusy || voiceCallStatus === "active") &&
+    lastMessage?.role === "user";
   const displayMessages = showPendingAssistant
     ? [
         ...mergedVisibleMessages,
@@ -496,7 +505,6 @@ export function ChatView({
         <PinThreadBottom
           active={mergedVisibleMessages.length > 0 || voiceCallActive}
           conversationId={conversationId}
-          messageCount={mergedVisibleMessages.length}
         />
         <ThreadScrollToBottom className="bottom-9 shadow-2xl md:bottom-18" />
       </Thread>

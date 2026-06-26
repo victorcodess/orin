@@ -1,13 +1,14 @@
 "use client";
 
 import { isTextUIPart, type UIMessage } from "ai";
-import { useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   useCallback,
   useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from "react";
 
 import { Call02Icon } from "@hugeicons/core-free-icons";
@@ -28,6 +29,8 @@ import {
 
 export const PENDING_ASSISTANT_ID = "__orin-pending-assistant__";
 export const OPTIMISTIC_USER_ID = "__orin-optimistic-user__";
+
+const FADE_EASE = [0.25, 0.1, 0.25, 1] as const;
 
 type ChatMessageListProps = {
   conversationId: string;
@@ -54,6 +57,35 @@ function textFromMessage(message: UIMessage) {
     .join("");
 }
 
+// Mirrors the reference: the assistant's column fades in on its own (delay 0)
+// inside the row wrapper (delay 0.14), so the "Thinking" indicator, the streamed
+// reply, and the actions share one container that fades exactly once. The user
+// column has no inner fade — only the outer row wrapper animates it.
+function AssistantColumn({
+  isAssistant,
+  shouldIntro,
+  children,
+}: {
+  isAssistant: boolean;
+  shouldIntro: boolean;
+  children: ReactNode;
+}) {
+  if (!isAssistant) {
+    return <>{children}</>;
+  }
+
+  return (
+    <motion.div
+      className="flex min-w-0 flex-1 flex-col"
+      initial={shouldIntro ? { opacity: 0 } : false}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, delay: 0, ease: FADE_EASE }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 export function ChatMessageList({
   conversationId,
   messages,
@@ -67,21 +99,8 @@ export function ChatMessageList({
   noFadeMessageId = null,
 }: ChatMessageListProps) {
   const reduceMotion = useReducedMotion();
-  const initialLastId = useRef<{ conv: string; id: string | null }>({
-    conv: conversationId,
-    id: messages.at(-1)?.id ?? null,
-  });
   const previousUserMessageRef = useRef<HTMLDivElement | null>(null);
   const [previousUserMessageHeight, setPreviousUserMessageHeight] = useState(0);
-
-  if (initialLastId.current.conv !== conversationId) {
-    initialLastId.current = {
-      conv: conversationId,
-      id: messages.at(-1)?.id ?? null,
-    };
-  } else if (initialLastId.current.id === null && messages.at(-1)?.id) {
-    initialLastId.current.id = messages.at(-1)?.id ?? null;
-  }
 
   const lastIndex = messages.length - 1;
   const editingMessageIndex = editingMessageId
@@ -130,23 +149,45 @@ export function ChatMessageList({
     return () => resizeObserver.disconnect();
   }, [previousUserMessageIndex]);
 
-  // Stable keys for the first user/assistant bubble keep the new-chat intro
-  // animation smooth across the optimistic→persisted swap. Everything else keys
-  // on the (unique) message id, avoiding the duplicate-key collisions that
-  // happened when consecutive assistant turns shared a preceding user message.
+  // Stable keys keep a row mounted (so it fades exactly once) across the
+  // optimistic→persisted and pending→real swaps. The first user bubble is keyed
+  // to the conversation for the new-chat intro; every assistant is paired to its
+  // preceding user so the "Thinking" shimmer and the streamed reply are the same
+  // row and never remount mid-stream.
   const firstUserIndex = messages.findIndex((message) => message.role === "user");
-  const firstAssistantIndex = messages.findIndex(
-    (message) => message.role === "assistant",
-  );
+  const userKey = (index: number) =>
+    index === firstUserIndex ? `${conversationId}::user` : messages[index]?.id;
   const messageKeys = messages.map((message, index) => {
-    if (message.role === "user" && index === firstUserIndex) {
-      return `${conversationId}::user`;
+    if (message.role !== "assistant") {
+      return userKey(index);
     }
-    if (message.role === "assistant" && index === firstAssistantIndex) {
-      return `${conversationId}::assistant`;
+    const previous = messages[index - 1];
+    if (previous?.role === "user") {
+      return `${userKey(index - 1)}::assistant`;
     }
     return message.id;
   });
+
+  // Fade a row only the first time it appears. Re-seed on conversation switch
+  // (navigation) and on the post-call thread swap (noFadeMessageId) so neither
+  // re-fades the whole, already-visible thread.
+  const introSeedRef = useRef<{
+    conv: string;
+    noFade: string | null;
+    keys: Set<string>;
+  } | null>(null);
+  if (
+    !introSeedRef.current ||
+    introSeedRef.current.conv !== conversationId ||
+    introSeedRef.current.noFade !== noFadeMessageId
+  ) {
+    introSeedRef.current = {
+      conv: conversationId,
+      noFade: noFadeMessageId,
+      keys: new Set(messageKeys),
+    };
+  }
+  const introSuppressedKeys = introSeedRef.current.keys;
 
   return (
     <>
@@ -170,87 +211,90 @@ export function ChatMessageList({
             !(isLoading && isLast);
         const messageKey = messageKeys[index];
         const isVoiceMessage = messageSources[message.id] === "voice";
-        const shouldFade =
-          isLast &&
-          !reduceMotion &&
-          message.id !== initialLastId.current.id &&
-          message.id !== noFadeMessageId;
+        const shouldIntro = !reduceMotion && !introSuppressedKeys.has(messageKey);
 
         return (
-          <Message
+          <motion.div
             key={messageKey}
-            ref={
-              index === previousUserMessageIndex
-                ? attachPreviousUserMessageRef
-                : undefined
-            }
-            from={message.role === "user" ? "user" : "assistant"}
-            className={cn(
-              // isLast &&
-              //   useAssistantMinHeight &&
-              //   "min-h-[calc(var(--orin-thread-height)-var(--orin-prev-user-height)-var(--orin-thread-content-gap)-var(--orin-thread-content-bottom-padding)-var(--orin-min-height-misc))]",
-              fadeForEditing && "opacity-50",
-              "transition-opacity duration-300"
-            )}
-            style={
-              isLast && useAssistantMinHeight
-                ? ({
-                    "--orin-prev-user-height": `${previousUserMessageHeight}px`,
-                  } as CSSProperties)
-                : undefined
-            }
-            aria-label={showTyping ? "Assistant is typing" : undefined}
+            className="w-full"
+            initial={shouldIntro ? { opacity: 0 } : false}
+            animate={{ opacity: 1 }}
+            transition={{
+              duration: 0.3,
+              ease: FADE_EASE,
+              delay: isAssistant ? 0.14 : 0,
+            }}
           >
-            <MessageStack>
-              <MessageContent
-                  className={cn(
-                    isEditingMessage &&
-                      "animate-pulse outline-1 outline-dashed outline-primary [&_svg]:opacity-0",
-                    shouldFade &&
-                      "animate-in fade-in-0 fill-mode-both duration-200",
-                    shouldFade && isAssistant && "delay-150"
-                  )}
-                >
-                  {showTyping ? (
-                    <TextShimmer className="text-muted-foreground text-sm">
-                      Thinking...
-                    </TextShimmer>
-                  ) : (
-                    <>
-                      {isVoiceMessage ? (
-                        <div className="text-muted-foreground mb-2 flex items-center gap-1.5 text-xs font-medium">
-                          <HugeiconsIcon
-                            icon={Call02Icon}
-                            strokeWidth={2}
-                            className="size-3.5 shrink-0"
-                          />
-                          <span>Spoken</span>
-                        </div>
-                      ) : null}
-                      <MessageMarkdown>{text}</MessageMarkdown>
-                    </>
-                  )}
-                </MessageContent>
-              {showActions ? (
-                <ChatMessageActions
-                  from={message.role === "user" ? "user" : "assistant"}
-                  messageId={message.id}
-                  text={text}
-                  isLoading={isLoading}
-                  isEditing={isEditingMessage}
-                  readAloud={readAloud}
-                  onRetry={onRetry}
-                  onEdit={onEdit}
-                  onCancelEdit={onCancelEdit}
-                  className={cn(
-                    shouldFade &&
-                      isAssistant &&
-                      "animate-in fade-in-0 fill-mode-both duration-200 delay-[120ms]"
-                  )}
-                />
-              ) : null}
-            </MessageStack>
-          </Message>
+            <Message
+              ref={
+                index === previousUserMessageIndex
+                  ? attachPreviousUserMessageRef
+                  : undefined
+              }
+              from={message.role === "user" ? "user" : "assistant"}
+              className={cn(
+                isLast &&
+                  useAssistantMinHeight &&
+                  "min-h-[calc(var(--orin-thread-height)-var(--orin-prev-user-height)-var(--orin-thread-content-gap)-var(--orin-thread-content-bottom-padding)-var(--orin-min-height-misc))]",
+                fadeForEditing && "opacity-50 transition-opacity duration-300"
+              )}
+              style={
+                isLast && useAssistantMinHeight
+                  ? ({
+                      "--orin-prev-user-height": `${previousUserMessageHeight}px`,
+                    } as CSSProperties)
+                  : undefined
+              }
+              aria-label={showTyping ? "Assistant is typing" : undefined}
+            >
+              <AssistantColumn
+                isAssistant={isAssistant}
+                shouldIntro={shouldIntro}
+              >
+                <MessageStack>
+                  <MessageContent
+                    className={cn(
+                      isEditingMessage &&
+                        "animate-pulse outline-1 outline-dashed outline-primary [&_svg]:opacity-0"
+                    )}
+                  >
+                    {showTyping ? (
+                      <TextShimmer className="text-muted-foreground text-sm">
+                        Thinking...
+                      </TextShimmer>
+                    ) : (
+                      <>
+                        {isVoiceMessage ? (
+                          <div className="text-muted-foreground mb-2 flex items-center gap-1.5 text-xs font-medium">
+                            <HugeiconsIcon
+                              icon={Call02Icon}
+                              strokeWidth={2}
+                              className="size-3.5 shrink-0"
+                            />
+                            <span>Spoken</span>
+                          </div>
+                        ) : null}
+                        <MessageMarkdown>{text}</MessageMarkdown>
+                      </>
+                    )}
+                  </MessageContent>
+                  {showActions ? (
+                    <ChatMessageActions
+                      from={message.role === "user" ? "user" : "assistant"}
+                      messageId={message.id}
+                      text={text}
+                      isLoading={isLoading}
+                      isEditing={isEditingMessage}
+                      readAloud={readAloud}
+                      onRetry={onRetry}
+                      onEdit={onEdit}
+                      onCancelEdit={onCancelEdit}
+                    />
+                  ) : null}
+                </MessageStack>
+              </AssistantColumn>
+            </Message>
+          </motion.div>
         );
       })}
     </>
