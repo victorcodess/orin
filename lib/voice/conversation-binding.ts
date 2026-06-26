@@ -86,13 +86,28 @@ export async function resolveConversationByVoiceSession(voiceSessionId: string) 
   return data;
 }
 
-export async function clearVoiceSession(conversationId: string) {
-  const supabase = createAdminClient();
+export async function clearVoiceSession(
+  conversationId: string,
+  pendingToken?: string,
+) {
+  if (pendingToken) {
+    await verifyConversationAccess(conversationId);
+  }
 
-  const { error } = await supabase
+  const supabase = createAdminClient();
+  let query = supabase
     .from("conversations")
     .update({ active_voice_session_id: null })
     .eq("id", conversationId);
+
+  if (pendingToken) {
+    query = query.eq(
+      "active_voice_session_id",
+      pendingVoiceSessionId(pendingToken),
+    );
+  }
+
+  const { error } = await query;
 
   if (error) {
     throw error;

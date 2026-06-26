@@ -428,6 +428,14 @@ export function VoiceCallOverlay() {
 
     return () => {
       cancelled = true;
+      const pendingToken = pendingTokenRef.current;
+      if (pendingToken) {
+        void fetch("/api/voice/clear-pending", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversationId, pendingToken }),
+        });
+      }
     };
   }, [bindLiveConversation, conversationId, setError, setPendingToken, status]);
 
