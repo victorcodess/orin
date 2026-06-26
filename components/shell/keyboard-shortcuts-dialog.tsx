@@ -90,6 +90,15 @@ export function KeyboardShortcutsDialog({
         { label: "Complete dictation", keys: [enterLabel()] },
       ],
     },
+    {
+      title: "Voice call",
+      shortcuts: [
+        { label: "Start voice call", keys: [shift, modifier, "C"] },
+        { label: "Toggle microphone", keys: [shift, modifier, "M"] },
+        { label: "Toggle call mode", keys: [shift, modifier, "E"] },
+        { label: "End call", keys: [escapeLabel()] },
+      ],
+    },
     ...(process.env.NODE_ENV === "development"
       ? [
           {

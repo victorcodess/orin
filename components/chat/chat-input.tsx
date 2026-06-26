@@ -29,6 +29,12 @@ import {
   PromptInputTextarea,
 } from "@/components/nexus-ui/prompt-input";
 import { useVoiceOrb } from "@/components/voice/use-voice-orb";
+import {
+  VoiceCallTooltip,
+  voiceCallEndKeys,
+  voiceCallModeKeys,
+  voiceCallMuteKeys,
+} from "@/components/voice/voice-call-keyboard-shortcuts";
 import { VoicePill } from "@/components/voice/voice-pill";
 import { CommitStrategy } from "@/hooks/use-scribe";
 import {
@@ -213,32 +219,39 @@ export function ChatInput({
         )}
         aria-hidden={!isCallActive}
       >
-        <Button
-          type="button"
-          variant="secondary"
-          size="icon-xl"
-          aria-label={isMuted ? "Unmute microphone" : "Mute microphone"}
-          onClick={() => setMuted(!isMuted)}
+        <VoiceCallTooltip
+          label={isMuted ? "Unmute microphone" : "Mute microphone"}
+          keys={voiceCallMuteKeys()}
         >
-          <HugeiconsIcon
-            icon={isMuted ? MicOff01Icon : Mic01Icon}
-            strokeWidth={2}
-            className="size-5.5 shrink-0"
-          />
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          size="icon-xl"
-          aria-label="Expand call"
-          onClick={toggleMode}
-        >
-          <HugeiconsIcon
-            icon={ExpandIcon}
-            strokeWidth={2}
-            className="size-5.5 shrink-0"
-          />
-        </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon-xl"
+            aria-label={isMuted ? "Unmute microphone" : "Mute microphone"}
+            onClick={() => setMuted(!isMuted)}
+          >
+            <HugeiconsIcon
+              icon={isMuted ? MicOff01Icon : Mic01Icon}
+              strokeWidth={2}
+              className="size-5.5 shrink-0"
+            />
+          </Button>
+        </VoiceCallTooltip>
+        <VoiceCallTooltip label="Expand call" keys={voiceCallModeKeys()}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon-xl"
+            aria-label="Expand call"
+            onClick={toggleMode}
+          >
+            <HugeiconsIcon
+              icon={ExpandIcon}
+              strokeWidth={2}
+              className="size-5.5 shrink-0"
+            />
+          </Button>
+        </VoiceCallTooltip>
         {isCallActive ? (
           <VoicePill
             state={agentState}
@@ -250,19 +263,21 @@ export function ChatInput({
         ) : (
           <div className="h-14 w-full" />
         )}
-        <Button
-          type="button"
-          variant="destructive"
-          size="icon-xl"
-          aria-label="End call"
-          onClick={() => setDisconnecting()}
-        >
-          <HugeiconsIcon
-            icon={Cancel01Icon}
-            strokeWidth={2}
-            className="size-5.5 shrink-0"
-          />
-        </Button>
+        <VoiceCallTooltip label="End call" keys={voiceCallEndKeys()}>
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon-xl"
+            aria-label="End call"
+            onClick={() => setDisconnecting()}
+          >
+            <HugeiconsIcon
+              icon={Cancel01Icon}
+              strokeWidth={2}
+              className="size-5.5 shrink-0"
+            />
+          </Button>
+        </VoiceCallTooltip>
       </div>
     </form>
   );

@@ -13,6 +13,7 @@ import {
   matchesShortcut,
 } from "@/lib/keyboard-shortcuts";
 import { useMessageStyleStore } from "@/lib/stores/message-style-store";
+import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 
 export function AppKeyboardShortcuts() {
   const router = useRouter();
@@ -76,7 +77,8 @@ export function AppKeyboardShortcuts() {
       if (
         process.env.NODE_ENV === "development" &&
         matchesShortcut(event, "m", { shift: true }) &&
-        !event.altKey
+        !event.altKey &&
+        useVoiceCallStore.getState().status === "idle"
       ) {
         event.preventDefault();
         useMessageStyleStore.getState().toggleLayout();

@@ -14,12 +14,13 @@ import { useEffect, useRef } from "react";
 
 import { Orb } from "@/components/elevenlabs/orb";
 import { useVoiceOrb, type VoiceActivity } from "@/components/voice/use-voice-orb";
-import { Button } from "@/components/ui/button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  VoiceCallTooltip,
+  voiceCallEndKeys,
+  voiceCallModeKeys,
+  voiceCallMuteKeys,
+} from "@/components/voice/voice-call-keyboard-shortcuts";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/nexus-ui/toaster";
 import {
   useVoiceCallStore,
@@ -113,62 +114,53 @@ function VoiceCallControls({
   return (
     <div className="absolute inset-x-0 bottom-0 flex w-full items-center justify-between gap-2 pb-13.5 px-6 lg:pb-16 lg:px-12">
       <div className="flex items-center gap-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon-xl"
-              disabled={!canToggleMute}
-              aria-label={muteLabel}
-              onClick={() => setMuted(!isMuted)}
-            >
-              <HugeiconsIcon
-                icon={isMuted ? MicOff01Icon : Mic01Icon}
-                strokeWidth={2}
-                className="size-5.5 shrink-0"
-              />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">{muteLabel}</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon-xl"
-              aria-label={modeLabel}
-              onClick={onToggleMode}
-            >
-              <HugeiconsIcon
-                icon={mode === "fullscreen" ? CollapseIcon : ExpandIcon}
-                strokeWidth={2}
-                className="size-5.5 shrink-0"
-              />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">{modeLabel}</TooltipContent>
-        </Tooltip>
-      </div>
-      <Tooltip>
-        <TooltipTrigger asChild>
+        <VoiceCallTooltip label={muteLabel} keys={voiceCallMuteKeys()}>
           <Button
             type="button"
-            variant="destructive"
+            variant="secondary"
             size="icon-xl"
-            aria-label="End call"
-            onClick={onEnd}
+            disabled={!canToggleMute}
+            aria-label={muteLabel}
+            onClick={() => setMuted(!isMuted)}
           >
             <HugeiconsIcon
-              icon={Cancel01Icon}
+              icon={isMuted ? MicOff01Icon : Mic01Icon}
               strokeWidth={2}
               className="size-5.5 shrink-0"
             />
           </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">End call</TooltipContent>
-      </Tooltip>
+        </VoiceCallTooltip>
+        <VoiceCallTooltip label={modeLabel} keys={voiceCallModeKeys()}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon-xl"
+            aria-label={modeLabel}
+            onClick={onToggleMode}
+          >
+            <HugeiconsIcon
+              icon={mode === "fullscreen" ? CollapseIcon : ExpandIcon}
+              strokeWidth={2}
+              className="size-5.5 shrink-0"
+            />
+          </Button>
+        </VoiceCallTooltip>
+      </div>
+      <VoiceCallTooltip label="End call" keys={voiceCallEndKeys()}>
+        <Button
+          type="button"
+          variant="destructive"
+          size="icon-xl"
+          aria-label="End call"
+          onClick={onEnd}
+        >
+          <HugeiconsIcon
+            icon={Cancel01Icon}
+            strokeWidth={2}
+            className="size-5.5 shrink-0"
+          />
+        </Button>
+      </VoiceCallTooltip>
     </div>
   );
 }

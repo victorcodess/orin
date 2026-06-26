@@ -2,6 +2,7 @@
 
 import { ConversationProvider } from "@elevenlabs/react";
 
+import { VoiceCallKeyboardShortcuts } from "@/components/voice/voice-call-keyboard-shortcuts";
 import { VoiceCallOverlay } from "@/components/voice/voice-call-overlay";
 
 export function VoiceCallProvider({
@@ -12,6 +13,7 @@ export function VoiceCallProvider({
   return (
     <ConversationProvider>
       {children}
+      <VoiceCallKeyboardShortcuts />
       <VoiceCallOverlay />
     </ConversationProvider>
   );
