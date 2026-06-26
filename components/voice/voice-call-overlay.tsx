@@ -20,6 +20,7 @@ import {
   voiceCallModeKeys,
   voiceCallMuteKeys,
 } from "@/components/voice/voice-call-keyboard-shortcuts";
+import { VoiceSilenceWarning } from "@/components/voice/voice-silence-warning";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/nexus-ui/toaster";
 import {
@@ -264,12 +265,16 @@ export function VoiceCallOverlay() {
         // Drop empty/silence turns (e.g. from a muted mic) so they never flash
         // a bubble; the server ignores them too.
         if (hasSpeech(message)) {
+          useVoiceCallStore.getState().touchUserSpeech();
           setUserTranscript(message);
         }
         return;
       }
 
       setAgentTranscript(message);
+    },
+    onModeChange: ({ mode }) => {
+      useVoiceCallStore.getState().setAgentListening(mode === "listening");
     },
     onAgentChatResponsePart: (part) => {
       applyAgentPart(part);
@@ -310,8 +315,20 @@ export function VoiceCallOverlay() {
         toast.error("Could not start voice call");
       }
     },
-    onDisconnect: () => {
+    onDisconnect: (details) => {
       sessionStartingRef.current = false;
+      toast.dismiss("voice-silence-countdown");
+      if (useVoiceCallStore.getState().status !== "disconnecting") {
+        if (details.reason === "agent") {
+          toast.info("Call ended due to silence", {
+            description: "Speak during the call to keep it open.",
+          });
+        } else if (details.reason === "error") {
+          toast.error("Voice call disconnected", {
+            description: details.message,
+          });
+        }
+      }
       reset();
     },
     onError: (message) => {
@@ -358,6 +375,7 @@ export function VoiceCallOverlay() {
             voiceId: string;
             firstMessage: string;
           };
+          silenceEndCallTimeout?: number | null;
           error?: string;
         };
 
@@ -375,7 +393,11 @@ export function VoiceCallOverlay() {
         }
 
         pendingTokenRef.current = data.pendingToken;
-        setPendingToken(data.pendingToken, data.assistant);
+        setPendingToken(
+          data.pendingToken,
+          data.assistant,
+          data.silenceEndCallTimeout ?? null,
+        );
         await navigator.mediaDevices.getUserMedia({ audio: true });
 
         if (cancelled) {
@@ -411,10 +433,7 @@ export function VoiceCallOverlay() {
       return;
     }
 
-    if (
-      conversation.status !== "disconnected" &&
-      conversation.status !== "error"
-    ) {
+    if (conversation.status !== "error") {
       return;
     }
 
@@ -450,7 +469,9 @@ export function VoiceCallOverlay() {
   const showFullscreen = status !== "idle" && mode === "fullscreen";
 
   return (
-    <AnimatePresence>
+    <>
+      {status !== "idle" ? <VoiceSilenceWarning /> : null}
+      <AnimatePresence>
       {showFullscreen ? (
         <motion.div
           key="voice-fullscreen"
@@ -468,6 +489,7 @@ export function VoiceCallOverlay() {
         </motion.div>
       ) : null}
     </AnimatePresence>
+    </>
   );
 }
 

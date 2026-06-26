@@ -23,13 +23,19 @@ type VoiceCallState = {
   pendingToken: string | null;
   assistant: VoiceCallAssistant | null;
   error: string | null;
+  silenceEndCallTimeout: number | null;
+  lastUserSpeechAt: number | null;
+  agentListening: boolean;
   requestStart: (conversationId: string) => void;
   setPendingToken: (
     pendingToken: string,
-    assistant: VoiceCallAssistant
+    assistant: VoiceCallAssistant,
+    silenceEndCallTimeout?: number | null,
   ) => void;
   setActive: () => void;
+  setAgentListening: (listening: boolean) => void;
   setDisconnecting: () => void;
+  touchUserSpeech: () => void;
   reset: () => void;
   setError: (error: string | null) => void;
   toggleMode: () => void;
@@ -42,6 +48,9 @@ const initialState = {
   pendingToken: null,
   assistant: null,
   error: null,
+  silenceEndCallTimeout: null,
+  lastUserSpeechAt: null,
+  agentListening: true,
 };
 
 export const useVoiceCallStore = create<VoiceCallState>((set, get) => ({
@@ -54,11 +63,17 @@ export const useVoiceCallStore = create<VoiceCallState>((set, get) => ({
       pendingToken: null,
       assistant: null,
       error: null,
+      silenceEndCallTimeout: null,
+      lastUserSpeechAt: null,
+      agentListening: true,
     }),
-  setPendingToken: (pendingToken, assistant) =>
-    set({ pendingToken, assistant }),
-  setActive: () => set({ status: "active", error: null }),
+  setPendingToken: (pendingToken, assistant, silenceEndCallTimeout = null) =>
+    set({ pendingToken, assistant, silenceEndCallTimeout, lastUserSpeechAt: null }),
+  setActive: () =>
+    set({ status: "active", error: null, lastUserSpeechAt: Date.now() }),
+  setAgentListening: (listening) => set({ agentListening: listening }),
   setDisconnecting: () => set({ status: "disconnecting" }),
+  touchUserSpeech: () => set({ lastUserSpeechAt: Date.now() }),
   reset: () => set(initialState),
   setError: (error) => set({ error, status: "idle", pendingToken: null }),
   toggleMode: () =>

@@ -51,9 +51,18 @@ export async function POST(req: Request) {
     const pendingToken = await markVoiceCallPending(conversationId);
 
     const elevenlabs = new ElevenLabsClient({ apiKey });
-    const { token } = await elevenlabs.conversationalAi.conversations.getWebrtcToken({
-      agentId: engineId,
-    });
+    const [{ token }, speechEngine] = await Promise.all([
+      elevenlabs.conversationalAi.conversations.getWebrtcToken({
+        agentId: engineId,
+      }),
+      elevenlabs.speechEngine.get(engineId).catch(() => null),
+    ]);
+
+    const turn = speechEngine?.config?.turn;
+    const silenceEndCallTimeout =
+      turn?.silenceEndCallTimeout != null && turn.silenceEndCallTimeout > 0
+        ? turn.silenceEndCallTimeout
+        : null;
 
     return Response.json(
       {
@@ -64,6 +73,7 @@ export async function POST(req: Request) {
           voiceId: assistant.voiceId,
           firstMessage: assistant.firstMessage,
         },
+        silenceEndCallTimeout,
       },
       { headers: { "Cache-Control": "no-store" } },
     );
