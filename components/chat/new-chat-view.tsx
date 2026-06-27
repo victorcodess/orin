@@ -9,7 +9,7 @@ import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
 import { titleFromUserMessage } from "@/lib/conversation-title";
 import { prefetchDictationToken } from "@/lib/elevenlabs/scribe-token-client";
 import { setPendingFirstMessage } from "@/lib/pending-first-message";
-import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
+import { useAssistantConfig } from "@/lib/stores/assistant-config-store";
 import { useConversationsStore } from "@/lib/stores/conversations-store";
 
 const EASE = [0.25, 0.1, 0.25, 1] as const;
@@ -20,7 +20,7 @@ export function signalNewChat() {
 }
 
 export function NewChatView() {
-  const assistant = DEFAULT_ASSISTANT;
+  const assistant = useAssistantConfig();
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const [input, setInput] = useState("");

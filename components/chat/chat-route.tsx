@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { ChatLoading } from "@/components/chat/chat-loading";
 import { ChatView } from "@/components/chat/chat-view";
-import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
+import { useAssistantConfig } from "@/lib/stores/assistant-config-store";
 import { useMessagesStore } from "@/lib/stores/messages-store";
 
 type ChatRouteProps = {
@@ -15,6 +15,7 @@ type ChatRouteProps = {
 
 export function ChatRoute({ conversationId, isNew }: ChatRouteProps) {
   const router = useRouter();
+  const assistantConfig = useAssistantConfig();
   const cached = useMessagesStore((state) => state.cache[conversationId]);
   const fetchConversation = useMessagesStore((state) => state.fetch);
   const entryCached = useRef(false);
@@ -46,7 +47,7 @@ export function ChatRoute({ conversationId, isNew }: ChatRouteProps) {
         key={conversationId}
         fadeIn={false}
         conversationId={conversationId}
-        assistant={DEFAULT_ASSISTANT}
+        assistant={assistantConfig}
         initialMessages={[]}
         initialMessageSources={{}}
       />

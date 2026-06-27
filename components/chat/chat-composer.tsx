@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 import { ChatInput } from "@/components/chat/chat-input";
-import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
+import { useAssistantConfig } from "@/lib/stores/assistant-config-store";
 import { prefetchDictationToken } from "@/lib/elevenlabs/scribe-token-client";
 import {
   useComposerStore,
@@ -14,13 +14,14 @@ export function ChatComposerDock() {
   const input = useComposerStore((state) => state.input);
   const setInput = useComposerStore((state) => state.setInput);
   const controls = useComposerStore((state) => state.controls);
+  const assistantConfig = useAssistantConfig();
 
   useEffect(() => {
     prefetchDictationToken();
   }, []);
 
   const composerControls: ChatComposerControls = controls ?? {
-    assistant: DEFAULT_ASSISTANT,
+    assistant: assistantConfig,
     isSubmitting: true,
     handleSubmit: () => {},
   };
