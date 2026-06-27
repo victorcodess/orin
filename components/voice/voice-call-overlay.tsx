@@ -353,6 +353,7 @@ export function VoiceCallOverlay() {
           conversationToken: data.token,
           overrides: {
             agent: { firstMessage: data.assistant.firstMessage },
+            tts: { voiceId: data.assistant.voiceId },
           },
         });
       } catch (error) {
