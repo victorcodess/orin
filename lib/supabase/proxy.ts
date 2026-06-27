@@ -57,6 +57,8 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/api/conversations") ||
     pathname.startsWith("/api/voice") ||
     pathname.startsWith("/api/elevenlabs") ||
+    pathname.startsWith("/api/assistant-config") ||
+    pathname.startsWith("/api/profile") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth");

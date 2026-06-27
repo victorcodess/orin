@@ -3,6 +3,7 @@
 import { create } from "zustand";
 
 import { signOut as signOutAction } from "@/app/auth/actions";
+import { useAssistantConfigStore } from "@/lib/stores/assistant-config-store";
 
 export type SidebarUser = {
   name: string;
@@ -45,6 +46,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           userId,
           isLoggedIn: Boolean(user),
         });
+        void useAssistantConfigStore.getState().refresh();
       })
       .catch(() => {
         set({
@@ -73,6 +75,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         userId,
         isLoggedIn: Boolean(user),
       });
+      void useAssistantConfigStore.getState().refresh();
     } catch {
       set({
         user: null,
@@ -89,6 +92,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       userId: null,
       isLoggedIn: false,
     });
+    void useAssistantConfigStore.getState().refresh();
   },
 }));
 
