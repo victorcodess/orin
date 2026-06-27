@@ -1,15 +1,24 @@
+import { create } from "zustand";
+
 export function hasPrimaryModifier(
   event: KeyboardEvent | { metaKey: boolean; ctrlKey: boolean },
 ) {
   return event.metaKey || event.ctrlKey;
 }
 
+export const useKeyboardShortcutsStore = create<{
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}>((set) => ({
+  open: false,
+  setOpen: (open) => set({ open }),
+}));
+
 export function isKeyboardShortcutsDialogOpen() {
-  return Boolean(
-    typeof document !== "undefined" &&
-      document.querySelector('[data-slot="keyboard-shortcuts-dialog"]'),
-  );
+  return useKeyboardShortcutsStore.getState().open;
 }
+
+export { isSettingsPanelOpen } from "@/lib/settings-routes";
 
 type ShortcutMatchOptions = {
   shift?: boolean;
@@ -79,4 +88,13 @@ export function openKeyboardShortcutsDialog() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent(KEYBOARD_SHORTCUTS_OPEN_EVENT));
   }
+}
+
+export function isPlainEscape(event: KeyboardEvent) {
+  return (
+    event.key === "Escape" &&
+    !event.shiftKey &&
+    !hasPrimaryModifier(event) &&
+    !event.altKey
+  );
 }

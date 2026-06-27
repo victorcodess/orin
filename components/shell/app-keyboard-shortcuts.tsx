@@ -2,23 +2,35 @@
 
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { signalNewChat } from "@/components/chat/new-chat-view";
 import { KeyboardShortcutsDialog } from "@/components/shell/keyboard-shortcuts-dialog";
 import {
   hasPrimaryModifier,
   isKeyboardShortcutsDialogOpen,
+  isPlainEscape,
+  isSettingsPanelOpen,
   KEYBOARD_SHORTCUTS_OPEN_EVENT,
   matchesShortcut,
+  useKeyboardShortcutsStore,
 } from "@/lib/keyboard-shortcuts";
+import { closeSettings, openSettings } from "@/lib/settings-routes";
 import { useMessageStyleStore } from "@/lib/stores/message-style-store";
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
+
+function handleThemeToggle(
+  resolvedTheme: string | undefined,
+  setTheme: (theme: string) => void,
+) {
+  setTheme(resolvedTheme === "dark" ? "light" : "dark");
+}
 
 export function AppKeyboardShortcuts() {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
-  const [open, setOpen] = useState(false);
+  const open = useKeyboardShortcutsStore((state) => state.open);
+  const setOpen = useKeyboardShortcutsStore((state) => state.setOpen);
 
   useEffect(() => {
     const handleOpen = () => setOpen(true);
@@ -26,11 +38,37 @@ export function AppKeyboardShortcuts() {
     window.addEventListener(KEYBOARD_SHORTCUTS_OPEN_EVENT, handleOpen);
     return () =>
       window.removeEventListener(KEYBOARD_SHORTCUTS_OPEN_EVENT, handleOpen);
-  }, []);
+  }, [setOpen]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isKeyboardShortcutsDialogOpen()) {
+      const settingsOpen = isSettingsPanelOpen();
+      const shortcutsDialogOpen = isKeyboardShortcutsDialogOpen();
+
+      if (isPlainEscape(event)) {
+        if (settingsOpen) {
+          event.preventDefault();
+          closeSettings();
+        }
+        return;
+      }
+
+      if (shortcutsDialogOpen) {
+        return;
+      }
+
+      if (
+        event.shiftKey &&
+        !event.altKey &&
+        (event.key.toLowerCase() === "l" || event.code === "KeyL") &&
+        hasPrimaryModifier(event)
+      ) {
+        event.preventDefault();
+        handleThemeToggle(resolvedTheme, setTheme);
+        return;
+      }
+
+      if (settingsOpen) {
         return;
       }
 
@@ -50,7 +88,7 @@ export function AppKeyboardShortcuts() {
 
       if (event.key === "/" && !event.shiftKey && !event.altKey) {
         event.preventDefault();
-        setOpen((current) => !current);
+        setOpen(!open);
         return;
       }
 
@@ -60,17 +98,7 @@ export function AppKeyboardShortcuts() {
         (event.key === "," || event.code === "Comma")
       ) {
         event.preventDefault();
-        router.push("/settings");
-        return;
-      }
-
-      if (
-        event.shiftKey &&
-        !event.altKey &&
-        (event.key.toLowerCase() === "l" || event.code === "KeyL")
-      ) {
-        event.preventDefault();
-        setTheme(resolvedTheme === "dark" ? "light" : "dark");
+        openSettings("general");
         return;
       }
 
@@ -85,9 +113,9 @@ export function AppKeyboardShortcuts() {
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [resolvedTheme, router, setTheme]);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [open, resolvedTheme, router, setOpen, setTheme]);
 
   return <KeyboardShortcutsDialog open={open} onOpenChange={setOpen} />;
 }

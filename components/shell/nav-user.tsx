@@ -26,6 +26,7 @@ import { useAuthStore, type SidebarUser } from "@/lib/stores/auth-store";
 import {
   openKeyboardShortcutsDialog,
 } from "@/lib/keyboard-shortcuts";
+import { openSettings } from "@/lib/settings-routes";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
 import { useKeyboardShortcutLabels } from "@/lib/hooks/use-keyboard-shortcut-labels";
 
@@ -360,36 +361,24 @@ export function NavUser() {
                             Upgrade plan
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/settings/personalization">
-                            <HugeiconsIcon
-                              icon={MagicWand01Icon}
-                              strokeWidth={2}
-                              className="size-4 shrink-0"
-                            />
-                            Personalization
-                          </Link>
+                        <DropdownMenuItem
+                          onSelect={() => openSettings("personalization")}
+                        >
+                          <HugeiconsIcon
+                            icon={MagicWand01Icon}
+                            strokeWidth={2}
+                            className="size-4 shrink-0"
+                          />
+                          Personalization
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/settings/profile">
-                            <HugeiconsIcon
-                              icon={UserCircle02Icon}
-                              strokeWidth={2}
-                              className="size-4 shrink-0"
-                            />
-                            Profile
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/settings">
-                            <HugeiconsIcon
-                              icon={Settings02Icon}
-                              strokeWidth={2}
-                              className="size-4 shrink-0"
-                            />
-                            Settings
-                            <MenuShortcutKeys keys={[shift, modifier, ","]} />
-                          </Link>
+                        <DropdownMenuItem onSelect={() => openSettings("general")}>
+                          <HugeiconsIcon
+                            icon={Settings02Icon}
+                            strokeWidth={2}
+                            className="size-4 shrink-0"
+                          />
+                          Settings
+                          <MenuShortcutKeys keys={[shift, modifier, ","]} />
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
 
@@ -433,6 +422,30 @@ export function NavUser() {
                     </>
                   ) : (
                     <>
+                      <DropdownMenuGroup>
+                        <DropdownMenuItem
+                          onSelect={() => openSettings("personalization")}
+                        >
+                          <HugeiconsIcon
+                            icon={MagicWand01Icon}
+                            strokeWidth={2}
+                            className="size-4 shrink-0"
+                          />
+                          Personalization
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => openSettings("general")}>
+                          <HugeiconsIcon
+                            icon={Settings02Icon}
+                            strokeWidth={2}
+                            className="size-4 shrink-0"
+                          />
+                          Settings
+                          <MenuShortcutKeys keys={[shift, modifier, ","]} />
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
+
+                      <DropdownMenuSeparator />
+
                       <DropdownMenuGroup>
                         <DropdownMenuItem asChild>
                           <Link href="/auth/login">

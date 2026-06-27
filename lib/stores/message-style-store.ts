@@ -8,11 +8,18 @@ const STORAGE_KEY = "orin:message-bubble-layout";
 
 type MessageStyleState = {
   layout: MessageBubbleLayout;
+  setLayout: (layout: MessageBubbleLayout) => void;
   toggleLayout: () => void;
 };
 
 export const useMessageStyleStore = create<MessageStyleState>((set) => ({
   layout: "single-bubble",
+  setLayout: (layout) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, layout);
+    }
+    set({ layout });
+  },
   toggleLayout: () =>
     set((state) => {
       const layout =
