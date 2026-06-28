@@ -17,7 +17,7 @@ type AssistantConfigState = {
   error: string | null;
   init: () => Promise<void>;
   refresh: () => Promise<void>;
-  save: (payload: Pick<AssistantConfig, "name" | "personality" | "voiceId">) => Promise<boolean>;
+  save: (payload: Pick<AssistantConfig, "personality" | "voiceId">) => Promise<boolean>;
   reset: () => Promise<boolean>;
 };
 

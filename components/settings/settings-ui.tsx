@@ -15,7 +15,9 @@ export function SettingsPage({
   className?: string;
 }) {
   return (
-    <div className={cn("mx-auto flex w-full max-w-2xl flex-col gap-6", className)}>
+    <div
+      className={cn("mx-auto flex w-full max-w-2xl flex-col gap-6", className)}
+    >
       {children}
     </div>
   );
@@ -31,8 +33,8 @@ export function SettingsGroup({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-3xl border border-border/40 bg-secondary/30",
-        className,
+        "border-border/40 bg-secondary/30 overflow-hidden rounded-3xl border",
+        className
       )}
     >
       {children}
@@ -59,16 +61,18 @@ export function SettingsRow({
       <div
         className={cn(
           "flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between",
-          className,
+          className
         )}
       >
         <div className="min-w-0 sm:max-w-[42%]">
-          <p className="text-sm font-medium text-foreground">{title}</p>
+          <p className="text-foreground text-sm font-medium">{title}</p>
           {description ? (
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+            <p className="text-muted-foreground mt-1 text-sm">{description}</p>
           ) : null}
         </div>
-        <div className="min-w-0 flex-1 flex items-center md:justify-end sm:max-w-[52%]">{children}</div>
+        <div className="flex min-w-0 flex-1 items-center sm:max-w-[52%] md:justify-end">
+          {children}
+        </div>
       </div>
     </>
   );
@@ -91,7 +95,7 @@ export function SettingsField({
         {label}
       </Label>
       {description ? (
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-muted-foreground text-sm">{description}</p>
       ) : null}
       {children}
     </div>
@@ -114,12 +118,12 @@ export function SettingsOption({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-full px-3.5 py-2 text-left text-sm font-medium transition-colors cursor-pointer",
-        "border hover:bg-accent/70",
+        "cursor-pointer rounded-full px-3.5 py-2 text-left text-sm font-medium transition-colors",
+        "hover:bg-accent/70 border",
         active
           ? "border-primary/50 bg-primary/20 hover:bg-primary/20 text-foreground"
           : "border-border/50 bg-background/60 hover:bg-primary/5 hover:border-primary/10 text-foreground/90",
-        className,
+        className
       )}
     >
       {children}
@@ -159,12 +163,12 @@ export function SettingsCardOption({
         "hover:bg-accent/60",
         active
           ? "border-primary/40 bg-primary/8"
-          : "border-border/40 bg-background/50",
+          : "border-border/40 bg-background/50"
       )}
     >
-      <p className="text-sm font-medium text-foreground">{title}</p>
+      <p className="text-foreground text-sm font-medium">{title}</p>
       {description ? (
-        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        <p className="text-muted-foreground mt-1 text-xs">{description}</p>
       ) : null}
     </button>
   );
@@ -177,10 +181,10 @@ export function SettingsSelect({
   return (
     <select
       className={cn(
-        "h-9 w-full rounded-md border border-input bg-background/80 px-3 text-sm shadow-xs outline-none",
-        "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-        "disabled:cursor-not-allowed disabled:opacity-60 dark:bg-input/30",
-        className,
+        "border-input bg-background/80 h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "dark:bg-input/30 disabled:cursor-not-allowed disabled:opacity-60",
+        className
       )}
       {...props}
     />
@@ -197,8 +201,8 @@ export function SettingsEmptyState({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border/40 bg-muted/30 px-4 py-5 text-sm text-muted-foreground",
-        className,
+        "border-border/40 bg-muted/30 text-muted-foreground rounded-xl border px-4 py-5 text-sm",
+        className
       )}
     >
       {children}
@@ -216,15 +220,15 @@ export function SettingsStat({
   loading?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border/40 bg-background/60 px-4 py-4">
+    <div className="border-border/40 bg-background/60 rounded-xl border px-4 py-4">
       {loading ? (
         <Skeleton className="h-7 w-16 rounded-full" />
       ) : (
-        <p className="text-2xl font-semibold tracking-tight text-foreground">
+        <p className="text-foreground text-2xl font-semibold tracking-tight">
           {value}
         </p>
       )}
-      <p className="mt-1 text-sm text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground mt-1 text-sm">{label}</p>
     </div>
   );
 }
@@ -244,7 +248,7 @@ export function SettingsActions({
         <p
           className={cn(
             "text-sm",
-            error ? "text-destructive" : "text-muted-foreground",
+            error ? "text-destructive" : "text-muted-foreground"
           )}
         >
           {error ?? message}
@@ -264,7 +268,7 @@ export function SettingsSignInPrompt({
 }) {
   return (
     <SettingsEmptyState>
-      <p className="font-medium text-foreground">{title}</p>
+      <p className="text-foreground font-medium">{title}</p>
       <p className="mt-1">{description}</p>
     </SettingsEmptyState>
   );

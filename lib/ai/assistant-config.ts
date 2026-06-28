@@ -52,10 +52,10 @@ export async function getAssistantConfigFromCookie(): Promise<AssistantConfig | 
     }
 
     return {
-      name: parsed.name.trim(),
+      name: DEFAULT_ASSISTANT.name,
       personality: parsed.personality.trim(),
       voiceId: parsed.voiceId.trim(),
-      firstMessage: parsed.firstMessage.trim(),
+      firstMessage: DEFAULT_ASSISTANT.firstMessage,
     };
   } catch {
     return null;
@@ -70,10 +70,10 @@ export async function setAssistantConfigCookie(
   cookieStore.set(
     ORIN_ASSISTANT_CONFIG_COOKIE,
     JSON.stringify({
-      name: config.name.trim(),
+      name: DEFAULT_ASSISTANT.name,
       personality: config.personality.trim(),
       voiceId: config.voiceId.trim(),
-      firstMessage: config.firstMessage.trim(),
+      firstMessage: DEFAULT_ASSISTANT.firstMessage,
     }),
     COOKIE_OPTIONS,
   );
@@ -84,24 +84,17 @@ export async function clearAssistantConfigCookie(): Promise<void> {
   cookieStore.delete(ORIN_ASSISTANT_CONFIG_COOKIE);
 }
 
-export function buildFirstMessage(name: string): string {
-  const trimmed = name.trim() || DEFAULT_ASSISTANT.name;
-  return `Hey — it's ${trimmed}. What's on your mind?`;
-}
-
 type AssistantConfigRow = {
-  name: string;
   personality: string;
   voice_id: string;
-  first_message: string;
 };
 
 function mapRow(row: AssistantConfigRow): AssistantConfig {
   return {
-    name: row.name,
+    name: DEFAULT_ASSISTANT.name,
     personality: row.personality,
     voiceId: row.voice_id,
-    firstMessage: row.first_message,
+    firstMessage: DEFAULT_ASSISTANT.firstMessage,
   };
 }
 
@@ -112,7 +105,7 @@ export const getAssistantConfig = cache(async function getAssistantConfig(
     const supabase = createAdminClient();
     const { data } = await supabase
       .from("assistant_configs")
-      .select("name, personality, voice_id, first_message")
+      .select("personality, voice_id")
       .eq("user_id", userId)
       .maybeSingle();
 

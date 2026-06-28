@@ -1,5 +1,4 @@
 import {
-  buildFirstMessage,
   clearAssistantConfigCookie,
   getAssistantConfig,
   setAssistantConfigCookie,
@@ -11,19 +10,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 type AssistantConfigPayload = {
-  name?: string;
   personality?: string;
   voiceId?: string;
 };
 
 function sanitizeConfig(payload: AssistantConfigPayload): AssistantConfig | null {
-  const name = payload.name?.trim();
   const personality = payload.personality?.trim();
   const voiceId = payload.voiceId?.trim();
-
-  if (!name || name.length > 32) {
-    return null;
-  }
 
   if (!personality || personality.length > 4000) {
     return null;
@@ -34,10 +27,10 @@ function sanitizeConfig(payload: AssistantConfigPayload): AssistantConfig | null
   }
 
   return {
-    name,
+    name: DEFAULT_ASSISTANT.name,
     personality,
     voiceId,
-    firstMessage: buildFirstMessage(name),
+    firstMessage: DEFAULT_ASSISTANT.firstMessage,
   };
 }
 

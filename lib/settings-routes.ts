@@ -2,11 +2,7 @@
 
 import { create } from "zustand";
 
-export type SettingsRoute =
-  | "general"
-  | "personalization"
-  | "account"
-  | "usage";
+export type SettingsRoute = "general" | "personalization" | "account" | "usage";
 
 export const SETTINGS_HASH_PREFIX = "settings";
 
@@ -31,7 +27,7 @@ export const SETTINGS_ROUTES: {
     label: "Personalization",
     hash: "#settings/personalization",
     title: "Personalization",
-    description: "Name, personality, and voice.",
+    description: "Customize how Orin speaks and responds.",
   },
   {
     id: "account",

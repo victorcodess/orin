@@ -13,7 +13,6 @@ import {
 } from "@/components/settings/settings-ui";
 import { VoicePicker } from "@/components/elevenlabs/voice-picker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { VoiceOption } from "@/lib/elevenlabs/voices";
 import { PERSONALITY_PRESETS } from "@/lib/orin/personality-presets";
@@ -31,20 +30,18 @@ export function SettingsPersonalization() {
   const save = useAssistantConfigStore((state) => state.save);
   const reset = useAssistantConfigStore((state) => state.reset);
 
-  const [name, setName] = useState(config.name);
   const [personality, setPersonality] = useState(config.personality);
   const [voiceId, setVoiceId] = useState(config.voiceId);
   const [voices, setVoices] = useState<VoiceOption[]>(
-    cachedVoices?.voices ?? [],
+    cachedVoices?.voices ?? []
   );
   const [voicesError, setVoicesError] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(
-    cachedVoices?.fallback ?? false,
+    cachedVoices?.fallback ?? false
   );
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setName(config.name);
     setPersonality(config.personality);
     setVoiceId(config.voiceId);
   }, [config]);
@@ -78,21 +75,18 @@ export function SettingsPersonalization() {
 
   const isDirty = useMemo(
     () =>
-      name.trim() !== config.name ||
-      personality.trim() !== config.personality ||
-      voiceId !== config.voiceId,
-    [config, name, personality, voiceId],
+      personality.trim() !== config.personality || voiceId !== config.voiceId,
+    [config, personality, voiceId]
   );
 
   const pickerVoices = useMemo(
     () => voices as unknown as ElevenLabs.Voice[],
-    [voices],
+    [voices]
   );
 
   const handleSave = async () => {
     setSaved(false);
     const ok = await save({
-      name: name.trim(),
       personality: personality.trim(),
       voiceId,
     });
@@ -112,32 +106,11 @@ export function SettingsPersonalization() {
   };
 
   if (isLoading) {
-    return <SettingsSkeletonRows count={3} />;
+    return <SettingsSkeletonRows count={2} />;
   }
 
   return (
     <SettingsPage className="gap-5">
-      <SettingsGroup>
-        <div className="px-4 py-4">
-          <SettingsField
-            label="Assistant name"
-            description="What Orin should call itself in chat and on calls."
-            htmlFor="assistant-name"
-          >
-            <Input
-              id="assistant-name"
-              value={name}
-              maxLength={32}
-              onChange={(event) => {
-                setSaved(false);
-                setName(event.target.value);
-              }}
-              placeholder="Orin"
-            />
-          </SettingsField>
-        </div>
-      </SettingsGroup>
-
       <SettingsGroup>
         <div className="flex flex-col gap-4 px-4 py-4">
           <SettingsField
@@ -182,7 +155,7 @@ export function SettingsPersonalization() {
             htmlFor="assistant-voice"
           >
             {voicesError ? (
-              <p className="text-sm text-destructive">{voicesError}</p>
+              <p className="text-destructive text-sm">{voicesError}</p>
             ) : (
               <VoicePicker
                 voices={pickerVoices}
@@ -196,9 +169,9 @@ export function SettingsPersonalization() {
             )}
 
             {usingFallback ? (
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-2 text-xs">
                 Showing common voices. To browse your full library, enable the{" "}
-                <span className="font-medium text-foreground">voices_read</span>{" "}
+                <span className="text-foreground font-medium">voices_read</span>{" "}
                 permission on your ElevenLabs API key.
               </p>
             ) : null}
@@ -206,7 +179,10 @@ export function SettingsPersonalization() {
         </div>
       </SettingsGroup>
 
-      <SettingsActions error={error} message={saved ? "Settings saved." : undefined}>
+      <SettingsActions
+        error={error}
+        message={saved ? "Settings saved." : undefined}
+      >
         <Button
           type="button"
           onClick={() => void handleSave()}
