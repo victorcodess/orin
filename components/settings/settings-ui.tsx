@@ -31,7 +31,7 @@ export function SettingsGroup({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-border/40 bg-secondary/30",
+        "overflow-hidden rounded-3xl border border-border/40 bg-secondary/30",
         className,
       )}
     >
@@ -58,7 +58,7 @@ export function SettingsRow({
       {withSeparator ? <Separator className="bg-border/40" /> : null}
       <div
         className={cn(
-          "flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between",
+          "flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between",
           className,
         )}
       >
@@ -68,7 +68,7 @@ export function SettingsRow({
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           ) : null}
         </div>
-        <div className="min-w-0 flex-1 sm:max-w-[52%]">{children}</div>
+        <div className="min-w-0 flex-1 flex items-center md:justify-end sm:max-w-[52%]">{children}</div>
       </div>
     </>
   );
@@ -114,11 +114,11 @@ export function SettingsOption({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-full px-3.5 py-2 text-left text-sm font-medium transition-colors",
+        "rounded-full px-3.5 py-2 text-left text-sm font-medium transition-colors cursor-pointer",
         "border hover:bg-accent/70",
         active
-          ? "border-primary/40 bg-primary/10 text-foreground"
-          : "border-border/50 bg-background/60 text-foreground/90",
+          ? "border-primary/50 bg-primary/20 hover:bg-primary/20 text-foreground"
+          : "border-border/50 bg-background/60 hover:bg-primary/5 hover:border-primary/10 text-foreground/90",
         className,
       )}
     >

@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  Message01Icon,
   ComputerIcon,
+  MessageMultiple01Icon,
   Moon02Icon,
   Sun01Icon,
 } from "@hugeicons/core-free-icons";
@@ -14,13 +16,17 @@ import {
   SettingsOptionGrid,
   SettingsPage,
   SettingsRow,
-  SettingsSelect,
 } from "@/components/settings/settings-ui";
-import { useHydrated } from "@/lib/hooks/use-hydrated";
 import {
-  useMessageStyleStore,
-  type MessageBubbleLayout,
-} from "@/lib/stores/message-style-store";
+  Select,
+  SelectGroup,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useHydrated } from "@/lib/hooks/use-hydrated";
+import { useMessageStyleStore } from "@/lib/stores/message-style-store";
 
 const THEME_OPTIONS = [
   { value: "system", label: "System", icon: ComputerIcon },
@@ -28,13 +34,14 @@ const THEME_OPTIONS = [
   { value: "dark", label: "Dark", icon: Moon02Icon },
 ] as const;
 
-const LAYOUT_OPTIONS: {
-  value: MessageBubbleLayout;
-  label: string;
-}[] = [
-  { value: "single-bubble", label: "Single bubble" },
-  { value: "both-bubbles", label: "Separate bubbles" },
-];
+const LAYOUT_OPTIONS = [
+  { value: "single-bubble", label: "Single", icon: Message01Icon },
+  {
+    value: "both-bubbles",
+    label: "Double",
+    icon: MessageMultiple01Icon,
+  },
+] as const;
 
 export function SettingsGeneral() {
   const hydrated = useHydrated();
@@ -77,14 +84,21 @@ export function SettingsGeneral() {
           description="Orin's interface language."
           withSeparator
         >
-          <SettingsSelect value="en" disabled>
-            <option value="en">English</option>
-          </SettingsSelect>
+          <Select defaultValue="en">
+            <SelectTrigger className="bg-background/80 w-full">
+              <SelectValue placeholder="Select language" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="en">English</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </SettingsRow>
 
         <SettingsRow
-          title="Message layout"
-          description="How messages appear in the chat thread."
+          title="Chat bubbles"
+          description="Your messages only, or both sides in bubbles."
           withSeparator
         >
           <SettingsOptionGrid>
@@ -93,7 +107,13 @@ export function SettingsGeneral() {
                 key={option.value}
                 active={layout === option.value}
                 onClick={() => setLayout(option.value)}
+                className="inline-flex items-center gap-2"
               >
+                <HugeiconsIcon
+                  icon={option.icon}
+                  strokeWidth={2}
+                  className="size-4 shrink-0"
+                />
                 {option.label}
               </SettingsOption>
             ))}
