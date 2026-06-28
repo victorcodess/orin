@@ -1,5 +1,6 @@
 "use client";
 
+import type { ElevenLabs } from "@elevenlabs/elevenlabs-js";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -10,11 +11,16 @@ import {
   SettingsPage,
   SettingsSkeletonRows,
 } from "@/components/settings/settings-ui";
+import { VoicePicker } from "@/components/elevenlabs/voice-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { VoiceOption } from "@/lib/elevenlabs/voices";
 import { PERSONALITY_PRESETS } from "@/lib/orin/personality-presets";
 import { useAssistantConfigStore } from "@/lib/stores/assistant-config-store";
+
+// Cached across mounts so re-opening the panel doesn't refetch/flash the picker.
+let cachedVoices: { voices: VoiceOption[]; fallback: boolean } | null = null;
 
 export function SettingsPersonalization() {
   const config = useAssistantConfigStore((state) => state.config);
@@ -27,18 +33,60 @@ export function SettingsPersonalization() {
 
   const [name, setName] = useState(config.name);
   const [personality, setPersonality] = useState(config.personality);
+  const [voiceId, setVoiceId] = useState(config.voiceId);
+  const [voices, setVoices] = useState<VoiceOption[]>(
+    cachedVoices?.voices ?? [],
+  );
+  const [voicesError, setVoicesError] = useState<string | null>(null);
+  const [usingFallback, setUsingFallback] = useState(
+    cachedVoices?.fallback ?? false,
+  );
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setName(config.name);
     setPersonality(config.personality);
+    setVoiceId(config.voiceId);
   }, [config]);
+
+  useEffect(() => {
+    if (cachedVoices) {
+      return;
+    }
+
+    void fetch("/api/elevenlabs/voices", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load voices");
+        }
+
+        const data = (await response.json()) as {
+          voices: VoiceOption[];
+          fallback?: boolean;
+        };
+        cachedVoices = {
+          voices: data.voices,
+          fallback: Boolean(data.fallback),
+        };
+        setVoices(data.voices);
+        setUsingFallback(Boolean(data.fallback));
+      })
+      .catch(() => {
+        setVoicesError("Could not load voices. Try again later.");
+      });
+  }, []);
 
   const isDirty = useMemo(
     () =>
       name.trim() !== config.name ||
-      personality.trim() !== config.personality,
-    [config, name, personality],
+      personality.trim() !== config.personality ||
+      voiceId !== config.voiceId,
+    [config, name, personality, voiceId],
+  );
+
+  const pickerVoices = useMemo(
+    () => voices as unknown as ElevenLabs.Voice[],
+    [voices],
   );
 
   const handleSave = async () => {
@@ -46,7 +94,7 @@ export function SettingsPersonalization() {
     const ok = await save({
       name: name.trim(),
       personality: personality.trim(),
-      voiceId: config.voiceId,
+      voiceId,
     });
 
     if (ok) {
@@ -64,7 +112,7 @@ export function SettingsPersonalization() {
   };
 
   if (isLoading) {
-    return <SettingsSkeletonRows count={2} />;
+    return <SettingsSkeletonRows count={3} />;
   }
 
   return (
@@ -122,6 +170,38 @@ export function SettingsPersonalization() {
               }}
               placeholder="Describe Orin's personality..."
             />
+          </SettingsField>
+        </div>
+      </SettingsGroup>
+
+      <SettingsGroup>
+        <div className="px-4 py-4">
+          <SettingsField
+            label="Voice"
+            description="Orin's voice for read-aloud and live calls."
+            htmlFor="assistant-voice"
+          >
+            {voicesError ? (
+              <p className="text-sm text-destructive">{voicesError}</p>
+            ) : (
+              <VoicePicker
+                voices={pickerVoices}
+                value={voiceId}
+                onValueChange={(value) => {
+                  setSaved(false);
+                  setVoiceId(value);
+                }}
+                placeholder="Select a voice..."
+              />
+            )}
+
+            {usingFallback ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Showing common voices. To browse your full library, enable the{" "}
+                <span className="font-medium text-foreground">voices_read</span>{" "}
+                permission on your ElevenLabs API key.
+              </p>
+            ) : null}
           </SettingsField>
         </div>
       </SettingsGroup>

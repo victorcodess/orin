@@ -6,7 +6,6 @@ export type SettingsRoute =
   | "general"
   | "personalization"
   | "account"
-  | "voice"
   | "usage";
 
 export const SETTINGS_HASH_PREFIX = "settings";
@@ -32,7 +31,7 @@ export const SETTINGS_ROUTES: {
     label: "Personalization",
     hash: "#settings/personalization",
     title: "Personalization",
-    description: "Customize how Orin speaks and responds.",
+    description: "Name, personality, and voice.",
   },
   {
     id: "account",
@@ -40,13 +39,6 @@ export const SETTINGS_ROUTES: {
     hash: "#settings/account",
     title: "Account",
     description: "Manage your account details.",
-  },
-  {
-    id: "voice",
-    label: "Voice",
-    hash: "#settings/voice",
-    title: "Voice",
-    description: "Choose Orin's voice for read-aloud and calls.",
   },
   {
     id: "usage",
@@ -59,6 +51,7 @@ export const SETTINGS_ROUTES: {
 
 const LEGACY_ROUTE_ALIASES: Record<string, SettingsRoute> = {
   profile: "account",
+  voice: "personalization",
 };
 
 export function parseSettingsHash(hash: string): SettingsRoute | null {

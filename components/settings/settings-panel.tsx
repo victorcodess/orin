@@ -4,7 +4,6 @@ import {
   Cancel01Icon,
   Coins01Icon,
   MagicWand01Icon,
-  Mic01Icon,
   Settings02Icon,
   UserCircle02Icon,
 } from "@hugeicons/core-free-icons";
@@ -15,7 +14,6 @@ import { SettingsAccount } from "@/components/settings/settings-account";
 import { SettingsGeneral } from "@/components/settings/settings-general";
 import { SettingsPersonalization } from "@/components/settings/settings-personalization";
 import { SettingsUsage } from "@/components/settings/settings-usage";
-import { SettingsVoice } from "@/components/settings/settings-voice";
 import { Button } from "@/components/ui/button";
 import {
   closeSettings,
@@ -31,7 +29,6 @@ const ROUTE_ICONS = {
   general: Settings02Icon,
   personalization: MagicWand01Icon,
   account: UserCircle02Icon,
-  voice: Mic01Icon,
   usage: Coins01Icon,
 } as const;
 
@@ -108,8 +105,6 @@ function SettingsRouteContent({ route }: { route: SettingsRoute }) {
       return <SettingsPersonalization />;
     case "account":
       return <SettingsAccount />;
-    case "voice":
-      return <SettingsVoice />;
     case "usage":
       return <SettingsUsage />;
   }
