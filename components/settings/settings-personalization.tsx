@@ -18,7 +18,6 @@ import type { VoiceOption } from "@/lib/elevenlabs/voices";
 import { PERSONALITY_PRESETS } from "@/lib/orin/personality-presets";
 import { useAssistantConfigStore } from "@/lib/stores/assistant-config-store";
 
-// Cached across mounts so re-opening the panel doesn't refetch/flash the picker.
 let cachedVoices: { voices: VoiceOption[]; fallback: boolean } | null = null;
 
 export function SettingsPersonalization() {
@@ -32,19 +31,24 @@ export function SettingsPersonalization() {
 
   const [personality, setPersonality] = useState(config.personality);
   const [voiceId, setVoiceId] = useState(config.voiceId);
+  const [isDirty, setIsDirty] = useState(false);
   const [voices, setVoices] = useState<VoiceOption[]>(
-    cachedVoices?.voices ?? []
+    cachedVoices?.voices ?? [],
   );
   const [voicesError, setVoicesError] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(
-    cachedVoices?.fallback ?? false
+    cachedVoices?.fallback ?? false,
   );
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    if (isDirty) {
+      return;
+    }
+
     setPersonality(config.personality);
     setVoiceId(config.voiceId);
-  }, [config]);
+  }, [config.personality, config.voiceId, isDirty]);
 
   useEffect(() => {
     if (cachedVoices) {
@@ -73,16 +77,21 @@ export function SettingsPersonalization() {
       });
   }, []);
 
-  const isDirty = useMemo(
+  const hasEdits = useMemo(
     () =>
       personality.trim() !== config.personality || voiceId !== config.voiceId,
-    [config, personality, voiceId]
+    [config, personality, voiceId],
   );
 
   const pickerVoices = useMemo(
     () => voices as unknown as ElevenLabs.Voice[],
-    [voices]
+    [voices],
   );
+
+  const markDirty = () => {
+    setSaved(false);
+    setIsDirty(true);
+  };
 
   const handleSave = async () => {
     setSaved(false);
@@ -92,6 +101,7 @@ export function SettingsPersonalization() {
     });
 
     if (ok) {
+      setIsDirty(false);
       setSaved(true);
     }
   };
@@ -101,6 +111,7 @@ export function SettingsPersonalization() {
     const ok = await reset();
 
     if (ok) {
+      setIsDirty(false);
       setSaved(true);
     }
   };
@@ -126,7 +137,7 @@ export function SettingsPersonalization() {
                   title={preset.label}
                   description={preset.description}
                   onClick={() => {
-                    setSaved(false);
+                    markDirty();
                     setPersonality(preset.personality);
                   }}
                 />
@@ -138,7 +149,7 @@ export function SettingsPersonalization() {
               rows={8}
               maxLength={4000}
               onChange={(event) => {
-                setSaved(false);
+                markDirty();
                 setPersonality(event.target.value);
               }}
               placeholder="Describe Orin's personality..."
@@ -161,7 +172,7 @@ export function SettingsPersonalization() {
                 voices={pickerVoices}
                 value={voiceId}
                 onValueChange={(value) => {
-                  setSaved(false);
+                  markDirty();
                   setVoiceId(value);
                 }}
                 placeholder="Select a voice..."
@@ -186,7 +197,7 @@ export function SettingsPersonalization() {
         <Button
           type="button"
           onClick={() => void handleSave()}
-          disabled={!isDirty || isSaving}
+          disabled={!hasEdits || isSaving}
         >
           {isSaving ? "Saving..." : "Save changes"}
         </Button>

@@ -14,77 +14,35 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/lib/stores/auth-store";
-
-type ProfileData = {
-  displayName: string;
-  email: string;
-  creditsBalance?: number;
-};
-
-// Cached across mounts so re-opening the panel doesn't refetch/flash a skeleton.
-// Keyed by user id so it's invalidated when switching accounts.
-let cachedProfile: { userId: string; data: ProfileData } | null = null;
+import { useProfileStore } from "@/lib/stores/profile-store";
 
 export function SettingsAccount() {
-  const user = useAuthStore((state) => state.user);
   const userId = useAuthStore((state) => state.userId);
+  const user = useAuthStore((state) => state.user);
+  const profile = useProfileStore((state) => state.profile);
+  const isLoading = useProfileStore((state) => state.isLoading);
+  const error = useProfileStore((state) => state.error);
+  const patch = useProfileStore((state) => state.patch);
   const syncSession = useAuthStore((state) => state.syncSession);
 
-  const initialProfile =
-    user && userId && cachedProfile?.userId === userId
-      ? cachedProfile.data
-      : null;
-
-  const [profile, setProfile] = useState<ProfileData | null>(initialProfile);
-  const [displayName, setDisplayName] = useState(
-    initialProfile?.displayName ?? "",
-  );
-  const [isLoading, setIsLoading] = useState(
-    Boolean(user) && initialProfile === null,
-  );
+  const serverName = profile?.displayName ?? user?.name ?? "";
+  const [displayName, setDisplayName] = useState(serverName);
+  const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      setIsLoading(false);
-      return;
+    if (!isDirty) {
+      setDisplayName(serverName);
     }
+  }, [serverName, isDirty]);
 
-    if (userId && cachedProfile?.userId === userId) {
-      setProfile(cachedProfile.data);
-      setDisplayName(cachedProfile.data.displayName);
-      setIsLoading(false);
-      return;
-    }
+  if (userId === undefined) {
+    return <SettingsSkeletonRows count={2} />;
+  }
 
-    setIsLoading(true);
-    void fetch("/api/profile", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error("Failed to load profile");
-        }
-
-        const data = (await response.json()) as { profile: ProfileData | null };
-
-        if (data.profile) {
-          if (userId) {
-            cachedProfile = { userId, data: data.profile };
-          }
-          setProfile(data.profile);
-          setDisplayName(data.profile.displayName);
-        }
-      })
-      .catch(() => {
-        setError("Could not load account details.");
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [user, userId]);
-
-  if (!user) {
+  if (userId === null) {
     return (
       <SettingsPage>
         <SettingsSignInPrompt
@@ -103,47 +61,32 @@ export function SettingsAccount() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading && !profile) {
     return <SettingsSkeletonRows count={2} />;
   }
 
   const handleSave = async () => {
     setSaved(false);
-    setError(null);
+    setSaveError(null);
     setIsSaving(true);
 
     try {
-      const response = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName: displayName.trim() }),
-      });
+      const updated = await patch({ displayName: displayName.trim() });
 
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        throw new Error(body?.error ?? "Failed to save account");
+      if (!updated) {
+        throw new Error("Failed to save account");
       }
 
-      const data = (await response.json()) as { profile: ProfileData };
-      if (userId) {
-        cachedProfile = { userId, data: data.profile };
-      }
-      setProfile(data.profile);
-      setDisplayName(data.profile.displayName);
+      setDisplayName(updated.displayName);
+      setIsDirty(false);
       setSaved(true);
       await syncSession();
-    } catch (saveError) {
-      setError(
-        saveError instanceof Error ? saveError.message : "Failed to save account",
-      );
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to save account");
     } finally {
       setIsSaving(false);
     }
   };
-
-  const isDirty = displayName.trim() !== (profile?.displayName ?? "");
 
   return (
     <SettingsPage className="gap-5">
@@ -160,6 +103,7 @@ export function SettingsAccount() {
               maxLength={64}
               onChange={(event) => {
                 setSaved(false);
+                setIsDirty(true);
                 setDisplayName(event.target.value);
               }}
             />
@@ -172,7 +116,7 @@ export function SettingsAccount() {
           >
             <Input
               id="account-email"
-              value={profile?.email ?? user.email}
+              value={profile?.email ?? user?.email ?? ""}
               disabled
               readOnly
             />
@@ -180,7 +124,10 @@ export function SettingsAccount() {
         </div>
       </SettingsGroup>
 
-      <SettingsActions error={error} message={saved ? "Account saved." : undefined}>
+      <SettingsActions
+        error={saveError ?? error}
+        message={saved ? "Account saved." : undefined}
+      >
         <Button
           type="button"
           onClick={() => void handleSave()}

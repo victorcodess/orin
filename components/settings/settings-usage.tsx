@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
 import {
   SettingsEmptyState,
@@ -10,53 +9,23 @@ import {
   SettingsPage,
   SettingsRow,
   SettingsSignInPrompt,
+  SettingsSkeletonRows,
   SettingsStat,
 } from "@/components/settings/settings-ui";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/stores/auth-store";
-
-type UsageData = {
-  creditsBalance: number;
-  email: string;
-};
+import { useProfileStore } from "@/lib/stores/profile-store";
 
 export function SettingsUsage() {
-  const user = useAuthStore((state) => state.user);
-  const [usage, setUsage] = useState<UsageData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const userId = useAuthStore((state) => state.userId);
+  const profile = useProfileStore((state) => state.profile);
+  const isLoading = useProfileStore((state) => state.isLoading);
 
-  useEffect(() => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
+  if (userId === undefined) {
+    return <SettingsSkeletonRows count={2} />;
+  }
 
-    void fetch("/api/profile", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error("Failed to load usage");
-        }
-
-        const data = (await response.json()) as {
-          profile: {
-            creditsBalance?: number;
-            email: string;
-          } | null;
-        };
-
-        if (data.profile) {
-          setUsage({
-            creditsBalance: data.profile.creditsBalance ?? 0,
-            email: data.profile.email,
-          });
-        }
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [user]);
-
-  if (!user) {
+  if (userId === null) {
     return (
       <SettingsPage>
         <SettingsSignInPrompt
@@ -81,8 +50,8 @@ export function SettingsUsage() {
         <SettingsRow title="Credits" description="Remaining balance for chat and voice.">
           <div className="flex flex-col gap-3">
             <SettingsStat
-              loading={isLoading}
-              value={usage?.creditsBalance ?? 0}
+              loading={isLoading && !profile}
+              value={profile?.creditsBalance ?? 0}
               label="Free tier"
             />
             <Button asChild variant="outline" size="sm" className="w-fit">

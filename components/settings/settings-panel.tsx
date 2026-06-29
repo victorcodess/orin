@@ -97,17 +97,23 @@ function SettingsNav({
   );
 }
 
-function SettingsRouteContent({ route }: { route: SettingsRoute }) {
-  switch (route) {
-    case "general":
-      return <SettingsGeneral />;
-    case "personalization":
-      return <SettingsPersonalization />;
-    case "account":
-      return <SettingsAccount />;
-    case "usage":
-      return <SettingsUsage />;
-  }
+function SettingsRoutes({ route }: { route: SettingsRoute }) {
+  return (
+    <>
+      <div className={cn(route !== "general" && "hidden")}>
+        <SettingsGeneral />
+      </div>
+      <div className={cn(route !== "personalization" && "hidden")}>
+        <SettingsPersonalization />
+      </div>
+      <div className={cn(route !== "account" && "hidden")}>
+        <SettingsAccount />
+      </div>
+      <div className={cn(route !== "usage" && "hidden")}>
+        <SettingsUsage />
+      </div>
+    </>
+  );
 }
 
 export function SettingsPanel() {
@@ -241,7 +247,7 @@ export function SettingsPanel() {
                 {meta.description}
               </p>
             </div>
-            <SettingsRouteContent route={route} />
+            <SettingsRoutes route={route} />
           </div>
         </div>
       </div>

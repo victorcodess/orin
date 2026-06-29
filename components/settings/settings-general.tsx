@@ -16,6 +16,7 @@ import {
   SettingsOptionGrid,
   SettingsPage,
   SettingsRow,
+  SettingsSkeletonRows,
 } from "@/components/settings/settings-ui";
 import {
   Select,
@@ -26,7 +27,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
-import { useMessageStyleStore } from "@/lib/stores/message-style-store";
+import type { ThemePreference } from "@/lib/orin/user-preferences";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import {
+  type MessageBubbleLayout,
+  useMessageStyleStore,
+} from "@/lib/stores/message-style-store";
+import { useProfileStore } from "@/lib/stores/profile-store";
 
 const THEME_OPTIONS = [
   { value: "system", label: "System", icon: ComputerIcon },
@@ -45,9 +52,41 @@ const LAYOUT_OPTIONS = [
 
 export function SettingsGeneral() {
   const hydrated = useHydrated();
+  const userId = useAuthStore((state) => state.userId);
+  const profile = useProfileStore((state) => state.profile);
+  const isLoading = useProfileStore((state) => state.isLoading);
+  const patch = useProfileStore((state) => state.patch);
   const { theme, setTheme } = useTheme();
   const layout = useMessageStyleStore((state) => state.layout);
   const setLayout = useMessageStyleStore((state) => state.setLayout);
+
+  const handleThemeChange = (value: ThemePreference) => {
+    setTheme(value);
+    if (userId) {
+      void patch({ theme: value });
+    }
+  };
+
+  const handleLayoutChange = (value: MessageBubbleLayout) => {
+    setLayout(value);
+    if (userId) {
+      void patch({ messageBubbleLayout: value });
+    }
+  };
+
+  const handleLanguageChange = (value: string) => {
+    if (userId) {
+      void patch({ language: value });
+    }
+  };
+
+  if (userId === undefined) {
+    return <SettingsSkeletonRows count={3} />;
+  }
+
+  if (userId && isLoading && !profile) {
+    return <SettingsSkeletonRows count={3} />;
+  }
 
   return (
     <SettingsPage>
@@ -64,7 +103,7 @@ export function SettingsGeneral() {
                 <SettingsOption
                   key={option.value}
                   active={active}
-                  onClick={() => setTheme(option.value)}
+                  onClick={() => handleThemeChange(option.value)}
                   className="inline-flex items-center gap-2"
                 >
                   <HugeiconsIcon
@@ -84,7 +123,10 @@ export function SettingsGeneral() {
           description="Orin's interface language."
           withSeparator
         >
-          <Select defaultValue="en">
+          <Select
+            value={profile?.language ?? "en"}
+            onValueChange={handleLanguageChange}
+          >
             <SelectTrigger className="bg-background/80 w-full">
               <SelectValue placeholder="Select language" />
             </SelectTrigger>
@@ -106,7 +148,7 @@ export function SettingsGeneral() {
               <SettingsOption
                 key={option.value}
                 active={layout === option.value}
-                onClick={() => setLayout(option.value)}
+                onClick={() => handleLayoutChange(option.value)}
                 className="inline-flex items-center gap-2"
               >
                 <HugeiconsIcon
