@@ -85,7 +85,7 @@ const Message = React.forwardRef<HTMLDivElement, MessageProps>(function Message(
         aria-labelledby={ariaLabelledBy}
         className={cn(
           "group/message flex w-full items-start gap-2",
-          from === "user" ? "ms-auto" : "me-auto max-w-[98%] md:max-w-[70%]",
+          from === "user" ? "ms-auto md:max-w-[80%]" : "me-auto max-w-[98%] md:max-w-[80%]",
           className
         )}
         {...props}
