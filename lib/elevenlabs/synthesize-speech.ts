@@ -1,7 +1,8 @@
 import { debugError } from "@/lib/debug";
-import { READ_ALOUD_TTS_MODEL } from "@/lib/elevenlabs/tts-config";
-
-const READ_ALOUD_MAX_CHARS = 40_000;
+import {
+  READ_ALOUD_MAX_CHARS,
+  READ_ALOUD_TTS_MODEL,
+} from "@/lib/elevenlabs/tts-config";
 
 export class TtsSynthesisError extends Error {
   readonly status: number;
@@ -27,6 +28,14 @@ function ttsErrorFromResponse(status: number, body: string): TtsSynthesisError {
       return new TtsSynthesisError(
         "Out of ElevenLabs credits. Add credits in your ElevenLabs account to use read aloud.",
         402,
+        code,
+      );
+    }
+
+    if (code === "model_access_denied") {
+      return new TtsSynthesisError(
+        "This voice model is not available for read aloud.",
+        403,
         code,
       );
     }
@@ -67,23 +76,49 @@ export function prepareReadAloudText(text: string): string {
     .replace(/_{1,3}([^_]+)_{1,3}/g, "$1")
     .replace(/^\s*[-*+]\s+/gm, "")
     .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, READ_ALOUD_MAX_CHARS)
     .trim();
 }
 
-export async function synthesizeSpeech(
+function chunkReadAloudText(text: string, maxLength = READ_ALOUD_MAX_CHARS) {
+  if (text.length <= maxLength) {
+    return [text];
+  }
+
+  const chunks: string[] = [];
+  let remaining = text;
+
+  while (remaining.length > maxLength) {
+    let splitAt = remaining.lastIndexOf(". ", maxLength);
+    if (splitAt < maxLength * 0.5) {
+      splitAt = remaining.lastIndexOf(" ", maxLength);
+    }
+    if (splitAt <= 0) {
+      splitAt = maxLength;
+    }
+
+    chunks.push(remaining.slice(0, splitAt).trim());
+    remaining = remaining.slice(splitAt).trim();
+  }
+
+  if (remaining) {
+    chunks.push(remaining);
+  }
+
+  return chunks.filter(Boolean);
+}
+
+async function synthesizeSpeechChunk(
   apiKey: string,
   {
     voiceId,
     text,
     speed,
-    modelId = READ_ALOUD_TTS_MODEL,
+    modelId,
   }: {
     voiceId: string;
     text: string;
     speed: number;
-    modelId?: string;
+    modelId: string;
   },
 ): Promise<ArrayBuffer> {
   const response = await fetch(
@@ -116,4 +151,47 @@ export async function synthesizeSpeech(
   }
 
   return response.arrayBuffer();
+}
+
+export async function synthesizeSpeech(
+  apiKey: string,
+  {
+    voiceId,
+    text,
+    speed,
+    modelId = READ_ALOUD_TTS_MODEL,
+  }: {
+    voiceId: string;
+    text: string;
+    speed: number;
+    modelId?: string;
+  },
+): Promise<ArrayBuffer> {
+  const chunks = chunkReadAloudText(text);
+
+  if (chunks.length === 1) {
+    return synthesizeSpeechChunk(apiKey, {
+      voiceId,
+      text: chunks[0],
+      speed,
+      modelId,
+    });
+  }
+
+  const audioChunks = await Promise.all(
+    chunks.map((chunk) =>
+      synthesizeSpeechChunk(apiKey, { voiceId, text: chunk, speed, modelId }),
+    ),
+  );
+
+  const totalLength = audioChunks.reduce((sum, chunk) => sum + chunk.byteLength, 0);
+  const combined = new Uint8Array(totalLength);
+  let offset = 0;
+
+  for (const chunk of audioChunks) {
+    combined.set(new Uint8Array(chunk), offset);
+    offset += chunk.byteLength;
+  }
+
+  return combined.buffer;
 }
