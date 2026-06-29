@@ -17,6 +17,10 @@ type AssistantConfigState = {
   error: string | null;
   init: () => Promise<void>;
   refresh: () => Promise<void>;
+  applyConfig: (
+    config: AssistantConfig,
+    meta?: { isDefault?: boolean; persisted?: boolean },
+  ) => void;
   save: (payload: Pick<AssistantConfig, "personality" | "voiceId">) => Promise<boolean>;
   reset: () => Promise<boolean>;
 };
@@ -78,7 +82,25 @@ export const useAssistantConfigStore = create<AssistantConfigState>((set, get) =
   },
 
   refresh: async () => {
-    await get().init();
+    try {
+      const data = await fetchAssistantConfig();
+      get().applyConfig(data.config, {
+        isDefault: data.isDefault,
+        persisted: data.persisted,
+      });
+      set({ error: null });
+    } catch {
+      // Keep showing current config on background refresh failure.
+    }
+  },
+
+  applyConfig: (config, meta = {}) => {
+    set({
+      config,
+      ...(meta.isDefault !== undefined ? { isDefault: meta.isDefault } : {}),
+      ...(meta.persisted !== undefined ? { persisted: meta.persisted } : {}),
+    });
+    syncMessagesStoreAssistant(config);
   },
 
   save: async (payload) => {

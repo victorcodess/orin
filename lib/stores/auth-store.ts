@@ -4,6 +4,7 @@ import { create } from "zustand";
 
 import { signOut as signOutAction } from "@/app/auth/actions";
 import { useAssistantConfigStore } from "@/lib/stores/assistant-config-store";
+import { useProfileStore } from "@/lib/stores/profile-store";
 
 export type SidebarUser = {
   name: string;
@@ -33,6 +34,25 @@ async function fetchSession() {
   };
 }
 
+function handleUserIdChange(nextUserId: string | null | undefined) {
+  const previousUserId = useAuthStore.getState().userId;
+
+  if (nextUserId === previousUserId) {
+    return;
+  }
+
+  const isFirstResolve = previousUserId === undefined;
+
+  if (!isFirstResolve) {
+    useProfileStore.getState().reset();
+    void useAssistantConfigStore.getState().refresh();
+  }
+
+  if (nextUserId && (isFirstResolve || nextUserId !== previousUserId)) {
+    void useProfileStore.getState().load(nextUserId);
+  }
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: undefined,
   userId: undefined,
@@ -41,12 +61,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   init: () => {
     void fetchSession()
       .then(({ user, userId }) => {
+        handleUserIdChange(userId);
         set({
           user,
           userId,
           isLoggedIn: Boolean(user),
         });
-        void useAssistantConfigStore.getState().refresh();
       })
       .catch(() => {
         set({
@@ -70,29 +90,25 @@ export const useAuthStore = create<AuthState>((set) => ({
   syncSession: async () => {
     try {
       const { user, userId } = await fetchSession();
+      handleUserIdChange(userId);
       set({
         user,
         userId,
         isLoggedIn: Boolean(user),
       });
-      void useAssistantConfigStore.getState().refresh();
     } catch {
-      set({
-        user: null,
-        userId: null,
-        isLoggedIn: false,
-      });
+      // Keep the current session on transient network errors.
     }
   },
 
   signOut: async () => {
     await signOutAction();
+    handleUserIdChange(null);
     set({
       user: null,
       userId: null,
       isLoggedIn: false,
     });
-    void useAssistantConfigStore.getState().refresh();
   },
 }));
 
