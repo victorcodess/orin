@@ -1,9 +1,15 @@
+import type { VoiceSpeed } from "@/lib/orin/voice/speed";
+
 const MAX_CACHED_READ_ALOUD = 50;
 
 const cache = new Map<string, string>();
 
-export function readAloudCacheKey(messageId: string, voiceId: string) {
-  return `${messageId}:${voiceId}`;
+export function readAloudCacheKey(
+  messageId: string,
+  voiceId: string,
+  voiceSpeed: VoiceSpeed,
+) {
+  return `${messageId}:${voiceId}:${voiceSpeed}`;
 }
 
 export function getReadAloudAudioCache(key: string) {

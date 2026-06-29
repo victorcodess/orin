@@ -1,14 +1,16 @@
 import { debugLog } from "@/lib/debug";
-import { READ_ALOUD_TTS_MODEL } from "@/lib/elevenlabs/tts-config";
+import { synthesizeSpeech } from "@/lib/elevenlabs/synthesize-speech";
 import {
   downloadCachedReadAloudAudio,
   getReadAloudOwnerId,
   uploadCachedReadAloudAudio,
 } from "@/lib/elevenlabs/read-aloud-storage";
+import { parseVoiceSpeed, voiceSpeedToNumber } from "@/lib/orin/voice/speed";
 
 type TextToSpeechRequestBody = {
   text?: string;
   voiceId?: string;
+  voiceSpeed?: string;
 };
 
 export async function POST(req: Request) {
@@ -28,6 +30,8 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as TextToSpeechRequestBody | null;
   const text = body?.text?.trim();
   const voiceId = body?.voiceId?.trim();
+  const voiceSpeed = parseVoiceSpeed(body?.voiceSpeed);
+  const speed = voiceSpeedToNumber(voiceSpeed);
 
   if (!text) {
     return Response.json({ error: "Text is required" }, { status: 400 });
@@ -45,6 +49,7 @@ export async function POST(req: Request) {
       ownerId,
       text,
       voiceId,
+      voiceSpeed,
     });
 
     if (cachedAudio) {
@@ -65,32 +70,20 @@ export async function POST(req: Request) {
     debugLog("api/tts", "cache lookup failed, continuing without cache", error);
   }
 
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`,
-    {
-      method: "POST",
-      headers: {
-        "xi-api-key": apiKey,
-        "Content-Type": "application/json",
-        Accept: "audio/mpeg",
-      },
-      body: JSON.stringify({
-        text,
-        model_id: READ_ALOUD_TTS_MODEL,
-        output_format: "mp3_44100_128",
-      }),
-      cache: "no-store",
-    }
-  );
+  const response = await synthesizeSpeech(apiKey, {
+    voiceId,
+    text,
+    speed,
+  }).catch(() => null);
 
-  if (!response.ok) {
+  if (!response) {
     return Response.json(
       { error: "Failed to generate speech" },
-      { status: response.status }
+      { status: 502 },
     );
   }
 
-  const audio = await response.arrayBuffer();
+  const audio = response;
 
   if (ownerId) {
     try {
@@ -98,6 +91,7 @@ export async function POST(req: Request) {
         ownerId,
         text,
         voiceId,
+        voiceSpeed,
         audio,
       });
       debugLog("api/tts", "cache stored", {

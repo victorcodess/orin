@@ -144,7 +144,7 @@ export function ChatView({
   const sentInitialPrompt = useRef(false);
   const isNewChat = useRef(initialMessages.length === 0);
   const messagesRef = useRef(initialMessages);
-  const readAloud = useReadAloud(assistant.voiceId);
+  const readAloud = useReadAloud(assistant.voiceId, assistant.voiceSpeed);
   const [messageSources, setMessageSources] = useState(initialMessageSources);
   const messageSourcesRef = useRef(messageSources);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);

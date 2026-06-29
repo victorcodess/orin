@@ -5,14 +5,16 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureSessionCookie, getSessionId } from "@/lib/session";
 
 import { READ_ALOUD_BUCKET, READ_ALOUD_TTS_MODEL } from "./tts-config";
+import type { VoiceSpeed } from "@/lib/orin/voice/speed";
 
 export function readAloudContentHash(
   text: string,
   voiceId: string,
-  modelId = READ_ALOUD_TTS_MODEL
+  voiceSpeed: VoiceSpeed,
+  modelId = READ_ALOUD_TTS_MODEL,
 ) {
   return createHash("sha256")
-    .update(`${modelId}\0${voiceId}\0${text}`)
+    .update(`${modelId}\0${voiceId}\0${voiceSpeed}\0${text}`)
     .digest("hex");
 }
 
@@ -36,15 +38,17 @@ export async function downloadCachedReadAloudAudio({
   ownerId,
   text,
   voiceId,
+  voiceSpeed,
 }: {
   ownerId: string;
   text: string;
   voiceId: string;
+  voiceSpeed: VoiceSpeed;
 }): Promise<Blob | null> {
   const supabase = createAdminClient();
   const path = readAloudStoragePath(
     ownerId,
-    readAloudContentHash(text, voiceId)
+    readAloudContentHash(text, voiceId, voiceSpeed),
   );
 
   const { data, error } = await supabase.storage
@@ -62,17 +66,19 @@ export async function uploadCachedReadAloudAudio({
   ownerId,
   text,
   voiceId,
+  voiceSpeed,
   audio,
 }: {
   ownerId: string;
   text: string;
   voiceId: string;
+  voiceSpeed: VoiceSpeed;
   audio: ArrayBuffer;
 }): Promise<void> {
   const supabase = createAdminClient();
   const path = readAloudStoragePath(
     ownerId,
-    readAloudContentHash(text, voiceId)
+    readAloudContentHash(text, voiceId, voiceSpeed),
   );
 
   const { error } = await supabase.storage.from(READ_ALOUD_BUCKET).upload(

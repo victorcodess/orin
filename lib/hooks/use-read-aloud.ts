@@ -9,8 +9,9 @@ import {
   setReadAloudAudioCache,
 } from "@/lib/elevenlabs/read-aloud-cache";
 import { fetchReadAloudAudio } from "@/lib/elevenlabs/read-aloud-client";
+import type { VoiceSpeed } from "@/lib/orin/voice/speed";
 
-export function useReadAloud(voiceId: string) {
+export function useReadAloud(voiceId: string, voiceSpeed: VoiceSpeed) {
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,7 +56,7 @@ export function useReadAloud(voiceId: string) {
 
   const toggle = useCallback(
     async (messageId: string, text: string) => {
-      const cacheKey = readAloudCacheKey(messageId, voiceId);
+      const cacheKey = readAloudCacheKey(messageId, voiceId, voiceSpeed);
 
       if (activeMessageId === messageId) {
         if (isLoading) {
@@ -100,7 +101,7 @@ export function useReadAloud(voiceId: string) {
       setIsLoading(true);
 
       try {
-        const objectUrl = await fetchReadAloudAudio(text, voiceId);
+        const objectUrl = await fetchReadAloudAudio(text, voiceId, voiceSpeed);
         setReadAloudAudioCache(cacheKey, objectUrl);
 
         if (requestIdRef.current !== requestId) {
@@ -125,10 +126,11 @@ export function useReadAloud(voiceId: string) {
       playFromUrl,
       resetPlayback,
       voiceId,
+      voiceSpeed,
     ]
   );
 
-  useEffect(() => resetPlayback, [resetPlayback]);
+  useEffect(() => resetPlayback, [resetPlayback, voiceId, voiceSpeed]);
 
   return {
     activeMessageId,

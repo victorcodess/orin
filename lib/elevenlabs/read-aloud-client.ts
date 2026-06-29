@@ -1,11 +1,14 @@
+import type { VoiceSpeed } from "@/lib/orin/voice/speed";
+
 export async function fetchReadAloudAudio(
   text: string,
-  voiceId: string
+  voiceId: string,
+  voiceSpeed: VoiceSpeed,
 ): Promise<string> {
   const response = await fetch("/api/elevenlabs/text-to-speech", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, voiceId }),
+    body: JSON.stringify({ text, voiceId, voiceSpeed }),
   });
 
   if (!response.ok) {
