@@ -1,15 +1,13 @@
 import type { ConversationRow } from "@/lib/ai/conversation-types";
+import { ORIN_NAME } from "@/lib/orin/defaults";
 import { useConversationsStore } from "@/lib/stores/conversations-store";
 
 export const UNTITLED_CHAT_LABEL = "Untitled chat";
 
-export function titleFromUserMessage(
-  text: string,
-  assistantName = "Orin"
-): string {
+export function titleFromUserMessage(text: string): string {
   const trimmed = text.trim();
   if (!trimmed) {
-    return `Chat with ${assistantName}`;
+    return `Chat with ${ORIN_NAME}`;
   }
 
   return trimmed.length > 60 ? `${trimmed.slice(0, 57)}...` : trimmed;

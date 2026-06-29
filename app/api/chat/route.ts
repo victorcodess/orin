@@ -89,7 +89,6 @@ export async function POST(req: Request) {
 
       conversation = await createConversation({
         id: conversationId,
-        skipGreeting: true,
         initialMessage: textFromUIMessage(lastUserMessage),
       });
     } else {
@@ -107,7 +106,6 @@ export async function POST(req: Request) {
     const config = await getAssistantConfig(authData.user?.id);
 
     debugLog("api/chat", "assistant config loaded", {
-      name: config.name,
       authUserId: authData.user?.id ?? null,
     });
 

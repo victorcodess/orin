@@ -1,10 +1,9 @@
 import "server-only";
 
-import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import type { ConversationRow } from "@/lib/ai/conversation-types";
-import { saveMessage } from "@/lib/ai/messages";
 import { titleFromUserMessage } from "@/lib/conversation-title";
 import { debugLog } from "@/lib/debug";
+import { ORIN_NAME } from "@/lib/orin/defaults";
 import { getSessionId } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -18,7 +17,6 @@ async function getAuthUserId(): Promise<string | null> {
 }
 
 export async function createConversation(options?: {
-  skipGreeting?: boolean;
   id?: string;
   initialMessage?: string;
 }): Promise<ConversationRow> {
@@ -29,13 +27,12 @@ export async function createConversation(options?: {
   if (!userId && !sessionId) {
     throw new Error("Missing anon session cookie");
   }
-  const config = await getAssistantConfig(userId);
 
   debugLog("conversations", "creating conversation", { userId, sessionId });
 
   const title = options?.initialMessage
-    ? titleFromUserMessage(options.initialMessage, config.name)
-    : `Chat with ${config.name}`;
+    ? titleFromUserMessage(options.initialMessage)
+    : `Chat with ${ORIN_NAME}`;
 
   const { data, error } = await supabase
     .from("conversations")
@@ -61,15 +58,6 @@ export async function createConversation(options?: {
   }
 
   debugLog("conversations", "created", { id: data.id });
-
-  if (!options?.skipGreeting) {
-    await saveMessage({
-      conversationId: data.id,
-      role: "assistant",
-      content: config.firstMessage,
-      source: "text",
-    });
-  }
 
   return data as ConversationRow;
 }
@@ -173,14 +161,13 @@ export async function maybeUpdateConversationTitle(
     return;
   }
 
-  const config = await getAssistantConfig(conversation.user_id);
-  const defaultTitle = `Chat with ${config.name}`;
+  const defaultTitle = `Chat with ${ORIN_NAME}`;
 
   if (conversation.title !== defaultTitle) {
     return;
   }
 
-  const title = titleFromUserMessage(trimmed, config.name);
+  const title = titleFromUserMessage(trimmed);
   const supabase = createAdminClient();
 
   await supabase

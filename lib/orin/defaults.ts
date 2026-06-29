@@ -1,13 +1,11 @@
+export const ORIN_NAME = "Orin" as const;
+
 export const DEFAULT_ASSISTANT = {
-  name: "Orin",
   personality: `You are Orin — a warm, thoughtful companion. You listen carefully, remember context, and speak like a trusted friend or associate. You are curious, supportive, and honest. Keep responses concise unless the user wants depth. Never be robotic or overly formal.`,
   voiceId: "TyAD2ntJFdDReoa55SLn",
-  firstMessage: "Hey — it's Orin. What's on your mind?",
 } as const;
 
 export type AssistantConfig = {
-  name: string;
   personality: string;
   voiceId: string;
-  firstMessage: string;
 };

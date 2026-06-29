@@ -45,7 +45,6 @@ export async function POST(req: Request) {
     }
 
     const conversation = await createConversation({
-      skipGreeting: true,
       id,
       initialMessage: message,
     });

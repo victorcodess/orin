@@ -49,12 +49,11 @@ import {
   isKeyboardShortcutsDialogOpen,
   matchesShortcut,
 } from "@/lib/keyboard-shortcuts";
-import { AssistantConfig } from "@/lib/orin/defaults";
+import { ORIN_NAME } from "@/lib/orin/defaults";
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 import { cn } from "@/lib/utils";
 
 type ChatInputProps = {
-  assistant: AssistantConfig;
   input: string;
   setInput: (input: string) => void;
   isSubmitting: boolean;
@@ -63,7 +62,6 @@ type ChatInputProps = {
 };
 
 export function ChatInput({
-  assistant,
   input,
   setInput,
   isSubmitting,
@@ -114,7 +112,7 @@ export function ChatInput({
           value={input}
           onChange={(event) => setInput(event.target.value)}
           onFocus={() => prefetchDictationToken()}
-          placeholder={`Message ${assistant.name}...`}
+          placeholder={`Message ${ORIN_NAME}...`}
           disabled={isSubmitting}
           className={cn(
             "text-foreground w-full px-6 pt-3 pb-3 text-base leading-7 font-[450] placeholder:text-sm placeholder:leading-7 md:text-[15px]",

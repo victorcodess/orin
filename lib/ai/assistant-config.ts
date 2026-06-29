@@ -17,7 +17,7 @@ const COOKIE_OPTIONS = {
   path: "/",
 };
 
-function isValidConfig(value: unknown): value is AssistantConfig {
+function isValidConfig(value: unknown): value is Pick<AssistantConfig, "personality" | "voiceId"> {
   if (!value || typeof value !== "object") {
     return false;
   }
@@ -25,14 +25,10 @@ function isValidConfig(value: unknown): value is AssistantConfig {
   const config = value as Record<string, unknown>;
 
   return (
-    typeof config.name === "string" &&
-    config.name.trim().length > 0 &&
     typeof config.personality === "string" &&
     config.personality.trim().length > 0 &&
     typeof config.voiceId === "string" &&
-    config.voiceId.trim().length > 0 &&
-    typeof config.firstMessage === "string" &&
-    config.firstMessage.trim().length > 0
+    config.voiceId.trim().length > 0
   );
 }
 
@@ -52,10 +48,8 @@ export async function getAssistantConfigFromCookie(): Promise<AssistantConfig | 
     }
 
     return {
-      name: DEFAULT_ASSISTANT.name,
       personality: parsed.personality.trim(),
       voiceId: parsed.voiceId.trim(),
-      firstMessage: DEFAULT_ASSISTANT.firstMessage,
     };
   } catch {
     return null;
@@ -70,10 +64,8 @@ export async function setAssistantConfigCookie(
   cookieStore.set(
     ORIN_ASSISTANT_CONFIG_COOKIE,
     JSON.stringify({
-      name: DEFAULT_ASSISTANT.name,
       personality: config.personality.trim(),
       voiceId: config.voiceId.trim(),
-      firstMessage: DEFAULT_ASSISTANT.firstMessage,
     }),
     COOKIE_OPTIONS,
   );
@@ -91,10 +83,8 @@ type AssistantConfigRow = {
 
 function mapRow(row: AssistantConfigRow): AssistantConfig {
   return {
-    name: DEFAULT_ASSISTANT.name,
     personality: row.personality,
     voiceId: row.voice_id,
-    firstMessage: DEFAULT_ASSISTANT.firstMessage,
   };
 }
 

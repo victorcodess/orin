@@ -17,10 +17,8 @@ export type Database = {
       assistant_configs: {
         Row: {
           created_at: string
-          first_message: string
           id: string
           is_default: boolean
-          name: string
           personality: string
           updated_at: string
           user_id: string | null
@@ -28,10 +26,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          first_message: string
           id?: string
           is_default?: boolean
-          name?: string
           personality: string
           updated_at?: string
           user_id?: string | null
@@ -39,10 +35,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          first_message?: string
           id?: string
           is_default?: boolean
-          name?: string
           personality?: string
           updated_at?: string
           user_id?: string | null

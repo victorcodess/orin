@@ -9,7 +9,6 @@ import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
 import { titleFromUserMessage } from "@/lib/conversation-title";
 import { prefetchDictationToken } from "@/lib/elevenlabs/scribe-token-client";
 import { setPendingFirstMessage } from "@/lib/pending-first-message";
-import { useAssistantConfig } from "@/lib/stores/assistant-config-store";
 import { useConversationsStore } from "@/lib/stores/conversations-store";
 
 const EASE = [0.25, 0.1, 0.25, 1] as const;
@@ -20,7 +19,6 @@ export function signalNewChat() {
 }
 
 export function NewChatView() {
-  const assistant = useAssistantConfig();
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const [input, setInput] = useState("");
@@ -59,7 +57,7 @@ export function NewChatView() {
 
       useConversationsStore.getState().prependConversation({
         id: conversationId,
-        title: titleFromUserMessage(trimmed, assistant.name),
+        title: titleFromUserMessage(trimmed),
         is_favorited: false,
         created_at: now,
         updated_at: now,
@@ -68,11 +66,10 @@ export function NewChatView() {
       setInput("");
       router.push(`/c/${conversationId}?new=1`);
     },
-    [assistant.name, input, router]
+    [input, router]
   );
 
   const chatInputProps = {
-    assistant,
     input,
     setInput,
     isSubmitting: false,
