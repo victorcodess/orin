@@ -16,13 +16,13 @@ import { SettingsPersonalization } from "@/components/settings/settings-personal
 import { SettingsUsage } from "@/components/settings/settings-usage";
 import { Button } from "@/components/ui/button";
 import {
-  closeSettings,
+  attemptSettingsNavigation,
   getSettingsRouteMeta,
   SETTINGS_ROUTES,
-  settingsHashForRoute,
   useSettingsStore,
   type SettingsRoute,
 } from "@/lib/settings-routes";
+import { SettingsUnsavedDialog } from "@/components/settings/settings-unsaved-dialog";
 import { cn } from "@/lib/utils";
 
 const ROUTE_ICONS = {
@@ -35,9 +35,11 @@ const ROUTE_ICONS = {
 function SettingsNav({
   route,
   variant,
+  onNavigate,
 }: {
   route: SettingsRoute;
   variant: "sidebar" | "tabs";
+  onNavigate: (route: SettingsRoute) => void;
 }) {
   if (variant === "tabs") {
     return (
@@ -49,9 +51,7 @@ function SettingsNav({
             <button
               key={item.id}
               type="button"
-              onClick={() => {
-                window.location.hash = settingsHashForRoute(item.id).slice(1);
-              }}
+              onClick={() => onNavigate(item.id)}
               className={cn(
                 "shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-medium",
                 active
@@ -78,9 +78,7 @@ function SettingsNav({
             key={item.id}
             type="button"
             data-active={active}
-            onClick={() => {
-              window.location.hash = settingsHashForRoute(item.id).slice(1);
-            }}
+            onClick={() => onNavigate(item.id)}
             className={cn(
               "flex h-10 w-full items-center gap-2.5 rounded-full px-4 text-left text-sm font-medium",
               "text-sidebar-foreground/90 focus-visible:ring-sidebar-ring/80 outline-none focus-visible:ring-2",
@@ -125,6 +123,18 @@ export function SettingsPanel() {
   const panelRef = useRef<HTMLDivElement>(null);
 
   const open = route !== null;
+
+  const handleNavigate = (nextRoute: SettingsRoute) => {
+    if (nextRoute === route) {
+      return;
+    }
+
+    attemptSettingsNavigation({ type: "route", route: nextRoute });
+  };
+
+  const handleClose = () => {
+    attemptSettingsNavigation({ type: "close" });
+  };
 
   useEffect(() => {
     if (!open) {
@@ -180,9 +190,10 @@ export function SettingsPanel() {
 
   return (
     <>
+      <SettingsUnsavedDialog />
       <div
         className="animate-in fade-in-0 fixed inset-0 z-50 bg-black/50 duration-150 supports-backdrop-filter:backdrop-blur-sm"
-        onClick={closeSettings}
+        onClick={handleClose}
         aria-hidden="true"
       />
       <div
@@ -208,7 +219,7 @@ export function SettingsPanel() {
               Settings
             </h2>
           </div>
-          <SettingsNav route={route} variant="sidebar" />
+          <SettingsNav route={route} variant="sidebar" onNavigate={handleNavigate} />
         </aside>
 
         <div className="bg-background flex min-h-0 min-w-0 flex-1 flex-col">
@@ -220,7 +231,7 @@ export function SettingsPanel() {
                 </h2>
               </div>
               <div className="md:hidden">
-                <SettingsNav route={route} variant="tabs" />
+                <SettingsNav route={route} variant="tabs" onNavigate={handleNavigate} />
               </div>
               <div className="hidden md:block">
                 <h3 className="text-foreground font-sans text-lg font-semibold tracking-tight">
@@ -234,7 +245,7 @@ export function SettingsPanel() {
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={closeSettings}
+              onClick={handleClose}
               aria-label="Close settings"
               className="hover:bg-accent hover:dark:bg-muted absolute top-4 right-4 shrink-0 md:top-4.5 md:right-4.5"
             >
@@ -246,7 +257,7 @@ export function SettingsPanel() {
             </Button>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 md:px-6 md:pb-8">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-20 md:px-6 md:pb-16">
             <div className="mb-5 md:hidden">
               <h3 className="text-foreground font-sans text-lg font-semibold tracking-tight">
                 {meta.title}
