@@ -70,6 +70,7 @@ export function VoiceSilenceWarning() {
           id: TOAST_ID,
           description: "Say something to stay connected.",
           duration: 60_000,
+          position: "top-center",
         });
       } else {
         toast.dismiss(TOAST_ID);

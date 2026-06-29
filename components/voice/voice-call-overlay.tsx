@@ -297,11 +297,13 @@ export function VoiceCallOverlay() {
           case "silence":
             toast.info("Call ended due to silence", {
               description: "Speak during the call to keep it open.",
+              position: "bottom-right",
             });
             break;
           case "ended":
             toast.info("Call ended", {
               description: toastInfo.description,
+              position: "bottom-right",
             });
             break;
           case "error":
