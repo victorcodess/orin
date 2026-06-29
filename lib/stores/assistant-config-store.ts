@@ -21,7 +21,7 @@ type AssistantConfigState = {
     config: AssistantConfig,
     meta?: { isDefault?: boolean; persisted?: boolean },
   ) => void;
-  save: (payload: Pick<AssistantConfig, "personalitySettings" | "voiceId">) => Promise<boolean>;
+  save: (payload: AssistantConfig) => Promise<boolean>;
   reset: () => Promise<boolean>;
 };
 

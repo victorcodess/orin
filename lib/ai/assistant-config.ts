@@ -5,7 +5,9 @@ import {
   DEFAULT_ASSISTANT,
   type AssistantConfig,
 } from "@/lib/orin/defaults";
+import { normalizeVoiceId } from "@/lib/elevenlabs/voices";
 import { parsePersonalitySettings } from "@/lib/orin/personality/parse";
+import { parseVoiceSpeed } from "@/lib/orin/voice/speed";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const ORIN_ASSISTANT_CONFIG_COOKIE = "orin_assistant_config";
@@ -49,7 +51,8 @@ export async function getAssistantConfigFromCookie(): Promise<AssistantConfig | 
 
     return {
       personalitySettings: parsePersonalitySettings(parsed.personalitySettings),
-      voiceId: parsed.voiceId.trim(),
+      voiceId: normalizeVoiceId(parsed.voiceId.trim()),
+      voiceSpeed: parseVoiceSpeed(parsed.voiceSpeed),
     };
   } catch {
     return null;
@@ -66,6 +69,7 @@ export async function setAssistantConfigCookie(
     JSON.stringify({
       personalitySettings: config.personalitySettings,
       voiceId: config.voiceId.trim(),
+      voiceSpeed: config.voiceSpeed,
     }),
     COOKIE_OPTIONS,
   );
@@ -83,14 +87,15 @@ export const getAssistantConfig = cache(async function getAssistantConfig(
     const supabase = createAdminClient();
     const { data } = await supabase
       .from("assistant_configs")
-      .select("personality_settings, voice_id")
+      .select("personality_settings, voice_id, voice_speed")
       .eq("user_id", userId)
       .maybeSingle();
 
     if (data) {
       return {
         personalitySettings: parsePersonalitySettings(data.personality_settings),
-        voiceId: data.voice_id,
+        voiceId: normalizeVoiceId(data.voice_id),
+        voiceSpeed: parseVoiceSpeed(data.voice_speed),
       };
     }
   } else {

@@ -6,8 +6,10 @@ import {
   setAssistantConfigCookie,
 } from "@/lib/ai/assistant-config";
 import { DEFAULT_ASSISTANT, type AssistantConfig } from "@/lib/orin/defaults";
+import { normalizeVoiceId } from "@/lib/elevenlabs/voices";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
 import { personalitySettingsEqual, parsePersonalitySettings } from "@/lib/orin/personality/parse";
+import { parseVoiceSpeed, type VoiceSpeed } from "@/lib/orin/voice/speed";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { buildSpeechEngineTtsConfig } from "@/lib/voice/speech-engine-config";
@@ -18,6 +20,7 @@ import type { PersonalitySettings } from "@/lib/orin/personality/types";
 type AssistantConfigPayload = {
   personalitySettings?: PersonalitySettings;
   voiceId?: string;
+  voiceSpeed?: VoiceSpeed;
 };
 
 function sanitizeConfig(payload: AssistantConfigPayload): AssistantConfig | null {
@@ -32,16 +35,19 @@ function sanitizeConfig(payload: AssistantConfigPayload): AssistantConfig | null
   }
 
   const personalitySettings = parsePersonalitySettings(payload.personalitySettings);
+  const voiceSpeed = parseVoiceSpeed(payload.voiceSpeed);
 
   return {
     personalitySettings,
-    voiceId,
+    voiceId: normalizeVoiceId(voiceId),
+    voiceSpeed,
   };
 }
 
 function isDefaultConfig(config: AssistantConfig) {
   return (
     config.voiceId === DEFAULT_ASSISTANT.voiceId &&
+    config.voiceSpeed === DEFAULT_ASSISTANT.voiceSpeed &&
     personalitySettingsEqual(
       config.personalitySettings,
       DEFAULT_ASSISTANT.personalitySettings,
@@ -49,7 +55,7 @@ function isDefaultConfig(config: AssistantConfig) {
   );
 }
 
-async function syncSpeechEngineVoice(voiceId: string) {
+async function syncSpeechEngineTts(config: AssistantConfig) {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   const engineId = process.env.ELEVENLABS_SPEECH_ENGINE_ID;
 
@@ -60,17 +66,21 @@ async function syncSpeechEngineVoice(voiceId: string) {
   try {
     const elevenlabs = new ElevenLabsClient({ apiKey });
     const engine = await elevenlabs.speechEngine.get(engineId);
-    const currentVoiceId = engine.config?.tts?.voiceId;
+    const currentTts = engine.config?.tts;
+    const nextTts = buildSpeechEngineTtsConfig(config.voiceId, config.voiceSpeed);
 
-    if (currentVoiceId === voiceId) {
+    if (
+      currentTts?.voiceId === nextTts.voiceId &&
+      currentTts?.speed === nextTts.speed
+    ) {
       return;
     }
 
     await elevenlabs.speechEngine.update(engineId, {
-      tts: buildSpeechEngineTtsConfig(voiceId),
+      tts: nextTts,
     });
   } catch (error) {
-    debugError("api/assistant-config", "failed to sync speech engine voice", error);
+    debugError("api/assistant-config", "failed to sync speech engine tts", error);
   }
 }
 
@@ -118,6 +128,7 @@ export async function PATCH(req: Request) {
           personality: buildPersonalityPrompt(config.personalitySettings),
           personality_settings: config.personalitySettings,
           voice_id: config.voiceId,
+          voice_speed: config.voiceSpeed,
           is_default: false,
         },
         { onConflict: "user_id" },
@@ -132,8 +143,11 @@ export async function PATCH(req: Request) {
       await setAssistantConfigCookie(config);
     }
 
-    if (previousConfig.voiceId !== config.voiceId) {
-      await syncSpeechEngineVoice(config.voiceId);
+    if (
+      previousConfig.voiceId !== config.voiceId ||
+      previousConfig.voiceSpeed !== config.voiceSpeed
+    ) {
+      await syncSpeechEngineTts(config);
     }
 
     return Response.json(
@@ -167,7 +181,7 @@ export async function DELETE() {
 
     await clearAssistantConfigCookie();
 
-    await syncSpeechEngineVoice(DEFAULT_ASSISTANT.voiceId);
+    await syncSpeechEngineTts(DEFAULT_ASSISTANT);
 
     return Response.json(
       { config: DEFAULT_ASSISTANT },

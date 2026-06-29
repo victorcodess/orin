@@ -3,6 +3,8 @@ import type { TtsConversationalConfigInput } from "@elevenlabs/elevenlabs-js/api
 import { TtsConversationalModel } from "@elevenlabs/elevenlabs-js/api/types/TtsConversationalModel";
 
 import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
+import { voiceSpeedToNumber } from "@/lib/orin/voice/speed";
+import type { VoiceSpeed } from "@/lib/orin/voice/speed";
 
 export function buildSpeechEngineWsConfig(wsUrl: string) {
   const config: {
@@ -45,10 +47,12 @@ export function buildSpeechEngineConversationConfig(): ConversationConfigInput {
 /** Speech Engine TTS is configured on the resource — client-side voice overrides are not allowed. */
 export function buildSpeechEngineTtsConfig(
   voiceId: string = DEFAULT_ASSISTANT.voiceId,
+  voiceSpeed: VoiceSpeed = DEFAULT_ASSISTANT.voiceSpeed,
 ): TtsConversationalConfigInput {
   return {
     modelId: TtsConversationalModel.ElevenFlashV2,
     voiceId,
+    speed: voiceSpeedToNumber(voiceSpeed),
   };
 }
 
