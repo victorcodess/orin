@@ -3,7 +3,10 @@
 import { useEffect } from "react";
 
 import { toast } from "@/components/nexus-ui/toaster";
-import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
+import {
+  isVoiceUserSpeakingNow,
+  useVoiceCallStore,
+} from "@/lib/stores/voice-call-store";
 
 const TOAST_ID = "voice-silence-countdown";
 const DEFAULT_SILENCE_END_SEC = 30;
@@ -22,6 +25,8 @@ export function VoiceSilenceWarning() {
   const active = useVoiceCallStore((s) => s.status === "active");
   const configured = useVoiceCallStore((s) => s.silenceEndCallTimeout);
   const agentListening = useVoiceCallStore((s) => s.agentListening);
+  const silenceSince = useVoiceCallStore((s) => s.silenceSince);
+  const userSpeakingUntil = useVoiceCallStore((s) => s.userSpeakingUntil);
   const endAfter = endAfterSec(configured);
 
   useEffect(() => {
@@ -31,15 +36,33 @@ export function VoiceSilenceWarning() {
     }
 
     const tick = () => {
-      const { lastUserSpeechAt, agentListening: listening } =
-        useVoiceCallStore.getState();
+      const state = useVoiceCallStore.getState();
+      const { agentListening: listening, silenceSince: quietSince } = state;
 
-      if (!listening || !lastUserSpeechAt) {
+      if (isVoiceUserSpeakingNow()) {
         toast.dismiss(TOAST_ID);
         return;
       }
 
-      const quietSec = (Date.now() - lastUserSpeechAt) / 1000;
+      // User just stopped speaking — start the post-turn silence clock.
+      if (
+        state.hasUserSpoken &&
+        state.userSpeakingUntil != null &&
+        Date.now() >= state.userSpeakingUntil &&
+        quietSince == null &&
+        listening
+      ) {
+        state.startSilenceClock();
+      }
+
+      const silenceStart = useVoiceCallStore.getState().silenceSince;
+
+      if (!listening || !silenceStart) {
+        toast.dismiss(TOAST_ID);
+        return;
+      }
+
+      const quietSec = (Date.now() - silenceStart) / 1000;
       const remaining = endAfter - quietSec;
 
       if (remaining > 0 && remaining <= WARN_LEAD_SEC) {
@@ -59,7 +82,7 @@ export function VoiceSilenceWarning() {
       window.clearInterval(id);
       toast.dismiss(TOAST_ID);
     };
-  }, [active, agentListening, endAfter]);
+  }, [active, agentListening, endAfter, silenceSince, userSpeakingUntil]);
 
   return null;
 }

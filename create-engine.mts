@@ -5,7 +5,9 @@ import { config } from "dotenv";
 
 import {
   buildSpeechEngineConversationConfig,
+  buildSpeechEngineOverrides,
   buildSpeechEngineTtsConfig,
+  buildSpeechEngineTurnConfig,
   buildSpeechEngineWsConfig,
 } from "./lib/voice/speech-engine-config";
 
@@ -30,8 +32,9 @@ const engine = await elevenlabs.speechEngine.create({
   name: "Orin Speech Engine",
   speechEngine: buildSpeechEngineWsConfig(wsUrl),
   tts: buildSpeechEngineTtsConfig(),
+  turn: buildSpeechEngineTurnConfig(),
   conversation: buildSpeechEngineConversationConfig(),
-  overrides: { firstMessage: true },
+  overrides: buildSpeechEngineOverrides(),
 });
 
 console.log("Speech Engine ID:", engine.engineId);

@@ -1,11 +1,9 @@
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
-import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import { verifyConversationAccess } from "@/lib/ai/conversations";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { markVoiceCallPending } from "@/lib/voice/conversation-binding";
-import { createClient } from "@/lib/supabase/server";
 
 type VoiceTokenRequest = {
   conversationId?: string;
@@ -45,9 +43,6 @@ export async function POST(req: Request) {
 
     await verifyConversationAccess(conversationId);
 
-    const supabase = await createClient();
-    const { data: authData } = await supabase.auth.getUser();
-    const assistant = await getAssistantConfig(authData.user?.id);
     const pendingToken = await markVoiceCallPending(conversationId);
 
     const elevenlabs = new ElevenLabsClient({ apiKey });
@@ -68,11 +63,6 @@ export async function POST(req: Request) {
       {
         token,
         pendingToken,
-        assistant: {
-          name: assistant.name,
-          voiceId: assistant.voiceId,
-          firstMessage: assistant.firstMessage,
-        },
         silenceEndCallTimeout,
       },
       { headers: { "Cache-Control": "no-store" } },

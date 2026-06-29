@@ -48,6 +48,8 @@ type ChatMessageListProps = {
    * and without this the last bubble would re-fade as if it were brand new.
    */
   noFadeMessageId?: string | null;
+  /** Apply the scroll-assistant-to-top min-height during live voice calls. */
+  voiceCallActive?: boolean;
 };
 
 function textFromMessage(message: UIMessage) {
@@ -97,6 +99,7 @@ export function ChatMessageList({
   onEdit,
   onCancelEdit,
   noFadeMessageId = null,
+  voiceCallActive = false,
 }: ChatMessageListProps) {
   const reduceMotion = useReducedMotion();
   const previousUserMessageRef = useRef<HTMLDivElement | null>(null);
@@ -112,12 +115,8 @@ export function ChatMessageList({
         (message, index) => index < lastIndex && message.role === "user"
       )
     : -1;
-  const useAssistantMinHeight =
-    lastMessageIsAssistant &&
-    previousUserMessageIndex > -1 &&
-    messages.some(
-      (message, index) => index < lastIndex && message.role === "assistant"
-    );
+  const useCallMinHeight =
+    lastMessageIsAssistant && previousUserMessageIndex > -1;
 
   const attachPreviousUserMessageRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -234,12 +233,17 @@ export function ChatMessageList({
               from={message.role === "user" ? "user" : "assistant"}
               className={cn(
                 isLast &&
-                  useAssistantMinHeight &&
-                  "min-h-[calc(var(--orin-thread-height)-var(--orin-prev-user-height)-var(--orin-thread-content-gap)-var(--orin-thread-content-bottom-padding)-var(--orin-min-height-misc))]",
+                  useCallMinHeight &&
+                  "transition-[min-height] duration-300",
+                isLast &&
+                  useCallMinHeight &&
+                  (voiceCallActive
+                    ? "min-h-[calc(var(--orin-thread-height)-var(--orin-prev-user-height)-var(--orin-thread-content-gap)-var(--orin-thread-content-bottom-padding)-var(--orin-min-height-misc))]"
+                    : "min-h-40 ease-out"),
                 fadeForEditing && "opacity-50 transition-opacity duration-300"
               )}
               style={
-                isLast && useAssistantMinHeight
+                isLast && useCallMinHeight && voiceCallActive
                   ? ({
                       "--orin-prev-user-height": `${previousUserMessageHeight}px`,
                     } as CSSProperties)

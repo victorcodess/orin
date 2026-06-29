@@ -51,3 +51,18 @@ export function buildSpeechEngineTtsConfig(
     voiceId,
   };
 }
+
+/** User speaks first — do not allow client-provided first messages. */
+export function buildSpeechEngineOverrides() {
+  return {
+    firstMessage: false,
+  };
+}
+
+/** User speaks first — empty first message is the Speech Engine default. */
+export function buildSpeechEngineTurnConfig() {
+  return {
+    initialWaitTime: 60,
+    silenceEndCallTimeout: 30,
+  };
+}

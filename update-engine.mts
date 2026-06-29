@@ -5,7 +5,9 @@ import { config } from "dotenv";
 
 import {
   buildSpeechEngineConversationConfig,
+  buildSpeechEngineOverrides,
   buildSpeechEngineTtsConfig,
+  buildSpeechEngineTurnConfig,
   buildSpeechEngineWsConfig,
 } from "./lib/voice/speech-engine-config";
 
@@ -36,8 +38,9 @@ const speechEngine = buildSpeechEngineWsConfig(wsUrl);
 const engine = await elevenlabs.speechEngine.update(engineId, {
   speechEngine,
   tts: buildSpeechEngineTtsConfig(),
+  turn: buildSpeechEngineTurnConfig(),
   conversation: buildSpeechEngineConversationConfig(),
-  overrides: { firstMessage: true },
+  overrides: buildSpeechEngineOverrides(),
 });
 
 console.log("Updated Speech Engine:", engine.engineId);

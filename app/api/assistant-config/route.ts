@@ -1,3 +1,5 @@
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+
 import {
   clearAssistantConfigCookie,
   getAssistantConfig,
@@ -6,6 +8,7 @@ import {
 import { DEFAULT_ASSISTANT, type AssistantConfig } from "@/lib/orin/defaults";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
+import { buildSpeechEngineTtsConfig } from "@/lib/voice/speech-engine-config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,11 +30,34 @@ function sanitizeConfig(payload: AssistantConfigPayload): AssistantConfig | null
   }
 
   return {
-    name: DEFAULT_ASSISTANT.name,
     personality,
     voiceId,
-    firstMessage: DEFAULT_ASSISTANT.firstMessage,
   };
+}
+
+async function syncSpeechEngineVoice(voiceId: string) {
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const engineId = process.env.ELEVENLABS_SPEECH_ENGINE_ID;
+
+  if (!apiKey || apiKey.includes("your-") || !engineId || engineId.includes("your-")) {
+    return;
+  }
+
+  try {
+    const elevenlabs = new ElevenLabsClient({ apiKey });
+    const engine = await elevenlabs.speechEngine.get(engineId);
+    const currentVoiceId = engine.config?.tts?.voiceId;
+
+    if (currentVoiceId === voiceId) {
+      return;
+    }
+
+    await elevenlabs.speechEngine.update(engineId, {
+      tts: buildSpeechEngineTtsConfig(voiceId),
+    });
+  } catch (error) {
+    debugError("api/assistant-config", "failed to sync speech engine voice", error);
+  }
 }
 
 export async function GET() {
@@ -68,16 +94,15 @@ export async function PATCH(req: Request) {
 
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
+    const previousConfig = await getAssistantConfig(authData.user?.id);
 
     if (authData.user) {
       const admin = createAdminClient();
       const { error } = await admin.from("assistant_configs").upsert(
         {
           user_id: authData.user.id,
-          name: config.name,
           personality: config.personality,
           voice_id: config.voiceId,
-          first_message: config.firstMessage,
           is_default: false,
         },
         { onConflict: "user_id" },
@@ -90,6 +115,10 @@ export async function PATCH(req: Request) {
       await clearAssistantConfigCookie();
     } else {
       await setAssistantConfigCookie(config);
+    }
+
+    if (previousConfig.voiceId !== config.voiceId) {
+      await syncSpeechEngineVoice(config.voiceId);
     }
 
     return Response.json(
@@ -122,6 +151,8 @@ export async function DELETE() {
     }
 
     await clearAssistantConfigCookie();
+
+    await syncSpeechEngineVoice(DEFAULT_ASSISTANT.voiceId);
 
     return Response.json(
       { config: DEFAULT_ASSISTANT },

@@ -31,7 +31,9 @@ import {
   useVoiceCallStore,
   type VoiceCallMode,
 } from "@/lib/stores/voice-call-store";
+import { ORIN_NAME } from "@/lib/orin/defaults";
 import { useVoiceLiveMessagesStore } from "@/lib/stores/voice-live-messages-store";
+import { getVoiceDisconnectToast } from "@/lib/voice/disconnect-toast";
 import { cn } from "@/lib/utils";
 
 // A muted WebRTC mic still sends silence frames, which ElevenLabs occasionally
@@ -178,7 +180,6 @@ export function VoiceCallOverlay() {
   const status = useVoiceCallStore((state) => state.status);
   const mode = useVoiceCallStore((state) => state.mode);
   const conversationId = useVoiceCallStore((state) => state.conversationId);
-  const assistant = useVoiceCallStore((state) => state.assistant);
   const reset = useVoiceCallStore((state) => state.reset);
   const setActive = useVoiceCallStore((state) => state.setActive);
   const setPendingToken = useVoiceCallStore((state) => state.setPendingToken);
@@ -201,6 +202,7 @@ export function VoiceCallOverlay() {
   const pendingTokenRef = useRef<string | null>(null);
   const conversationIdRef = useRef<string | null>(null);
   const sessionStartingRef = useRef(false);
+  const lastErrorAtRef = useRef<number | null>(null);
 
   conversationIdRef.current = conversationId;
 
@@ -210,7 +212,7 @@ export function VoiceCallOverlay() {
         // Drop empty/silence turns (e.g. from a muted mic) so they never flash
         // a bubble; the server ignores them too.
         if (hasSpeech(message)) {
-          useVoiceCallStore.getState().touchUserSpeech();
+          useVoiceCallStore.getState().markUserSpeaking();
           setUserTranscript(message);
         }
         return;
@@ -218,8 +220,19 @@ export function VoiceCallOverlay() {
 
       setAgentTranscript(message);
     },
+    onVadScore: ({ vadScore }) => {
+      if (vadScore > 0.35) {
+        useVoiceCallStore.getState().markUserSpeaking();
+      }
+    },
     onModeChange: ({ mode }) => {
-      useVoiceCallStore.getState().setAgentListening(mode === "listening");
+      const store = useVoiceCallStore.getState();
+      store.setAgentListening(mode === "listening");
+      if (mode === "listening") {
+        store.startSilenceClock();
+      } else {
+        store.clearSilenceClock();
+      }
     },
     onAgentChatResponsePart: (part) => {
       applyAgentPart(part);
@@ -263,24 +276,71 @@ export function VoiceCallOverlay() {
     onDisconnect: (details) => {
       sessionStartingRef.current = false;
       toast.dismiss("voice-silence-countdown");
+
       if (useVoiceCallStore.getState().status !== "disconnecting") {
-        if (details.reason === "agent") {
-          toast.info("Call ended due to silence", {
-            description: "Speak during the call to keep it open.",
-          });
-        } else if (details.reason === "error") {
-          toast.error("Voice call disconnected", {
-            description: details.message,
-          });
+        const {
+          lastUserSpeechAt,
+          silenceEndCallTimeout,
+          activeSince,
+        } = useVoiceCallStore.getState();
+        const recentError =
+          lastErrorAtRef.current != null &&
+          Date.now() - lastErrorAtRef.current < 5_000;
+        const toastInfo = getVoiceDisconnectToast(details, {
+          recentError,
+          activeSince,
+          lastUserSpeechAt,
+          silenceEndCallTimeout,
+        });
+
+        switch (toastInfo.kind) {
+          case "silence":
+            toast.info("Call ended due to silence", {
+              description: "Speak during the call to keep it open.",
+            });
+            break;
+          case "ended":
+            toast.info("Call ended", {
+              description: toastInfo.description,
+            });
+            break;
+          case "error":
+            toast.error(toastInfo.title, {
+              description: toastInfo.description,
+            });
+            break;
+          case "none":
+            break;
         }
       }
+
+      lastErrorAtRef.current = null;
       reset();
     },
-    onError: (message) => {
+    onError: (message, context) => {
       sessionStartingRef.current = false;
+      lastErrorAtRef.current = Date.now();
       conversation.endSession();
       setError(message);
-      toast.error("Voice call error", { description: message });
+
+      const description =
+        typeof context === "object" && context != null
+          ? [
+              "debugMessage" in context &&
+              typeof context.debugMessage === "string"
+                ? context.debugMessage
+                : null,
+              "details" in context && typeof context.details === "string"
+                ? context.details
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" ") || undefined
+          : undefined;
+
+      toast.error("Voice call error", {
+        description: description ?? message,
+      });
     },
   });
 
@@ -315,11 +375,6 @@ export function VoiceCallOverlay() {
         const data = (await response.json()) as {
           token?: string;
           pendingToken?: string;
-          assistant?: {
-            name: string;
-            voiceId: string;
-            firstMessage: string;
-          };
           silenceEndCallTimeout?: number | null;
           error?: string;
         };
@@ -328,19 +383,13 @@ export function VoiceCallOverlay() {
           return;
         }
 
-        if (
-          !response.ok ||
-          !data.token ||
-          !data.pendingToken ||
-          !data.assistant
-        ) {
+        if (!response.ok || !data.token || !data.pendingToken) {
           throw new Error(data.error ?? "Failed to create voice token");
         }
 
         pendingTokenRef.current = data.pendingToken;
         setPendingToken(
           data.pendingToken,
-          data.assistant,
           data.silenceEndCallTimeout ?? null
         );
         await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -351,10 +400,6 @@ export function VoiceCallOverlay() {
 
         conversationRef.current.startSession({
           conversationToken: data.token,
-          overrides: {
-            agent: { firstMessage: data.assistant.firstMessage },
-            tts: { voiceId: data.assistant.voiceId },
-          },
         });
       } catch (error) {
         if (cancelled) {
@@ -416,7 +461,7 @@ export function VoiceCallOverlay() {
     setDisconnecting();
   };
 
-  const assistantName = assistant?.name ?? "Orin";
+  const assistantName = ORIN_NAME;
 
   // Inline calls are rendered by the chat composer (ChatInput); the overlay only
   // owns the fullscreen experience plus the conversation lifecycle.

@@ -38,7 +38,7 @@ import {
   useVoiceLiveMessagesStore,
   voiceLiveMessagesToUi,
 } from "@/lib/stores/voice-live-messages-store";
-import type { AssistantConfig } from "@/lib/orin/defaults";
+import { ORIN_NAME, type AssistantConfig } from "@/lib/orin/defaults";
 
 const EASE = [0.25, 0.1, 0.25, 1] as const;
 
@@ -436,7 +436,7 @@ export function ChatView({
 
   const copyChatRef = useRef({
     conversationId,
-    assistantName: assistant.name,
+    assistantName: ORIN_NAME,
     messages: mergedVisibleMessages,
     messageSources: displayMessageSources,
     voiceCallStatus,
@@ -444,7 +444,7 @@ export function ChatView({
 
   copyChatRef.current = {
     conversationId,
-    assistantName: assistant.name,
+    assistantName: ORIN_NAME,
     messages: mergedVisibleMessages,
     messageSources: displayMessageSources,
     voiceCallStatus,
@@ -483,9 +483,8 @@ export function ChatView({
           {mergedVisibleMessages.length === 0 && !isComposerBusy ? (
             <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-24 text-center">
               <p className="text-foreground text-lg font-medium">
-                {assistant.name}
+                {ORIN_NAME}
               </p>
-              <p className="max-w-md text-sm">{assistant.firstMessage}</p>
             </div>
           ) : (
             <ChatMessageList
@@ -499,6 +498,7 @@ export function ChatView({
               onEdit={handleEditMessage}
               onCancelEdit={cancelEditing}
               noFadeMessageId={noFadeMessageId}
+              voiceCallActive={voiceCallActive}
             />
           )}
         </ThreadContent>
