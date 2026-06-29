@@ -45,7 +45,7 @@ export const BASE_STYLE_OPTIONS: PersonalityOption<BaseStyleId>[] = [
 ];
 
 export const TRAIT_LEVEL_OPTIONS: PersonalityOption<TraitLevel>[] = [
-  { value: "default", label: "Default", description: "Follow your base style" },
   { value: "less", label: "Less", description: "Dial it down" },
+  { value: "default", label: "Default", description: "Follow your base style" },
   { value: "more", label: "More", description: "Dial it up" },
 ];

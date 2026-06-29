@@ -35,6 +35,7 @@ import {
 import type { PersonalitySettings } from "@/lib/orin/personality/types";
 import { useAssistantConfigStore } from "@/lib/stores/assistant-config-store";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 let cachedVoices: { voices: VoiceOption[]; fallback: boolean } | null = null;
 
@@ -59,8 +60,8 @@ function PersonalityDropdown<T extends string>({
           type="button"
           variant="outline"
           className={cn(
-            "border-input bg-background/80 h-10 w-full justify-between rounded-xl px-3.5 text-sm font-medium shadow-xs sm:w-44",
-            className,
+            "border-input bg-background/80 h-10 w-full justify-between rounded-3xl px-3.5 text-sm font-medium shadow-xs/1 sm:w-44",
+            className
           )}
         >
           <span className="truncate">{selected.label}</span>
@@ -71,7 +72,7 @@ function PersonalityDropdown<T extends string>({
           />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-72 p-1.5">
+      <DropdownMenuContent align="end" className="max-w-64">
         <DropdownMenuRadioGroup
           value={value}
           onValueChange={(next) => onValueChange(next as T)}
@@ -80,13 +81,13 @@ function PersonalityDropdown<T extends string>({
             <DropdownMenuRadioItem
               key={option.value}
               value={option.value}
-              className="h-auto items-start rounded-2xl py-2.5 pr-10 pl-3.5"
+              className="h-auto items-start rounded-2xl py-2 pr-8 pl-3"
             >
-              <span className="flex flex-col gap-0.5 text-left">
+              <span className="flex flex-col gap-0.25 text-left">
                 <span className="text-foreground text-sm font-medium">
                   {option.label}
                 </span>
-                <span className="text-muted-foreground text-xs leading-relaxed font-normal">
+                <span className="text-muted-foreground text-xs leading-relaxed font-[450]">
                   {option.description}
                 </span>
               </span>
@@ -112,11 +113,11 @@ export function SettingsPersonalization() {
   const [voiceId, setVoiceId] = useState(config.voiceId);
   const [isDirty, setIsDirty] = useState(false);
   const [voices, setVoices] = useState<VoiceOption[]>(
-    cachedVoices?.voices ?? [],
+    cachedVoices?.voices ?? []
   );
   const [voicesError, setVoicesError] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(
-    cachedVoices?.fallback ?? false,
+    cachedVoices?.fallback ?? false
   );
   const [saved, setSaved] = useState(false);
 
@@ -160,14 +161,14 @@ export function SettingsPersonalization() {
     () =>
       !personalitySettingsEqual(
         personalitySettings,
-        config.personalitySettings,
+        config.personalitySettings
       ) || voiceId !== config.voiceId,
-    [config, personalitySettings, voiceId],
+    [config, personalitySettings, voiceId]
   );
 
   const pickerVoices = useMemo(
     () => voices as unknown as ElevenLabs.Voice[],
-    [voices],
+    [voices]
   );
 
   const markDirty = () => {
@@ -252,7 +253,6 @@ export function SettingsPersonalization() {
         <SettingsRow
           title="Enthusiastic"
           description="How much energy and momentum Orin brings."
-          withSeparator
         >
           <PersonalityDropdown
             value={personalitySettings.enthusiastic}
@@ -260,7 +260,7 @@ export function SettingsPersonalization() {
             onValueChange={(enthusiastic) => updateSettings({ enthusiastic })}
           />
         </SettingsRow>
-
+        <Separator className="bg-border/40" />
         <div className="px-4 py-4">
           <SettingsField
             label="Custom instructions"

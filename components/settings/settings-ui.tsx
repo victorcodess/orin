@@ -64,7 +64,7 @@ export function SettingsRow({
           className
         )}
       >
-        <div className="min-w-0 sm:max-w-[46%]">
+        <div className="min-w-0 sm:max-w-[42%]">
           <p className="text-foreground text-sm font-medium">{title}</p>
           {description ? (
             <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
@@ -72,7 +72,7 @@ export function SettingsRow({
             </p>
           ) : null}
         </div>
-        <div className="flex min-w-0 flex-1 items-center sm:max-w-[48%] sm:justify-end sm:pt-0.5">
+        <div className="flex min-w-0 flex-1 items-center sm:max-w-[52%] sm:justify-end sm:pt-0.5">
           {children}
         </div>
       </div>
