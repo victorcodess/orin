@@ -115,7 +115,7 @@ function DropdownMenuContent({
         className={cn(
           dropdownMenuGlassClasses,
           dropdownMenuAnimationClasses,
-          "border-border/50 text-popover-foreground no-scrollbar z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-3xl border px-1.5 py-1.5 shadow-2xl/5 dark:shadow-2xl/50",
+          "border-border/50 text-popover-foreground no-scrollbar z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-3xl border px-1.5 py-1.5 shadow-2xl/5 dark:shadow-2xl/10",
           className
         )}
         {...props}
