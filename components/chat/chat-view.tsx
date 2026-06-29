@@ -26,9 +26,10 @@ import {
 } from "@/components/nexus-ui/thread";
 import { isKeyboardShortcutsDialogOpen } from "@/lib/keyboard-shortcuts";
 import { chatFetch } from "@/lib/ai/chat-fetch";
+import { getChatErrorMessage } from "@/lib/errors";
 import { registerChatCopyProvider } from "@/lib/chat/chat-copy-registry";
 import { formatChatForCopy } from "@/lib/chat/format-chat-for-copy";
-import { isAssistantReplyComplete } from "@/lib/ai/message-utils";
+import { isAssistantReplyComplete, textFromUIMessage } from "@/lib/ai/message-utils";
 import type { MessageRow } from "@/lib/ai/message-utils";
 import { useReadAloud } from "@/lib/hooks/use-read-aloud";
 import { takePendingFirstMessage } from "@/lib/pending-first-message";
@@ -54,7 +55,7 @@ function focusComposerInput() {
 }
 
 function toastChatError(error: Error) {
-  const message = error.message;
+  const message = getChatErrorMessage(error);
 
   if (message.includes("OPENAI_API_KEY")) {
     toast.error("OpenAI API key not configured", {
@@ -172,6 +173,13 @@ export function ChatView({
       generateId: () => crypto.randomUUID(),
       onError: (chatError) => {
         console.error("[orin:chat-view] useChat error", chatError);
+        setMessages((current) =>
+          current.filter(
+            (message) =>
+              message.role !== "assistant" ||
+              textFromUIMessage(message).trim().length > 0,
+          ),
+        );
         toastChatError(chatError);
         clearError();
 

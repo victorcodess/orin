@@ -24,6 +24,17 @@ export function textFromUIMessage(message: UIMessage): string {
     .join("");
 }
 
+/** Drop empty turns so OpenAI never receives placeholder assistant rows. */
+export function sanitizeUIMessagesForModel(messages: UIMessage[]): UIMessage[] {
+  return messages.filter((message) => {
+    if (message.role === "system") {
+      return false;
+    }
+
+    return textFromUIMessage(message).trim().length > 0;
+  });
+}
+
 export function isAssistantReplyComplete(messages: UIMessage[]): boolean {
   const lastUserIndex = messages.findLastIndex(
     (message) => message.role === "user",

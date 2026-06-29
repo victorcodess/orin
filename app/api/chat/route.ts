@@ -15,7 +15,8 @@ import {
   textFromUIMessage,
   updateUserMessageAndDeleteAfter,
 } from "@/lib/ai/messages";
-import { buildSystemPrompt } from "@/lib/ai/prompts";
+import { sanitizeUIMessagesForModel } from "@/lib/ai/message-utils";
+import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
 import { debugError, debugLog } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { ensureSessionCookie } from "@/lib/session";
@@ -136,16 +137,32 @@ export async function POST(req: Request) {
       await maybeUpdateConversationTitle(conversationId, userText);
     }
 
-    const modelMessages = await convertToModelMessages(messages);
+    const modelMessages = await convertToModelMessages(
+      sanitizeUIMessagesForModel(messages),
+    );
+
+    if (modelMessages.length === 0) {
+      return Response.json(
+        { error: "At least one non-empty message is required" },
+        { status: 400 },
+      );
+    }
+
+    const system = buildPersonalityPrompt(config.personalitySettings);
+
     debugLog("api/chat", "starting streamText", {
       modelMessageCount: modelMessages.length,
+      systemPromptChars: system.length,
       elapsedMs: Date.now() - startedAt,
     });
 
     const result = streamText({
       model: openai("gpt-4o-mini"),
-      system: buildSystemPrompt(config),
+      system,
       messages: modelMessages,
+      onError: ({ error }) => {
+        debugError("api/chat", "streamText failed", error);
+      },
       onFinish: ({ text }) => {
         void (async () => {
           debugLog("api/chat", "stream finished", {

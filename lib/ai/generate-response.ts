@@ -6,7 +6,8 @@ import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import { toUIMessages } from "@/lib/ai/message-utils";
 import { loadHistory, saveMessage } from "@/lib/ai/messages";
-import { buildSystemPrompt } from "@/lib/ai/prompts";
+import { sanitizeUIMessagesForModel } from "@/lib/ai/message-utils";
+import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 
 type TranscriptEntry = { role: "user" | "agent"; content: string };
@@ -205,13 +206,21 @@ export async function handleVoiceTranscript({
     ...transcriptToUiMessages(transcript),
   ].slice(-VOICE_PROMPT_MESSAGE_LIMIT);
 
+  const modelMessages = await convertToModelMessages(
+    sanitizeUIMessagesForModel(promptMessages),
+  );
+
+  if (modelMessages.length === 0) {
+    return null;
+  }
+
   let fullText = "";
 
   async function* textStream() {
     const result = streamText({
       model: openai("gpt-4o-mini"),
-      system: buildSystemPrompt(config),
-      messages: await convertToModelMessages(promptMessages),
+      system: buildPersonalityPrompt(config.personalitySettings),
+      messages: modelMessages,
       abortSignal: signal,
     });
 
