@@ -153,7 +153,9 @@ export function ChatMessageList({
   // to the conversation for the new-chat intro; every assistant is paired to its
   // preceding user so the "Thinking" shimmer and the streamed reply are the same
   // row and never remount mid-stream.
-  const firstUserIndex = messages.findIndex((message) => message.role === "user");
+  const firstUserIndex = messages.findIndex(
+    (message) => message.role === "user"
+  );
   const userKey = (index: number) =>
     index === firstUserIndex ? `${conversationId}::user` : messages[index]?.id;
   const messageKeys = messages.map((message, index) => {
@@ -210,7 +212,8 @@ export function ChatMessageList({
             !(isLoading && isLast);
         const messageKey = messageKeys[index];
         const isVoiceMessage = messageSources[message.id] === "voice";
-        const shouldIntro = !reduceMotion && !introSuppressedKeys.has(messageKey);
+        const shouldIntro =
+          !reduceMotion && !introSuppressedKeys.has(messageKey);
 
         return (
           <motion.div
@@ -259,7 +262,7 @@ export function ChatMessageList({
                   <MessageContent
                     className={cn(
                       isEditingMessage &&
-                        "animate-pulse outline-1 outline-dashed outline-primary [&_svg]:opacity-0"
+                        "outline-primary animate-pulse outline-1 outline-dashed [&_svg]:opacity-0"
                     )}
                   >
                     {showTyping ? (

@@ -2,7 +2,16 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { useStickToBottomContext } from "use-stick-to-bottom";
@@ -29,11 +38,17 @@ import { chatFetch } from "@/lib/ai/chat-fetch";
 import { getChatErrorMessage } from "@/lib/errors";
 import { registerChatCopyProvider } from "@/lib/chat/chat-copy-registry";
 import { formatChatForCopy } from "@/lib/chat/format-chat-for-copy";
-import { isAssistantReplyComplete, textFromUIMessage } from "@/lib/ai/message-utils";
+import {
+  isAssistantReplyComplete,
+  textFromUIMessage,
+} from "@/lib/ai/message-utils";
 import type { MessageRow } from "@/lib/ai/message-utils";
 import { useReadAloud } from "@/lib/hooks/use-read-aloud";
 import { takePendingFirstMessage } from "@/lib/pending-first-message";
-import { useIsVoiceCallActive, useVoiceCallStore } from "@/lib/stores/voice-call-store";
+import {
+  useIsVoiceCallActive,
+  useVoiceCallStore,
+} from "@/lib/stores/voice-call-store";
 import {
   EMPTY_VOICE_LIVE_MESSAGES,
   useVoiceLiveMessagesStore,
@@ -166,60 +181,69 @@ export function ChatView({
     [conversationId]
   );
 
-  const { messages, sendMessage, regenerate, status, stop, clearError, setMessages } =
-    useChat({
-      transport,
-      messages: initialMessages,
-      generateId: () => crypto.randomUUID(),
-      onError: (chatError) => {
-        console.error("[orin:chat-view] useChat error", chatError);
-        setMessages((current) =>
-          current.filter(
-            (message) =>
-              message.role !== "assistant" ||
-              textFromUIMessage(message).trim().length > 0,
-          ),
-        );
-        toastChatError(chatError);
-        clearError();
+  const {
+    messages,
+    sendMessage,
+    regenerate,
+    status,
+    stop,
+    clearError,
+    setMessages,
+  } = useChat({
+    transport,
+    messages: initialMessages,
+    generateId: () => crypto.randomUUID(),
+    onError: (chatError) => {
+      console.error("[orin:chat-view] useChat error", chatError);
+      setMessages((current) =>
+        current.filter(
+          (message) =>
+            message.role !== "assistant" ||
+            textFromUIMessage(message).trim().length > 0
+        )
+      );
+      toastChatError(chatError);
+      clearError();
 
-        if (isNewChat.current) {
-          useConversationsStore.getState().removeConversation(conversationId);
-          useMessagesStore.getState().remove(conversationId);
-          router.push("/new");
-        }
-      },
-      onFinish: () => {
-        isNewChat.current = false;
-        void useConversationsStore.getState().refresh({ silent: true });
-        const visible = messagesRef.current.filter(
-          (message) => message.role !== "system"
-        );
-        if (visible.length > 0) {
-          useMessagesStore.getState().set(conversationId, {
-            assistant,
-            messages: visible,
-            messageSources: messageSourcesRef.current,
-          });
-        }
-      },
-    });
+      if (isNewChat.current) {
+        useConversationsStore.getState().removeConversation(conversationId);
+        useMessagesStore.getState().remove(conversationId);
+        router.push("/new");
+      }
+    },
+    onFinish: () => {
+      isNewChat.current = false;
+      void useConversationsStore.getState().refresh({ silent: true });
+      const visible = messagesRef.current.filter(
+        (message) => message.role !== "system"
+      );
+      if (visible.length > 0) {
+        useMessagesStore.getState().set(conversationId, {
+          assistant,
+          messages: visible,
+          messageSources: messageSourcesRef.current,
+        });
+      }
+    },
+  });
 
   messagesRef.current = messages;
   messageSourcesRef.current = messageSources;
 
   const voiceCallActive = useIsVoiceCallActive(conversationId);
   const voiceCallStatus = useVoiceCallStore((state) =>
-    state.conversationId === conversationId ? state.status : "idle",
+    state.conversationId === conversationId ? state.status : "idle"
   );
   const liveVoiceMessages = useVoiceLiveMessagesStore(
     useShallow((state) =>
       state.conversationId === conversationId
         ? state.messages
-        : EMPTY_VOICE_LIVE_MESSAGES,
-    ),
+        : EMPTY_VOICE_LIVE_MESSAGES
+    )
   );
-  const liveAgentStreaming = liveVoiceMessages.some((message) => message.streaming);
+  const liveAgentStreaming = liveVoiceMessages.some(
+    (message) => message.streaming
+  );
 
   const prevVoiceCallStatusRef = useRef(voiceCallStatus);
   // After a voice call, the live transcript is swapped for the canonical DB
@@ -410,15 +434,15 @@ export function ChatView({
 
   const visibleMessages = useMemo(
     () => messages.filter((message) => message.role !== "system"),
-    [messages],
+    [messages]
   );
   const liveVoiceUiMessages = useMemo(
     () => voiceLiveMessagesToUi(liveVoiceMessages),
-    [liveVoiceMessages],
+    [liveVoiceMessages]
   );
   const mergedVisibleMessages = useMemo(
     () => [...visibleMessages, ...liveVoiceUiMessages],
-    [liveVoiceUiMessages, visibleMessages],
+    [liveVoiceUiMessages, visibleMessages]
   );
   const lastMessage = mergedVisibleMessages.at(-1);
   // Insert the pending assistant row (the min-height box that scrolls the user
@@ -468,7 +492,7 @@ export function ChatView({
 
   useEffect(() => {
     registerChatCopyProvider(conversationId, () =>
-      formatChatForCopy(copyChatRef.current),
+      formatChatForCopy(copyChatRef.current)
     );
 
     return () => registerChatCopyProvider(conversationId, null);
@@ -495,12 +519,10 @@ export function ChatView({
           } as CSSProperties
         }
       >
-        <ThreadContent className="mx-auto w-full max-w-3xl items-stretch gap-(--orin-thread-content-gap) pt-15 md:pt-10 pb-30 md:pb-(--orin-thread-content-bottom-padding)">
+        <ThreadContent className="mx-auto w-full max-w-3xl items-stretch gap-(--orin-thread-content-gap) pt-15 pb-30 md:pt-10 md:pb-(--orin-thread-content-bottom-padding)">
           {mergedVisibleMessages.length === 0 && !isComposerBusy ? (
             <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-24 text-center">
-              <p className="text-foreground text-lg font-medium">
-                {ORIN_NAME}
-              </p>
+              <p className="text-foreground text-lg font-medium">{ORIN_NAME}</p>
             </div>
           ) : (
             <ChatMessageList
