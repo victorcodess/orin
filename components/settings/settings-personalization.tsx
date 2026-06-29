@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import type { VoiceOption } from "@/lib/elevenlabs/voices";
+import { CURATED_VOICES } from "@/lib/elevenlabs/voices";
 import { useSettingsRouteDirty } from "@/lib/hooks/use-settings-route-dirty";
 import { personalitySettingsEqual } from "@/lib/orin/personality/parse";
 import {
@@ -34,22 +34,26 @@ import {
   type PersonalityOption,
 } from "@/lib/orin/personality/ui-options";
 import type { PersonalitySettings } from "@/lib/orin/personality/types";
+import {
+  VOICE_SPEED_OPTIONS,
+  type VoiceSpeed,
+} from "@/lib/orin/voice/speed";
 import { useAssistantConfigStore } from "@/lib/stores/assistant-config-store";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-
-let cachedVoices: { voices: VoiceOption[]; fallback: boolean } | null = null;
 
 function PersonalityDropdown<T extends string>({
   value,
   options,
   onValueChange,
   className,
+  compact = false,
 }: {
   value: T;
-  options: PersonalityOption<T>[];
+  options: PersonalityOption<T>[] | { value: T; label: string }[];
   onValueChange: (value: T) => void;
   className?: string;
+  compact?: boolean;
 }) {
   const selected =
     options.find((option) => option.value === value) ?? options[0];
@@ -82,16 +86,25 @@ function PersonalityDropdown<T extends string>({
             <DropdownMenuRadioItem
               key={option.value}
               value={option.value}
-              className="h-auto items-start rounded-2xl py-2 pr-8 pl-3"
+              className={cn(
+                "rounded-2xl pr-8 pl-3",
+                compact ? "py-2" : "h-auto items-start py-2",
+              )}
             >
-              <span className="flex flex-col gap-0.25 text-left">
+              {compact ? (
                 <span className="text-foreground text-sm font-medium">
                   {option.label}
                 </span>
-                <span className="text-muted-foreground text-xs leading-relaxed font-[450]">
-                  {option.description}
+              ) : (
+                <span className="flex flex-col gap-0.25 text-left">
+                  <span className="text-foreground text-sm font-medium">
+                    {option.label}
+                  </span>
+                  <span className="text-muted-foreground text-xs leading-relaxed font-[450]">
+                    {"description" in option ? option.description : null}
+                  </span>
                 </span>
-              </span>
+              )}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
@@ -112,13 +125,8 @@ export function SettingsPersonalization() {
   const [personalitySettings, setPersonalitySettings] =
     useState<PersonalitySettings>(config.personalitySettings);
   const [voiceId, setVoiceId] = useState(config.voiceId);
+  const [voiceSpeed, setVoiceSpeed] = useState<VoiceSpeed>(config.voiceSpeed);
   const [isDirty, setIsDirty] = useState(false);
-  const [voices, setVoices] = useState<VoiceOption[]>(
-    cachedVoices?.voices ?? []
-  );
-  const [usingFallback, setUsingFallback] = useState(
-    cachedVoices?.fallback ?? false
-  );
   const loadErrorToasted = useRef(false);
 
   useEffect(() => {
@@ -128,7 +136,8 @@ export function SettingsPersonalization() {
 
     setPersonalitySettings(config.personalitySettings);
     setVoiceId(config.voiceId);
-  }, [config.personalitySettings, config.voiceId, isDirty]);
+    setVoiceSpeed(config.voiceSpeed);
+  }, [config.personalitySettings, config.voiceId, config.voiceSpeed, isDirty]);
 
   useEffect(() => {
     if (!isLoading && error && !loadErrorToasted.current) {
@@ -137,55 +146,27 @@ export function SettingsPersonalization() {
     }
   }, [isLoading, error]);
 
-  useEffect(() => {
-    if (cachedVoices) {
-      return;
-    }
-
-    void fetch("/api/elevenlabs/voices", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error("Failed to load voices");
-        }
-
-        const data = (await response.json()) as {
-          voices: VoiceOption[];
-          fallback?: boolean;
-        };
-        cachedVoices = {
-          voices: data.voices,
-          fallback: Boolean(data.fallback),
-        };
-        setVoices(data.voices);
-        setUsingFallback(Boolean(data.fallback));
-      })
-      .catch(() => {
-        toast.error("Couldn't load voices", {
-          description: "Try again later.",
-        });
-      });
-  }, []);
-
   const hasEdits = useMemo(
     () =>
       !personalitySettingsEqual(
         personalitySettings,
         config.personalitySettings
-      ) || voiceId !== config.voiceId,
-    [config, personalitySettings, voiceId]
+      ) || voiceId !== config.voiceId || voiceSpeed !== config.voiceSpeed,
+    [config, personalitySettings, voiceId, voiceSpeed]
   );
 
   const discardEdits = useCallback(() => {
     setPersonalitySettings(config.personalitySettings);
     setVoiceId(config.voiceId);
+    setVoiceSpeed(config.voiceSpeed);
     setIsDirty(false);
-  }, [config.personalitySettings, config.voiceId]);
+  }, [config.personalitySettings, config.voiceId, config.voiceSpeed]);
 
   useSettingsRouteDirty("personalization", hasEdits, discardEdits);
 
   const pickerVoices = useMemo(
-    () => voices as unknown as ElevenLabs.Voice[],
-    [voices]
+    () => CURATED_VOICES as unknown as ElevenLabs.Voice[],
+    [],
   );
 
   const markDirty = () => {
@@ -204,6 +185,7 @@ export function SettingsPersonalization() {
         customInstructions: personalitySettings.customInstructions.trim(),
       },
       voiceId,
+      voiceSpeed,
     });
 
     if (ok) {
@@ -305,31 +287,37 @@ export function SettingsPersonalization() {
       </SettingsGroup>
 
       <SettingsGroup>
-        <div className="px-4 py-4">
-          <SettingsField
-            label="Voice"
-            description="Orin's voice for read-aloud and calls."
-            htmlFor="assistant-voice"
-          >
-            <VoicePicker
-              voices={pickerVoices}
-              value={voiceId}
-              onValueChange={(value) => {
-                markDirty();
-                setVoiceId(value);
-              }}
-              placeholder="Select a voice..."
-            />
+        <SettingsRow
+          title="Voice"
+          description="Orin's voice for read-aloud and calls."
+        >
+          <VoicePicker
+            voices={pickerVoices}
+            value={voiceId}
+            voiceSpeed={voiceSpeed}
+            onValueChange={(value) => {
+              markDirty();
+              setVoiceId(value);
+            }}
+            placeholder="Select a voice..."
+          />
+        </SettingsRow>
 
-            {usingFallback ? (
-              <p className="text-muted-foreground mt-2 text-xs">
-                Showing common voices. To browse your full library, enable the{" "}
-                <span className="text-foreground font-medium">voices_read</span>{" "}
-                permission on your ElevenLabs API key.
-              </p>
-            ) : null}
-          </SettingsField>
-        </div>
+        <SettingsRow
+          title="Speed"
+          description="How fast Orin speaks on calls and read-aloud."
+          withSeparator
+        >
+          <PersonalityDropdown
+            value={voiceSpeed}
+            options={VOICE_SPEED_OPTIONS}
+            onValueChange={(value) => {
+              markDirty();
+              setVoiceSpeed(value);
+            }}
+            compact
+          />
+        </SettingsRow>
       </SettingsGroup>
 
       <SettingsActions>

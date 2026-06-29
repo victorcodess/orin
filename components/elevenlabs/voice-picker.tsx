@@ -27,37 +27,97 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { getVoiceOrbColors } from "@/lib/elevenlabs/voices"
+import { getVoiceOrbColors, voicePreviewUrl } from "@/lib/elevenlabs/voices"
+import type { VoiceSpeed } from "@/lib/orin/voice/speed"
 
-// Minimal shared preview player: one <audio> element, one active clip at a time.
-const usePreview = create<{ currentId: string | null; isPlaying: boolean }>(
-  () => ({ currentId: null, isPlaying: false })
-)
+type PreviewState = {
+  voiceId: string | null
+  status: "idle" | "loading" | "playing"
+}
+
+const usePreview = create<PreviewState>(() => ({
+  voiceId: null,
+  status: "idle",
+}))
 
 let previewAudio: HTMLAudioElement | null = null
 
-function togglePreview(id: string, src: string) {
-  if (typeof window === "undefined") return
-  if (!previewAudio) {
-    previewAudio = new Audio()
-    previewAudio.addEventListener("ended", () =>
-      usePreview.setState({ currentId: null, isPlaying: false })
-    )
+function ensurePreviewAudio() {
+  if (previewAudio) {
+    return previewAudio
   }
-  const { currentId, isPlaying } = usePreview.getState()
-  if (currentId === id && isPlaying) {
-    previewAudio.pause()
-    usePreview.setState({ isPlaying: false })
+
+  previewAudio = new Audio()
+  previewAudio.addEventListener("ended", () => {
+    usePreview.setState({ voiceId: null, status: "idle" })
+  })
+  previewAudio.addEventListener("error", () => {
+    usePreview.setState({ voiceId: null, status: "idle" })
+  })
+
+  return previewAudio
+}
+
+function stopPreview() {
+  previewAudio?.pause()
+  usePreview.setState({ voiceId: null, status: "idle" })
+}
+
+function waitForAudioReady(audio: HTMLAudioElement) {
+  if (audio.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
+    return Promise.resolve()
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const onReady = () => {
+      cleanup()
+      resolve()
+    }
+    const onError = () => {
+      cleanup()
+      reject(new Error("Preview failed to load"))
+    }
+    const cleanup = () => {
+      audio.removeEventListener("canplaythrough", onReady)
+      audio.removeEventListener("error", onError)
+    }
+
+    audio.addEventListener("canplaythrough", onReady)
+    audio.addEventListener("error", onError)
+  })
+}
+
+async function toggleVoicePreview(voiceId: string, src: string) {
+  const audio = ensurePreviewAudio()
+  const { voiceId: activeId, status } = usePreview.getState()
+
+  if (activeId === voiceId && status === "playing") {
+    audio.pause()
+    usePreview.setState({ status: "idle" })
     return
   }
-  if (currentId !== id) previewAudio.src = src
-  void previewAudio.play()
-  usePreview.setState({ currentId: id, isPlaying: true })
+
+  usePreview.setState({ voiceId, status: "loading" })
+
+  const resolvedSrc = new URL(src, window.location.origin).href
+  if (audio.src !== resolvedSrc) {
+    audio.src = src
+    audio.load()
+  }
+
+  try {
+    await waitForAudioReady(audio)
+    await audio.play()
+    usePreview.setState({ voiceId, status: "playing" })
+  } catch {
+    usePreview.setState({ voiceId: null, status: "idle" })
+  }
 }
 
 interface VoicePickerProps {
   voices: ElevenLabs.Voice[]
   value?: string
+  voiceSpeed?: VoiceSpeed
   onValueChange?: (value: string) => void
   placeholder?: string
   className?: string
@@ -68,6 +128,7 @@ interface VoicePickerProps {
 function VoicePicker({
   voices,
   value,
+  voiceSpeed,
   onValueChange,
   placeholder = "Select a voice...",
   className,
@@ -81,106 +142,104 @@ function VoicePicker({
 
   const selectedVoice = voices.find((v) => v.voiceId === value)
 
-  React.useEffect(
-    () => () => {
-      previewAudio?.pause()
-      usePreview.setState({ currentId: null, isPlaying: false })
-    },
-    []
-  )
+  React.useEffect(() => () => stopPreview(), [])
+  React.useEffect(() => stopPreview(), [voiceSpeed])
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={isOpen}
-            className={cn("w-full justify-between", className)}
-          >
-            {selectedVoice ? (
-              <div className="flex items-center gap-2 overflow-hidden">
-                <div className="relative size-6 shrink-0 overflow-visible">
-                  <Orb
-                    colors={getVoiceOrbColors(selectedVoice.voiceId)}
-                    agentState="thinking"
-                    className="absolute inset-0"
-                  />
-                </div>
-                <span className="truncate">{selectedVoice.name}</span>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={isOpen}
+          className={cn("w-full justify-between", className)}
+        >
+          {selectedVoice ? (
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="relative size-6 shrink-0 overflow-visible">
+                <Orb
+                  colors={getVoiceOrbColors(selectedVoice.voiceId)}
+                  agentState="thinking"
+                  className="absolute inset-0"
+                />
               </div>
-            ) : (
-              placeholder
-            )}
-            <HugeiconsIcon
-              icon={UnfoldMoreIcon}
-              strokeWidth={2}
-              className="ml-2 size-4 shrink-0 opacity-50"
-            />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-          <Command>
-            <CommandInput placeholder="Search voices..." />
-            <CommandList>
-              <CommandEmpty>No voice found.</CommandEmpty>
-              <CommandGroup>
-                {voices.map((voice) => (
-                  <VoicePickerItem
-                    key={voice.voiceId}
-                    voice={voice}
-                    isSelected={value === voice.voiceId}
-                    onSelect={() => {
-                      onValueChange?.(voice.voiceId!)
-                    }}
-                  />
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
+              <span className="truncate">{selectedVoice.name}</span>
+            </div>
+          ) : (
+            placeholder
+          )}
+          <HugeiconsIcon
+            icon={UnfoldMoreIcon}
+            strokeWidth={2}
+            className="ml-2 size-4 shrink-0 opacity-50"
+          />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+        <Command>
+          <CommandInput placeholder="Search voices..." />
+          <CommandList>
+            <CommandEmpty>No voice found.</CommandEmpty>
+            <CommandGroup>
+              {voices.map((voice) => (
+                <VoicePickerItem
+                  key={voice.voiceId}
+                  voice={voice}
+                  voiceSpeed={voiceSpeed}
+                  isSelected={value === voice.voiceId}
+                  onSelect={() => {
+                    onValueChange?.(voice.voiceId!)
+                  }}
+                />
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
     </Popover>
   )
 }
 
 interface VoicePickerItemProps {
   voice: ElevenLabs.Voice
+  voiceSpeed?: VoiceSpeed
   isSelected: boolean
   onSelect: () => void
 }
 
 function VoicePickerItem({
   voice,
+  voiceSpeed,
   isSelected,
   onSelect,
 }: VoicePickerItemProps) {
   const [isHovered, setIsHovered] = React.useState(false)
 
-  const preview = voice.previewUrl
-  const currentId = usePreview((s) => s.currentId)
-  const playing = usePreview((s) => s.isPlaying)
-  const isPlaying = Boolean(preview) && currentId === voice.voiceId && playing
+  const preview = voice.voiceId
+    ? voicePreviewUrl(voice.voiceId, voiceSpeed)
+    : null
+  const { voiceId: activeId, status } = usePreview()
+  const isPlaying = activeId === voice.voiceId && status === "playing"
+  const isLoadingPreview = activeId === voice.voiceId && status === "loading"
 
   const handlePreview = React.useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault()
       e.stopPropagation()
-      if (preview) togglePreview(voice.voiceId!, preview)
+
+      if (!preview || !voice.voiceId) {
+        return
+      }
+
+      void toggleVoicePreview(voice.voiceId, preview)
     },
-    [preview, voice.voiceId]
+    [preview, voice.voiceId],
   )
 
   return (
     <CommandItem
       value={voice.voiceId!}
-      keywords={[
-        voice.name,
-        voice.labels?.accent,
-        voice.labels?.gender,
-        voice.labels?.age,
-        voice.labels?.description,
-        voice.labels?.["use case"],
-      ].filter((k): k is string => Boolean(k))}
+      keywords={[voice.name].filter((k): k is string => Boolean(k))}
       onSelect={onSelect}
       className="flex items-center gap-3"
     >
@@ -195,9 +254,11 @@ function VoicePickerItem({
           agentState={isPlaying ? "talking" : undefined}
           className="pointer-events-none absolute inset-0"
         />
-        {preview && isHovered && (
-          <div className="pointer-events-none absolute inset-0 flex size-8 shrink-0 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-opacity hover:bg-black/50">
-            {isPlaying ? (
+        {isHovered && preview ? (
+          <div className="pointer-events-none absolute inset-0 flex size-8 shrink-0 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-opacity">
+            {isLoadingPreview ? (
+              <span className="size-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : isPlaying ? (
               <HugeiconsIcon
                 icon={PauseIcon}
                 strokeWidth={2}
@@ -211,32 +272,17 @@ function VoicePickerItem({
               />
             )}
           </div>
-        )}
+        ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col gap-0.5">
-        <span className="font-medium">{voice.name}</span>
-        {voice.labels && (
-          <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-            {voice.labels.accent && <span>{voice.labels.accent}</span>}
-            {voice.labels.gender && <span>•</span>}
-            {voice.labels.gender && (
-              <span className="capitalize">{voice.labels.gender}</span>
-            )}
-            {voice.labels.age && <span>•</span>}
-            {voice.labels.age && (
-              <span className="capitalize">{voice.labels.age}</span>
-            )}
-          </div>
-        )}
-      </div>
+      <span className="flex-1 font-medium">{voice.name}</span>
 
       <HugeiconsIcon
         icon={Tick02Icon}
         strokeWidth={2}
         className={cn(
           "ml-auto size-4 shrink-0",
-          isSelected ? "opacity-100" : "opacity-0"
+          isSelected ? "opacity-100" : "opacity-0",
         )}
       />
     </CommandItem>
