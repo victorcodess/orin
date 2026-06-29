@@ -1,7 +1,9 @@
 import type { ConversationConfigInput } from "@elevenlabs/elevenlabs-js/api/types/ConversationConfigInput";
 import type { TtsConversationalConfigInput } from "@elevenlabs/elevenlabs-js/api/types/TtsConversationalConfigInput";
-import { TtsConversationalModel } from "@elevenlabs/elevenlabs-js/api/types/TtsConversationalModel";
+import type { TtsConversationalModel } from "@elevenlabs/elevenlabs-js/api/types/TtsConversationalModel";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+
+import { VOICE_CALL_TTS_MODEL } from "@/lib/elevenlabs/tts-config";
 
 import { debugError, debugLog } from "@/lib/debug";
 import { DEFAULT_ASSISTANT, type AssistantConfig } from "@/lib/orin/defaults";
@@ -52,7 +54,7 @@ export function buildSpeechEngineTtsConfig(
   voiceSpeed: VoiceSpeed = DEFAULT_ASSISTANT.voiceSpeed,
 ): TtsConversationalConfigInput {
   return {
-    modelId: TtsConversationalModel.ElevenV3Conversational,
+    modelId: VOICE_CALL_TTS_MODEL as TtsConversationalModel,
     voiceId,
     speed: voiceSpeedToNumber(voiceSpeed),
     expressiveMode: true,
