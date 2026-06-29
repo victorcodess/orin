@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   SettingsActions,
@@ -11,8 +11,10 @@ import {
   SettingsSignInPrompt,
   SettingsSkeletonRows,
 } from "@/components/settings/settings-ui";
+import { toast } from "@/components/nexus-ui/toaster";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSettingsRouteDirty } from "@/lib/hooks/use-settings-route-dirty";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useProfileStore } from "@/lib/stores/profile-store";
 
@@ -21,7 +23,6 @@ export function SettingsAccount() {
   const user = useAuthStore((state) => state.user);
   const profile = useProfileStore((state) => state.profile);
   const isLoading = useProfileStore((state) => state.isLoading);
-  const error = useProfileStore((state) => state.error);
   const patch = useProfileStore((state) => state.patch);
   const syncSession = useAuthStore((state) => state.syncSession);
 
@@ -29,14 +30,19 @@ export function SettingsAccount() {
   const [displayName, setDisplayName] = useState(serverName);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (!isDirty) {
       setDisplayName(serverName);
     }
   }, [serverName, isDirty]);
+
+  const discardEdits = useCallback(() => {
+    setDisplayName(serverName);
+    setIsDirty(false);
+  }, [serverName]);
+
+  useSettingsRouteDirty("account", isDirty, discardEdits);
 
   if (userId === undefined) {
     return <SettingsSkeletonRows count={2} />;
@@ -66,23 +72,23 @@ export function SettingsAccount() {
   }
 
   const handleSave = async () => {
-    setSaved(false);
-    setSaveError(null);
     setIsSaving(true);
 
     try {
       const updated = await patch({ displayName: displayName.trim() });
 
       if (!updated) {
-        throw new Error("Failed to save account");
+        throw new Error("Couldn't save account");
       }
 
       setDisplayName(updated.displayName);
       setIsDirty(false);
-      setSaved(true);
       await syncSession();
+      toast.success("Account saved", { position: "bottom-center" });
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Failed to save account");
+      toast.error(
+        err instanceof Error ? err.message : "Couldn't save account"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -102,7 +108,6 @@ export function SettingsAccount() {
               value={displayName}
               maxLength={64}
               onChange={(event) => {
-                setSaved(false);
                 setIsDirty(true);
                 setDisplayName(event.target.value);
               }}
@@ -124,10 +129,7 @@ export function SettingsAccount() {
         </div>
       </SettingsGroup>
 
-      <SettingsActions
-        error={saveError ?? error}
-        message={saved ? "Account saved." : undefined}
-      >
+      <SettingsActions>
         <Button
           type="button"
           onClick={() => void handleSave()}
@@ -135,6 +137,16 @@ export function SettingsAccount() {
         >
           {isSaving ? "Saving..." : "Save changes"}
         </Button>
+        {isDirty ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={discardEdits}
+            disabled={isSaving}
+          >
+            Cancel
+          </Button>
+        ) : null}
       </SettingsActions>
     </SettingsPage>
   );

@@ -18,6 +18,7 @@ import {
   SettingsRow,
   SettingsSkeletonRows,
 } from "@/components/settings/settings-ui";
+import { toast } from "@/components/nexus-ui/toaster";
 import {
   Select,
   SelectGroup,
@@ -63,20 +64,32 @@ export function SettingsGeneral() {
   const handleThemeChange = (value: ThemePreference) => {
     setTheme(value);
     if (userId) {
-      void patch({ theme: value });
+      void patch({ theme: value }).then((updated) => {
+        if (!updated) {
+          toast.error("Couldn't save theme");
+        }
+      });
     }
   };
 
   const handleLayoutChange = (value: MessageBubbleLayout) => {
     setLayout(value);
     if (userId) {
-      void patch({ messageBubbleLayout: value });
+      void patch({ messageBubbleLayout: value }).then((updated) => {
+        if (!updated) {
+          toast.error("Couldn't save chat layout");
+        }
+      });
     }
   };
 
   const handleLanguageChange = (value: string) => {
     if (userId) {
-      void patch({ language: value });
+      void patch({ language: value }).then((updated) => {
+        if (!updated) {
+          toast.error("Couldn't save language");
+        }
+      });
     }
   };
 

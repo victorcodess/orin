@@ -3,7 +3,7 @@
 import type { ElevenLabs } from "@elevenlabs/elevenlabs-js";
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   SettingsActions,
@@ -15,6 +15,7 @@ import {
   SettingsSkeletonRows,
 } from "@/components/settings/settings-ui";
 import { VoicePicker } from "@/components/elevenlabs/voice-picker";
+import { toast } from "@/components/nexus-ui/toaster";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import type { VoiceOption } from "@/lib/elevenlabs/voices";
-import { DEFAULT_PERSONALITY_SETTINGS } from "@/lib/orin/personality/types";
+import { useSettingsRouteDirty } from "@/lib/hooks/use-settings-route-dirty";
 import { personalitySettingsEqual } from "@/lib/orin/personality/parse";
 import {
   BASE_STYLE_OPTIONS,
@@ -115,11 +116,10 @@ export function SettingsPersonalization() {
   const [voices, setVoices] = useState<VoiceOption[]>(
     cachedVoices?.voices ?? []
   );
-  const [voicesError, setVoicesError] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(
     cachedVoices?.fallback ?? false
   );
-  const [saved, setSaved] = useState(false);
+  const loadErrorToasted = useRef(false);
 
   useEffect(() => {
     if (isDirty) {
@@ -129,6 +129,13 @@ export function SettingsPersonalization() {
     setPersonalitySettings(config.personalitySettings);
     setVoiceId(config.voiceId);
   }, [config.personalitySettings, config.voiceId, isDirty]);
+
+  useEffect(() => {
+    if (!isLoading && error && !loadErrorToasted.current) {
+      loadErrorToasted.current = true;
+      toast.error(error);
+    }
+  }, [isLoading, error]);
 
   useEffect(() => {
     if (cachedVoices) {
@@ -153,7 +160,9 @@ export function SettingsPersonalization() {
         setUsingFallback(Boolean(data.fallback));
       })
       .catch(() => {
-        setVoicesError("Could not load voices. Try again later.");
+        toast.error("Couldn't load voices", {
+          description: "Try again later.",
+        });
       });
   }, []);
 
@@ -166,13 +175,20 @@ export function SettingsPersonalization() {
     [config, personalitySettings, voiceId]
   );
 
+  const discardEdits = useCallback(() => {
+    setPersonalitySettings(config.personalitySettings);
+    setVoiceId(config.voiceId);
+    setIsDirty(false);
+  }, [config.personalitySettings, config.voiceId]);
+
+  useSettingsRouteDirty("personalization", hasEdits, discardEdits);
+
   const pickerVoices = useMemo(
     () => voices as unknown as ElevenLabs.Voice[],
     [voices]
   );
 
   const markDirty = () => {
-    setSaved(false);
     setIsDirty(true);
   };
 
@@ -182,7 +198,6 @@ export function SettingsPersonalization() {
   };
 
   const handleSave = async () => {
-    setSaved(false);
     const ok = await save({
       personalitySettings: {
         ...personalitySettings,
@@ -193,19 +208,27 @@ export function SettingsPersonalization() {
 
     if (ok) {
       setIsDirty(false);
-      setSaved(true);
+      toast.success("Settings saved", { position: "bottom-center" });
+      return;
     }
+
+    toast.error(
+      useAssistantConfigStore.getState().error ?? "Couldn't save settings"
+    );
   };
 
   const handleReset = async () => {
-    setSaved(false);
     const ok = await reset();
 
     if (ok) {
-      setPersonalitySettings(DEFAULT_PERSONALITY_SETTINGS);
       setIsDirty(false);
-      setSaved(true);
+      toast.success("Reset to default", { position: "bottom-center" });
+      return;
     }
+
+    toast.error(
+      useAssistantConfigStore.getState().error ?? "Couldn't reset settings"
+    );
   };
 
   if (isLoading) {
@@ -288,19 +311,15 @@ export function SettingsPersonalization() {
             description="Orin's voice for read-aloud and calls."
             htmlFor="assistant-voice"
           >
-            {voicesError ? (
-              <p className="text-destructive text-sm">{voicesError}</p>
-            ) : (
-              <VoicePicker
-                voices={pickerVoices}
-                value={voiceId}
-                onValueChange={(value) => {
-                  markDirty();
-                  setVoiceId(value);
-                }}
-                placeholder="Select a voice..."
-              />
-            )}
+            <VoicePicker
+              voices={pickerVoices}
+              value={voiceId}
+              onValueChange={(value) => {
+                markDirty();
+                setVoiceId(value);
+              }}
+              placeholder="Select a voice..."
+            />
 
             {usingFallback ? (
               <p className="text-muted-foreground mt-2 text-xs">
@@ -313,10 +332,7 @@ export function SettingsPersonalization() {
         </div>
       </SettingsGroup>
 
-      <SettingsActions
-        error={error}
-        message={saved ? "Settings saved." : undefined}
-      >
+      <SettingsActions>
         <Button
           type="button"
           onClick={() => void handleSave()}
@@ -324,14 +340,25 @@ export function SettingsPersonalization() {
         >
           {isSaving ? "Saving..." : "Save changes"}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => void handleReset()}
-          disabled={isDefault || isSaving}
-        >
-          Reset to default
-        </Button>
+        {hasEdits ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={discardEdits}
+            disabled={isSaving}
+          >
+            Cancel
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void handleReset()}
+            disabled={isDefault || isSaving}
+          >
+            Reset to default
+          </Button>
+        )}
       </SettingsActions>
     </SettingsPage>
   );

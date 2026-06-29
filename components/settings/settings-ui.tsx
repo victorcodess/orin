@@ -261,29 +261,9 @@ export function SettingsStat({
   );
 }
 
-export function SettingsActions({
-  children,
-  message,
-  error,
-}: {
-  children: ReactNode;
-  message?: string;
-  error?: string | null;
-}) {
+export function SettingsActions({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 pt-1">
-      {(error || message) && (
-        <p
-          className={cn(
-            "text-sm",
-            error ? "text-destructive" : "text-muted-foreground"
-          )}
-        >
-          {error ?? message}
-        </p>
-      )}
-      <div className="flex flex-wrap items-center gap-2">{children}</div>
-    </div>
+    <div className="flex flex-wrap items-center gap-2 pt-1">{children}</div>
   );
 }
 
