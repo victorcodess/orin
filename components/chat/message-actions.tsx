@@ -57,6 +57,7 @@ type ChatMessageActionsProps = {
   isLoading: boolean;
   isEditing: boolean;
   readAloud: ReadAloudState;
+  voiceCallActive?: boolean;
   onRetry: (messageId: string) => void;
   onEdit: (messageId: string, text: string) => void;
   onCancelEdit: () => void;
@@ -107,6 +108,28 @@ function CopyMessageAction({ text }: { text: string }) {
       </Button>
     </MessageAction>
   );
+}
+
+function readAloudActionMotion(reduceMotion: boolean | null) {
+  const blur = reduceMotion ? "blur(0px)" : "blur(2px)";
+
+  return {
+    initial: { opacity: 0, scale: 0.88, maxWidth: 0, filter: blur },
+    animate: {
+      opacity: 1,
+      scale: 1,
+      maxWidth: 40,
+      filter: "blur(0px)",
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.88,
+      maxWidth: 0,
+      filter: blur,
+      transition: speechUiTransition(reduceMotion, 0.15),
+    },
+    transition: speechUiTransition(reduceMotion, 0.2),
+  } as const;
 }
 
 function ReadAloudMessageAction({
@@ -219,12 +242,14 @@ export function ChatMessageActions({
   isLoading,
   isEditing,
   readAloud,
+  voiceCallActive = false,
   onRetry,
   onEdit,
   onCancelEdit,
   className,
 }: ChatMessageActionsProps) {
   const isAssistant = from === "assistant";
+  const reduceMotion = useReducedMotion();
 
   return (
     <MessageActions
@@ -240,11 +265,21 @@ export function ChatMessageActions({
         <CopyMessageAction text={text} />
         {isAssistant ? (
           <>
-            <ReadAloudMessageAction
-              messageId={messageId}
-              text={text}
-              readAloud={readAloud}
-            />
+            <AnimatePresence initial={false}>
+              {!voiceCallActive ? (
+                <motion.div
+                  key="read-aloud"
+                  {...readAloudActionMotion(reduceMotion)}
+                  className="overflow-hidden"
+                >
+                  <ReadAloudMessageAction
+                    messageId={messageId}
+                    text={text}
+                    readAloud={readAloud}
+                  />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
             <MessageAction asChild tooltip="Retry">
               <Button
                 type="button"

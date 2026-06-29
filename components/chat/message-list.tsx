@@ -290,6 +290,7 @@ export function ChatMessageList({
                       isLoading={isLoading}
                       isEditing={isEditingMessage}
                       readAloud={readAloud}
+                      voiceCallActive={voiceCallActive}
                       onRetry={onRetry}
                       onEdit={onEdit}
                       onCancelEdit={onCancelEdit}
