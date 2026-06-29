@@ -148,6 +148,9 @@ export type Database = {
           credits_balance: number
           display_name: string | null
           id: string
+          language: string
+          message_bubble_layout: string
+          theme: string
           updated_at: string
         }
         Insert: {
@@ -155,6 +158,9 @@ export type Database = {
           credits_balance?: number
           display_name?: string | null
           id: string
+          language?: string
+          message_bubble_layout?: string
+          theme?: string
           updated_at?: string
         }
         Update: {
@@ -162,6 +168,9 @@ export type Database = {
           credits_balance?: number
           display_name?: string | null
           id?: string
+          language?: string
+          message_bubble_layout?: string
+          theme?: string
           updated_at?: string
         }
         Relationships: []
