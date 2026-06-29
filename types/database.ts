@@ -20,6 +20,7 @@ export type Database = {
           id: string
           is_default: boolean
           personality: string
+          personality_settings: Json
           updated_at: string
           user_id: string | null
           voice_id: string
@@ -29,6 +30,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           personality: string
+          personality_settings?: Json
           updated_at?: string
           user_id?: string | null
           voice_id: string
@@ -38,6 +40,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           personality?: string
+          personality_settings?: Json
           updated_at?: string
           user_id?: string | null
           voice_id?: string

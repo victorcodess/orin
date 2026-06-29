@@ -5,6 +5,7 @@ import {
   DEFAULT_ASSISTANT,
   type AssistantConfig,
 } from "@/lib/orin/defaults";
+import { parsePersonalitySettings } from "@/lib/orin/personality/parse";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const ORIN_ASSISTANT_CONFIG_COOKIE = "orin_assistant_config";
@@ -17,7 +18,7 @@ const COOKIE_OPTIONS = {
   path: "/",
 };
 
-function isValidConfig(value: unknown): value is Pick<AssistantConfig, "personality" | "voiceId"> {
+function isValidConfig(value: unknown): value is AssistantConfig {
   if (!value || typeof value !== "object") {
     return false;
   }
@@ -25,10 +26,9 @@ function isValidConfig(value: unknown): value is Pick<AssistantConfig, "personal
   const config = value as Record<string, unknown>;
 
   return (
-    typeof config.personality === "string" &&
-    config.personality.trim().length > 0 &&
     typeof config.voiceId === "string" &&
-    config.voiceId.trim().length > 0
+    config.voiceId.trim().length > 0 &&
+    config.personalitySettings !== undefined
   );
 }
 
@@ -48,7 +48,7 @@ export async function getAssistantConfigFromCookie(): Promise<AssistantConfig | 
     }
 
     return {
-      personality: parsed.personality.trim(),
+      personalitySettings: parsePersonalitySettings(parsed.personalitySettings),
       voiceId: parsed.voiceId.trim(),
     };
   } catch {
@@ -64,7 +64,7 @@ export async function setAssistantConfigCookie(
   cookieStore.set(
     ORIN_ASSISTANT_CONFIG_COOKIE,
     JSON.stringify({
-      personality: config.personality.trim(),
+      personalitySettings: config.personalitySettings,
       voiceId: config.voiceId.trim(),
     }),
     COOKIE_OPTIONS,
@@ -76,18 +76,6 @@ export async function clearAssistantConfigCookie(): Promise<void> {
   cookieStore.delete(ORIN_ASSISTANT_CONFIG_COOKIE);
 }
 
-type AssistantConfigRow = {
-  personality: string;
-  voice_id: string;
-};
-
-function mapRow(row: AssistantConfigRow): AssistantConfig {
-  return {
-    personality: row.personality,
-    voiceId: row.voice_id,
-  };
-}
-
 export const getAssistantConfig = cache(async function getAssistantConfig(
   userId?: string | null,
 ): Promise<AssistantConfig> {
@@ -95,16 +83,18 @@ export const getAssistantConfig = cache(async function getAssistantConfig(
     const supabase = createAdminClient();
     const { data } = await supabase
       .from("assistant_configs")
-      .select("personality, voice_id")
+      .select("personality_settings, voice_id")
       .eq("user_id", userId)
       .maybeSingle();
 
     if (data) {
-      return mapRow(data);
+      return {
+        personalitySettings: parsePersonalitySettings(data.personality_settings),
+        voiceId: data.voice_id,
+      };
     }
   } else {
     const cookieConfig = await getAssistantConfigFromCookie();
-
     if (cookieConfig) {
       return cookieConfig;
     }

@@ -60,19 +60,47 @@ export function SettingsRow({
       {withSeparator ? <Separator className="bg-border/40" /> : null}
       <div
         className={cn(
-          "flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between",
+          "flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between",
           className
         )}
       >
-        <div className="min-w-0 sm:max-w-[42%]">
+        <div className="min-w-0 sm:max-w-[46%]">
           <p className="text-foreground text-sm font-medium">{title}</p>
           {description ? (
-            <p className="text-muted-foreground mt-1 text-sm">{description}</p>
+            <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+              {description}
+            </p>
           ) : null}
         </div>
-        <div className="flex min-w-0 flex-1 items-center sm:max-w-[52%] md:justify-end">
+        <div className="flex min-w-0 flex-1 items-center sm:max-w-[48%] sm:justify-end sm:pt-0.5">
           {children}
         </div>
+      </div>
+    </>
+  );
+}
+
+export function SettingsSectionIntro({
+  title,
+  description,
+  withSeparator = false,
+  className,
+}: {
+  title: string;
+  description?: string;
+  withSeparator?: boolean;
+  className?: string;
+}) {
+  return (
+    <>
+      {withSeparator ? <Separator className="bg-border/40" /> : null}
+      <div className={cn("px-4 pt-4 pb-1", className)}>
+        <p className="text-foreground text-sm font-medium">{title}</p>
+        {description ? (
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+            {description}
+          </p>
+        ) : null}
       </div>
     </>
   );

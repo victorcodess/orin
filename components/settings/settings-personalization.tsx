@@ -1,24 +1,102 @@
 "use client";
 
 import type { ElevenLabs } from "@elevenlabs/elevenlabs-js";
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useMemo, useState } from "react";
 
 import {
   SettingsActions,
-  SettingsCardOption,
   SettingsField,
   SettingsGroup,
   SettingsPage,
+  SettingsRow,
+  SettingsSectionIntro,
   SettingsSkeletonRows,
 } from "@/components/settings/settings-ui";
 import { VoicePicker } from "@/components/elevenlabs/voice-picker";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import type { VoiceOption } from "@/lib/elevenlabs/voices";
-import { PERSONALITY_PRESETS } from "@/lib/orin/personality-presets";
+import { DEFAULT_PERSONALITY_SETTINGS } from "@/lib/orin/personality/types";
+import { personalitySettingsEqual } from "@/lib/orin/personality/parse";
+import {
+  BASE_STYLE_OPTIONS,
+  TRAIT_LEVEL_OPTIONS,
+  type PersonalityOption,
+} from "@/lib/orin/personality/ui-options";
+import type { PersonalitySettings } from "@/lib/orin/personality/types";
 import { useAssistantConfigStore } from "@/lib/stores/assistant-config-store";
+import { cn } from "@/lib/utils";
 
 let cachedVoices: { voices: VoiceOption[]; fallback: boolean } | null = null;
+
+function PersonalityDropdown<T extends string>({
+  value,
+  options,
+  onValueChange,
+  className,
+}: {
+  value: T;
+  options: PersonalityOption<T>[];
+  onValueChange: (value: T) => void;
+  className?: string;
+}) {
+  const selected =
+    options.find((option) => option.value === value) ?? options[0];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className={cn(
+            "border-input bg-background/80 h-10 w-full justify-between rounded-xl px-3.5 text-sm font-medium shadow-xs sm:w-44",
+            className,
+          )}
+        >
+          <span className="truncate">{selected.label}</span>
+          <HugeiconsIcon
+            icon={ArrowDown01Icon}
+            strokeWidth={2}
+            className="text-muted-foreground size-4 shrink-0"
+          />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-72 p-1.5">
+        <DropdownMenuRadioGroup
+          value={value}
+          onValueChange={(next) => onValueChange(next as T)}
+        >
+          {options.map((option) => (
+            <DropdownMenuRadioItem
+              key={option.value}
+              value={option.value}
+              className="h-auto items-start rounded-2xl py-2.5 pr-10 pl-3.5"
+            >
+              <span className="flex flex-col gap-0.5 text-left">
+                <span className="text-foreground text-sm font-medium">
+                  {option.label}
+                </span>
+                <span className="text-muted-foreground text-xs leading-relaxed font-normal">
+                  {option.description}
+                </span>
+              </span>
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function SettingsPersonalization() {
   const config = useAssistantConfigStore((state) => state.config);
@@ -29,7 +107,8 @@ export function SettingsPersonalization() {
   const save = useAssistantConfigStore((state) => state.save);
   const reset = useAssistantConfigStore((state) => state.reset);
 
-  const [personality, setPersonality] = useState(config.personality);
+  const [personalitySettings, setPersonalitySettings] =
+    useState<PersonalitySettings>(config.personalitySettings);
   const [voiceId, setVoiceId] = useState(config.voiceId);
   const [isDirty, setIsDirty] = useState(false);
   const [voices, setVoices] = useState<VoiceOption[]>(
@@ -46,9 +125,9 @@ export function SettingsPersonalization() {
       return;
     }
 
-    setPersonality(config.personality);
+    setPersonalitySettings(config.personalitySettings);
     setVoiceId(config.voiceId);
-  }, [config.personality, config.voiceId, isDirty]);
+  }, [config.personalitySettings, config.voiceId, isDirty]);
 
   useEffect(() => {
     if (cachedVoices) {
@@ -79,8 +158,11 @@ export function SettingsPersonalization() {
 
   const hasEdits = useMemo(
     () =>
-      personality.trim() !== config.personality || voiceId !== config.voiceId,
-    [config, personality, voiceId],
+      !personalitySettingsEqual(
+        personalitySettings,
+        config.personalitySettings,
+      ) || voiceId !== config.voiceId,
+    [config, personalitySettings, voiceId],
   );
 
   const pickerVoices = useMemo(
@@ -93,10 +175,18 @@ export function SettingsPersonalization() {
     setIsDirty(true);
   };
 
+  const updateSettings = (patch: Partial<PersonalitySettings>) => {
+    markDirty();
+    setPersonalitySettings((current) => ({ ...current, ...patch }));
+  };
+
   const handleSave = async () => {
     setSaved(false);
     const ok = await save({
-      personality: personality.trim(),
+      personalitySettings: {
+        ...personalitySettings,
+        customInstructions: personalitySettings.customInstructions.trim(),
+      },
       voiceId,
     });
 
@@ -111,48 +201,81 @@ export function SettingsPersonalization() {
     const ok = await reset();
 
     if (ok) {
+      setPersonalitySettings(DEFAULT_PERSONALITY_SETTINGS);
       setIsDirty(false);
       setSaved(true);
     }
   };
 
   if (isLoading) {
-    return <SettingsSkeletonRows count={2} />;
+    return <SettingsSkeletonRows count={3} />;
   }
 
   return (
     <SettingsPage className="gap-5">
       <SettingsGroup>
-        <div className="flex flex-col gap-4 px-4 py-4">
+        <SettingsSectionIntro
+          title="Base style and tone"
+          description="Sets how Orin responds. This doesn't change what Orin can do."
+          className="pb-2"
+        />
+
+        <SettingsRow
+          title="Style"
+          description="Orin's overall personality in text and on calls."
+        >
+          <PersonalityDropdown
+            value={personalitySettings.baseStyle}
+            options={BASE_STYLE_OPTIONS}
+            onValueChange={(baseStyle) => updateSettings({ baseStyle })}
+          />
+        </SettingsRow>
+
+        <SettingsSectionIntro
+          title="Characteristics"
+          description="Fine-tune warmth and energy on top of your base style."
+          withSeparator
+          className="pb-2"
+        />
+
+        <SettingsRow
+          title="Warm"
+          description="How caring and emotionally present Orin sounds."
+        >
+          <PersonalityDropdown
+            value={personalitySettings.warm}
+            options={TRAIT_LEVEL_OPTIONS}
+            onValueChange={(warm) => updateSettings({ warm })}
+          />
+        </SettingsRow>
+
+        <SettingsRow
+          title="Enthusiastic"
+          description="How much energy and momentum Orin brings."
+          withSeparator
+        >
+          <PersonalityDropdown
+            value={personalitySettings.enthusiastic}
+            options={TRAIT_LEVEL_OPTIONS}
+            onValueChange={(enthusiastic) => updateSettings({ enthusiastic })}
+          />
+        </SettingsRow>
+
+        <div className="px-4 py-4">
           <SettingsField
-            label="Personality"
-            description="Pick a preset or describe how Orin should sound and behave."
-            htmlFor="assistant-personality"
+            label="Custom instructions"
+            description="Anything else you want Orin to keep in mind."
+            htmlFor="assistant-custom-instructions"
           >
-            <div className="grid gap-2 sm:grid-cols-2">
-              {PERSONALITY_PRESETS.map((preset) => (
-                <SettingsCardOption
-                  key={preset.id}
-                  active={personality === preset.personality}
-                  title={preset.label}
-                  description={preset.description}
-                  onClick={() => {
-                    markDirty();
-                    setPersonality(preset.personality);
-                  }}
-                />
-              ))}
-            </div>
             <Textarea
-              id="assistant-personality"
-              value={personality}
-              rows={8}
+              id="assistant-custom-instructions"
+              value={personalitySettings.customInstructions}
+              rows={5}
               maxLength={4000}
-              onChange={(event) => {
-                markDirty();
-                setPersonality(event.target.value);
-              }}
-              placeholder="Describe Orin's personality..."
+              placeholder="Additional behavior, style, and tone preferences"
+              onChange={(event) =>
+                updateSettings({ customInstructions: event.target.value })
+              }
             />
           </SettingsField>
         </div>
@@ -162,7 +285,7 @@ export function SettingsPersonalization() {
         <div className="px-4 py-4">
           <SettingsField
             label="Voice"
-            description="Orin's voice for read-aloud and live calls."
+            description="Orin's voice for read-aloud and calls."
             htmlFor="assistant-voice"
           >
             {voicesError ? (

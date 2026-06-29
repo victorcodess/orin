@@ -6,33 +6,47 @@ import {
   setAssistantConfigCookie,
 } from "@/lib/ai/assistant-config";
 import { DEFAULT_ASSISTANT, type AssistantConfig } from "@/lib/orin/defaults";
+import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
+import { personalitySettingsEqual, parsePersonalitySettings } from "@/lib/orin/personality/parse";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { buildSpeechEngineTtsConfig } from "@/lib/voice/speech-engine-config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import type { PersonalitySettings } from "@/lib/orin/personality/types";
 
 type AssistantConfigPayload = {
-  personality?: string;
+  personalitySettings?: PersonalitySettings;
   voiceId?: string;
 };
 
 function sanitizeConfig(payload: AssistantConfigPayload): AssistantConfig | null {
-  const personality = payload.personality?.trim();
   const voiceId = payload.voiceId?.trim();
-
-  if (!personality || personality.length > 4000) {
-    return null;
-  }
 
   if (!voiceId || voiceId.length > 64) {
     return null;
   }
 
+  if (!payload.personalitySettings) {
+    return null;
+  }
+
+  const personalitySettings = parsePersonalitySettings(payload.personalitySettings);
+
   return {
-    personality,
+    personalitySettings,
     voiceId,
   };
+}
+
+function isDefaultConfig(config: AssistantConfig) {
+  return (
+    config.voiceId === DEFAULT_ASSISTANT.voiceId &&
+    personalitySettingsEqual(
+      config.personalitySettings,
+      DEFAULT_ASSISTANT.personalitySettings,
+    )
+  );
 }
 
 async function syncSpeechEngineVoice(voiceId: string) {
@@ -69,7 +83,7 @@ export async function GET() {
     return Response.json(
       {
         config,
-        isDefault: JSON.stringify(config) === JSON.stringify(DEFAULT_ASSISTANT),
+        isDefault: isDefaultConfig(config),
         persisted: Boolean(authData.user),
       },
       { headers: { "Cache-Control": "no-store" } },
@@ -101,7 +115,8 @@ export async function PATCH(req: Request) {
       const { error } = await admin.from("assistant_configs").upsert(
         {
           user_id: authData.user.id,
-          personality: config.personality,
+          personality: buildPersonalityPrompt(config.personalitySettings),
+          personality_settings: config.personalitySettings,
           voice_id: config.voiceId,
           is_default: false,
         },

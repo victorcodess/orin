@@ -53,10 +53,10 @@ function SettingsNav({
                 window.location.hash = settingsHashForRoute(item.id).slice(1);
               }}
               className={cn(
-                "shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium cursor-pointer",
+                "shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-medium",
                 active
                   ? "bg-secondary text-secondary-foreground"
-                  : "text-muted-foreground hover:bg-accent/70 hover:text-foreground",
+                  : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
               )}
             >
               {item.label}
@@ -83,12 +83,16 @@ function SettingsNav({
             }}
             className={cn(
               "flex h-10 w-full items-center gap-2.5 rounded-full px-4 text-left text-sm font-medium",
-              "text-sidebar-foreground/90 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/80",
+              "text-sidebar-foreground/90 focus-visible:ring-sidebar-ring/80 outline-none focus-visible:ring-2",
               "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              active && "bg-sidebar-accent/80 text-sidebar-accent-foreground",
+              active && "bg-sidebar-accent/80 text-sidebar-accent-foreground"
             )}
           >
-            <HugeiconsIcon icon={Icon} strokeWidth={2} className="size-4 shrink-0" />
+            <HugeiconsIcon
+              icon={Icon}
+              strokeWidth={2}
+              className="size-4 shrink-0"
+            />
             <span className="truncate">{item.label}</span>
           </button>
         );
@@ -139,7 +143,7 @@ export function SettingsPanel() {
       }
 
       const focusable = panelRef.current.querySelectorAll<HTMLElement>(
-        'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
+        'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])'
       );
 
       if (focusable.length === 0) {
@@ -177,7 +181,7 @@ export function SettingsPanel() {
   return (
     <>
       <div
-        className="fixed inset-0 z-50 bg-black/50 supports-backdrop-filter:backdrop-blur-sm animate-in fade-in-0 duration-150"
+        className="animate-in fade-in-0 fixed inset-0 z-50 bg-black/50 duration-150 supports-backdrop-filter:backdrop-blur-sm"
         onClick={closeSettings}
         aria-hidden="true"
       />
@@ -189,13 +193,13 @@ export function SettingsPanel() {
         aria-labelledby="settings-panel-title"
         tabIndex={-1}
         className={cn(
-          "fixed z-50 flex overflow-hidden bg-popover text-popover-foreground shadow-xl/10 ring-1 ring-border/50 outline-none",
+          "bg-popover text-popover-foreground ring-border/50 fixed z-50 flex overflow-hidden shadow-xl/10 ring-1 outline-none",
           "animate-in fade-in-0 zoom-in-[0.98] duration-150",
           "inset-0 md:inset-auto md:top-1/2 md:left-1/2 md:h-[min(720px,85vh)] md:w-full md:max-w-4xl md:-translate-x-1/2 md:-translate-y-1/2",
-          "md:rounded-3xl",
+          "md:rounded-3xl"
         )}
       >
-        <aside className="hidden w-60 shrink-0 flex-col border-r border-sidebar-border/50 bg-sidebar text-sidebar-foreground md:flex">
+        <aside className="border-sidebar-border/50 bg-sidebar text-sidebar-foreground hidden w-60 shrink-0 flex-col border-r md:flex">
           <div className="flex items-center px-4 py-5">
             <h2
               id="settings-panel-title"
@@ -207,7 +211,7 @@ export function SettingsPanel() {
           <SettingsNav route={route} variant="sidebar" />
         </aside>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background">
+        <div className="bg-background flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="flex items-start justify-between gap-4 px-4 py-4 md:px-6 md:py-5">
             <div className="flex min-w-0 flex-1 flex-col gap-3">
               <div className="md:hidden">
@@ -219,10 +223,10 @@ export function SettingsPanel() {
                 <SettingsNav route={route} variant="tabs" />
               </div>
               <div className="hidden md:block">
-                <h3 className="font-sans text-lg font-semibold tracking-tight text-foreground">
+                <h3 className="text-foreground font-sans text-lg font-semibold tracking-tight">
                   {meta.title}
                 </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="text-muted-foreground mt-1 text-sm">
                   {meta.description}
                 </p>
               </div>
@@ -232,18 +236,22 @@ export function SettingsPanel() {
               size="icon-sm"
               onClick={closeSettings}
               aria-label="Close settings"
-              className="shrink-0 hover:bg-accent hover:dark:bg-muted absolute top-4 md:top-4.5 right-4 md:right-4.5"
+              className="hover:bg-accent hover:dark:bg-muted absolute top-4 right-4 shrink-0 md:top-4.5 md:right-4.5"
             >
-              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} className="size-4" />
+              <HugeiconsIcon
+                icon={Cancel01Icon}
+                strokeWidth={2}
+                className="size-4"
+              />
             </Button>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 md:px-6 md:pb-8">
             <div className="mb-5 md:hidden">
-              <h3 className="font-sans text-lg font-semibold tracking-tight text-foreground">
+              <h3 className="text-foreground font-sans text-lg font-semibold tracking-tight">
                 {meta.title}
               </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-sm">
                 {meta.description}
               </p>
             </div>
