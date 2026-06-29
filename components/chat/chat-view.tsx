@@ -385,9 +385,17 @@ export function ChatView({
     [setInput]
   );
 
+  const stopReadAloud = readAloud.stop;
+
   useEffect(() => {
-    readAloud.stop();
-  }, [conversationId, readAloud, readAloud.stop]);
+    stopReadAloud();
+  }, [conversationId, stopReadAloud]);
+
+  useEffect(() => {
+    if (voiceCallActive) {
+      stopReadAloud();
+    }
+  }, [voiceCallActive, stopReadAloud]);
 
   useLayoutEffect(() => {
     setControls({

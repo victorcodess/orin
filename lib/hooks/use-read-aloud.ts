@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { toast } from "@/components/nexus-ui/toaster";
 import {
@@ -49,9 +49,17 @@ export function useReadAloud(voiceId: string, voiceSpeed: VoiceSpeed) {
       };
 
       setIsLoading(false);
-      await audio.play();
+
+      try {
+        await audio.play();
+      } catch {
+        if (requestIdRef.current === requestId) {
+          toast.error("Couldn't start playback");
+          resetPlayback();
+        }
+      }
     },
-    [resetPlayback]
+    [resetPlayback],
   );
 
   const toggle = useCallback(
@@ -130,15 +138,20 @@ export function useReadAloud(voiceId: string, voiceSpeed: VoiceSpeed) {
     ]
   );
 
-  useEffect(() => resetPlayback, [resetPlayback, voiceId, voiceSpeed]);
+  useEffect(() => {
+    resetPlayback();
+  }, [resetPlayback, voiceId, voiceSpeed]);
 
-  return {
-    activeMessageId,
-    isPaused,
-    isLoading,
-    toggle,
-    stop: resetPlayback,
-  };
+  return useMemo(
+    () => ({
+      activeMessageId,
+      isPaused,
+      isLoading,
+      toggle,
+      stop: resetPlayback,
+    }),
+    [activeMessageId, isPaused, isLoading, toggle, resetPlayback],
+  );
 }
 
 export type ReadAloudState = ReturnType<typeof useReadAloud>;

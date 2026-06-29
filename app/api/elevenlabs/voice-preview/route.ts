@@ -1,5 +1,5 @@
 import { debugError } from "@/lib/debug";
-import { synthesizeSpeech } from "@/lib/elevenlabs/synthesize-speech";
+import { synthesizeSpeech, ttsErrorResponse } from "@/lib/elevenlabs/synthesize-speech";
 import {
   isCuratedVoiceId,
   VOICE_PREVIEW_TEXT,
@@ -71,9 +71,6 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     debugError("api/elevenlabs/voice-preview", "GET failed", error);
-    return Response.json(
-      { error: "Failed to generate voice preview" },
-      { status: 500 },
-    );
+    return ttsErrorResponse(error);
   }
 }

@@ -1,5 +1,9 @@
-import { debugLog } from "@/lib/debug";
-import { synthesizeSpeech } from "@/lib/elevenlabs/synthesize-speech";
+import { debugLog, debugError } from "@/lib/debug";
+import {
+  prepareReadAloudText,
+  synthesizeSpeech,
+  ttsErrorResponse,
+} from "@/lib/elevenlabs/synthesize-speech";
 import {
   downloadCachedReadAloudAudio,
   getReadAloudOwnerId,
@@ -28,13 +32,19 @@ export async function POST(req: Request) {
   }
 
   const body = (await req.json().catch(() => null)) as TextToSpeechRequestBody | null;
-  const text = body?.text?.trim();
+  const rawText = body?.text?.trim();
   const voiceId = body?.voiceId?.trim();
   const voiceSpeed = parseVoiceSpeed(body?.voiceSpeed);
   const speed = voiceSpeedToNumber(voiceSpeed);
 
-  if (!text) {
+  if (!rawText) {
     return Response.json({ error: "Text is required" }, { status: 400 });
+  }
+
+  const text = prepareReadAloudText(rawText);
+
+  if (!text) {
+    return Response.json({ error: "Nothing to read aloud" }, { status: 400 });
   }
 
   if (!voiceId) {
@@ -70,20 +80,18 @@ export async function POST(req: Request) {
     debugLog("api/tts", "cache lookup failed, continuing without cache", error);
   }
 
-  const response = await synthesizeSpeech(apiKey, {
-    voiceId,
-    text,
-    speed,
-  }).catch(() => null);
+  let audio: ArrayBuffer;
 
-  if (!response) {
-    return Response.json(
-      { error: "Failed to generate speech" },
-      { status: 502 },
-    );
+  try {
+    audio = await synthesizeSpeech(apiKey, {
+      voiceId,
+      text,
+      speed,
+    });
+  } catch (error) {
+    debugError("api/tts", "synthesis failed", error);
+    return ttsErrorResponse(error);
   }
-
-  const audio = response;
 
   if (ownerId) {
     try {
