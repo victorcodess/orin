@@ -1,9 +1,12 @@
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
+import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import { verifyConversationAccess } from "@/lib/ai/conversations";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { markVoiceCallPending } from "@/lib/voice/conversation-binding";
+import { syncSpeechEngineTts } from "@/lib/voice/speech-engine-config";
+import { createClient } from "@/lib/supabase/server";
 
 type VoiceTokenRequest = {
   conversationId?: string;
@@ -42,6 +45,11 @@ export async function POST(req: Request) {
     }
 
     await verifyConversationAccess(conversationId);
+
+    const supabase = await createClient();
+    const { data: authData } = await supabase.auth.getUser();
+    const assistantConfig = await getAssistantConfig(authData.user?.id);
+    await syncSpeechEngineTts(assistantConfig);
 
     const pendingToken = await markVoiceCallPending(conversationId);
 

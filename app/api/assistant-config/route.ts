@@ -1,5 +1,3 @@
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
-
 import {
   clearAssistantConfigCookie,
   getAssistantConfig,
@@ -12,7 +10,7 @@ import { personalitySettingsEqual, parsePersonalitySettings } from "@/lib/orin/p
 import { parseVoiceSpeed, type VoiceSpeed } from "@/lib/orin/voice/speed";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
-import { buildSpeechEngineTtsConfig } from "@/lib/voice/speech-engine-config";
+import { syncSpeechEngineTts } from "@/lib/voice/speech-engine-config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { PersonalitySettings } from "@/lib/orin/personality/types";
@@ -55,35 +53,6 @@ function isDefaultConfig(config: AssistantConfig) {
   );
 }
 
-async function syncSpeechEngineTts(config: AssistantConfig) {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  const engineId = process.env.ELEVENLABS_SPEECH_ENGINE_ID;
-
-  if (!apiKey || apiKey.includes("your-") || !engineId || engineId.includes("your-")) {
-    return;
-  }
-
-  try {
-    const elevenlabs = new ElevenLabsClient({ apiKey });
-    const engine = await elevenlabs.speechEngine.get(engineId);
-    const currentTts = engine.config?.tts;
-    const nextTts = buildSpeechEngineTtsConfig(config.voiceId, config.voiceSpeed);
-
-    if (
-      currentTts?.voiceId === nextTts.voiceId &&
-      currentTts?.speed === nextTts.speed
-    ) {
-      return;
-    }
-
-    await elevenlabs.speechEngine.update(engineId, {
-      tts: nextTts,
-    });
-  } catch (error) {
-    debugError("api/assistant-config", "failed to sync speech engine tts", error);
-  }
-}
-
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -118,7 +87,6 @@ export async function PATCH(req: Request) {
 
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
-    const previousConfig = await getAssistantConfig(authData.user?.id);
 
     if (authData.user) {
       const admin = createAdminClient();
@@ -143,12 +111,7 @@ export async function PATCH(req: Request) {
       await setAssistantConfigCookie(config);
     }
 
-    if (
-      previousConfig.voiceId !== config.voiceId ||
-      previousConfig.voiceSpeed !== config.voiceSpeed
-    ) {
-      await syncSpeechEngineTts(config);
-    }
+    await syncSpeechEngineTts(config);
 
     return Response.json(
       {
