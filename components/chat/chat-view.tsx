@@ -36,6 +36,8 @@ import {
 import { isKeyboardShortcutsDialogOpen } from "@/lib/keyboard-shortcuts";
 import { chatFetch } from "@/lib/ai/chat-fetch";
 import { getChatErrorMessage } from "@/lib/errors";
+import { isFetchError } from "@/lib/quotas/client-errors";
+import { toastQuotaError } from "@/lib/quotas/toast";
 import { registerChatCopyProvider } from "@/lib/chat/chat-copy-registry";
 import { formatChatForCopy } from "@/lib/chat/format-chat-for-copy";
 import {
@@ -70,6 +72,11 @@ function focusComposerInput() {
 }
 
 function toastChatError(error: Error) {
+  if (isFetchError(error) && (error.code || error.action)) {
+    toastQuotaError(error);
+    return;
+  }
+
   const message = getChatErrorMessage(error);
 
   if (message.includes("OPENAI_API_KEY")) {

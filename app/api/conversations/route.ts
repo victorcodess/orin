@@ -6,6 +6,9 @@ import {
 } from "@/lib/ai/conversations";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
+import { getQuotaContext } from "@/lib/quotas/context";
+import { isQuotaBlockedError, quotaBlockedResponse } from "@/lib/quotas/errors";
+import { resolveOpenAIKey } from "@/lib/quotas/resolve";
 import { ensureSessionCookie } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
@@ -44,6 +47,9 @@ export async function POST(req: Request) {
       await ensureSessionCookie();
     }
 
+    const quotaCtx = await getQuotaContext();
+    await resolveOpenAIKey(quotaCtx, "new_conversation");
+
     const conversation = await createConversation({
       id,
       initialMessage: message,
@@ -54,6 +60,11 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     debugError("api/conversations", "create failed", error);
+
+    if (isQuotaBlockedError(error)) {
+      return quotaBlockedResponse(error);
+    }
+
     return NextResponse.json(
       { error: getErrorMessage(error) },
       { status: 500 },

@@ -9,6 +9,8 @@ import {
   setReadAloudAudioCache,
 } from "@/lib/elevenlabs/read-aloud-cache";
 import { fetchReadAloudAudio } from "@/lib/elevenlabs/read-aloud-client";
+import { isFetchError } from "@/lib/quotas/client-errors";
+import { toastQuotaError } from "@/lib/quotas/toast";
 import type { VoiceSpeed } from "@/lib/orin/voice/speed";
 
 export function useReadAloud(voiceId: string, voiceSpeed: VoiceSpeed) {
@@ -119,9 +121,13 @@ export function useReadAloud(voiceId: string, voiceSpeed: VoiceSpeed) {
         await playFromUrl(objectUrl, requestId);
       } catch (error) {
         if (requestIdRef.current === requestId) {
-          toast.error(
-            error instanceof Error ? error.message : "Read aloud failed"
-          );
+          if (isFetchError(error) && (error.code || error.action)) {
+            toastQuotaError(error);
+          } else {
+            toast.error(
+              error instanceof Error ? error.message : "Read aloud failed",
+            );
+          }
           resetPlayback();
         }
       }

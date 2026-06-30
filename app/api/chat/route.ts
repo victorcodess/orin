@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
@@ -19,6 +19,9 @@ import { sanitizeUIMessagesForModel } from "@/lib/ai/message-utils";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
 import { debugError, debugLog } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
+import { getQuotaContext } from "@/lib/quotas/context";
+import { isQuotaBlockedError, quotaBlockedResponse } from "@/lib/quotas/errors";
+import { resolveOpenAIKey } from "@/lib/quotas/resolve";
 import { ensureSessionCookie } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
@@ -46,24 +49,7 @@ export async function POST(req: Request) {
       debugLog("api/chat", "validation failed", { conversationId, messages });
       return Response.json(
         { error: "conversationId and messages are required" },
-        { status: 400 }
-      );
-    }
-
-    if (
-      !process.env.OPENAI_API_KEY ||
-      process.env.OPENAI_API_KEY.includes("your-")
-    ) {
-      debugError(
-        "api/chat",
-        "OPENAI_API_KEY is missing or still a placeholder"
-      );
-      return Response.json(
-        {
-          error:
-            "OPENAI_API_KEY is not configured. Set a real key in .env.local and restart the dev server.",
-        },
-        { status: 500 }
+        { status: 400 },
       );
     }
 
@@ -72,21 +58,22 @@ export async function POST(req: Request) {
       .find((m) => m.role === "user");
 
     let conversation = await getConversation(conversationId);
+    const quotaCtx = await getQuotaContext();
 
     if (!conversation) {
       if (!lastUserMessage) {
         return Response.json(
           { error: "conversationId and messages are required" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
-      const supabase = await createClient();
-      const { data: authData } = await supabase.auth.getUser();
-
-      if (!authData.user) {
+      if (!quotaCtx.userId) {
         await ensureSessionCookie();
+        Object.assign(quotaCtx, await getQuotaContext());
       }
+
+      await resolveOpenAIKey(quotaCtx, "new_conversation");
 
       conversation = await createConversation({
         id: conversationId,
@@ -125,6 +112,8 @@ export async function POST(req: Request) {
       });
 
       if (!updatedExistingMessage) {
+        await resolveOpenAIKey(quotaCtx, "message_turn");
+
         await saveMessageIfNew({
           id: lastUserMessage.id,
           conversationId,
@@ -136,6 +125,9 @@ export async function POST(req: Request) {
 
       await maybeUpdateConversationTitle(conversationId, userText);
     }
+
+    const openaiResolved = await resolveOpenAIKey(quotaCtx, "message_turn");
+    const openai = createOpenAI({ apiKey: openaiResolved.key });
 
     const modelMessages = await convertToModelMessages(
       sanitizeUIMessagesForModel(messages),
@@ -153,6 +145,7 @@ export async function POST(req: Request) {
     debugLog("api/chat", "starting streamText", {
       modelMessageCount: modelMessages.length,
       systemPromptChars: system.length,
+      keySource: openaiResolved.source,
       elapsedMs: Date.now() - startedAt,
     });
 
@@ -196,6 +189,10 @@ export async function POST(req: Request) {
     return result.toUIMessageStreamResponse();
   } catch (error) {
     debugError("api/chat", "request failed", error);
+
+    if (isQuotaBlockedError(error)) {
+      return quotaBlockedResponse(error);
+    }
 
     const message = getErrorMessage(error);
 

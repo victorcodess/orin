@@ -27,6 +27,8 @@ import { VoiceActivityIndicator } from "@/components/voice/voice-activity-indica
 import { VoiceSilenceWarning } from "@/components/voice/voice-silence-warning";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/nexus-ui/toaster";
+import { isFetchError, readErrorResponse } from "@/lib/quotas/client-errors";
+import { toastQuotaError } from "@/lib/quotas/toast";
 import {
   useVoiceCallStore,
   type VoiceCallMode,
@@ -393,19 +395,22 @@ export function VoiceCallOverlay() {
           body: JSON.stringify({ conversationId }),
         });
 
+        if (!response.ok) {
+          throw await readErrorResponse(response);
+        }
+
         const data = (await response.json()) as {
           token?: string;
           pendingToken?: string;
           silenceEndCallTimeout?: number | null;
-          error?: string;
         };
 
         if (cancelled) {
           return;
         }
 
-        if (!response.ok || !data.token || !data.pendingToken) {
-          throw new Error(data.error ?? "Failed to create voice token");
+        if (!data.token || !data.pendingToken) {
+          throw new Error("Failed to create voice token");
         }
 
         pendingTokenRef.current = data.pendingToken;
@@ -431,7 +436,11 @@ export function VoiceCallOverlay() {
         const message =
           error instanceof Error ? error.message : "Failed to start voice call";
         setError(message);
-        toast.error("Could not start voice call", { description: message });
+        if (isFetchError(error)) {
+          toastQuotaError(error);
+        } else {
+          toast.error("Could not start voice call", { description: message });
+        }
       }
     })();
 

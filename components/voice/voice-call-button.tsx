@@ -8,6 +8,8 @@ import {
   VoiceCallTooltip,
   voiceCallStartKeys,
 } from "@/components/voice/voice-call-keyboard-shortcuts";
+import { toast } from "@/components/nexus-ui/toaster";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 
 type VoiceCallButtonProps = {
@@ -19,6 +21,7 @@ export function VoiceCallButton({
   conversationId,
   disabled = false,
 }: VoiceCallButtonProps) {
+  const userId = useAuthStore((state) => state.userId);
   const status = useVoiceCallStore((state) => state.status);
   const activeConversationId = useVoiceCallStore(
     (state) => state.conversationId,
@@ -34,6 +37,27 @@ export function VoiceCallButton({
     activeConversationId === targetId &&
     status !== "idle";
 
+  const handleClick = () => {
+    if (userId === null) {
+      toast.error("Sign in for voice calls", {
+        description: "Voice calls are available after you create an account.",
+        action: {
+          label: "Sign up",
+          onClick: () => {
+            window.location.href = "/auth/sign-up";
+          },
+        },
+      });
+      return;
+    }
+
+    if (conversationId) {
+      requestStart(conversationId);
+    } else {
+      requestStartNewChat();
+    }
+  };
+
   return (
     <VoiceCallTooltip
       label={isActive ? "Voice call active" : "Start voice call"}
@@ -45,13 +69,9 @@ export function VoiceCallButton({
           variant={isActive ? "default" : "ghost"}
           size="icon-lg"
           className="hover:bg-accent hover:dark:bg-muted"
-          disabled={disabled || status === "connecting"}
+          disabled={disabled || status === "connecting" || userId === undefined}
           aria-label={isActive ? "Voice call active" : "Start voice call"}
-          onClick={() =>
-            conversationId
-              ? requestStart(conversationId)
-              : requestStartNewChat()
-          }
+          onClick={handleClick}
         >
           <HugeiconsIcon
             icon={Call02Icon}

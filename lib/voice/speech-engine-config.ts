@@ -89,8 +89,11 @@ function speedsMatch(current?: number, next?: number) {
 }
 
 /** Push voice + speed to the shared Speech Engine (before saves and calls). */
-export async function syncSpeechEngineTts(config: AssistantConfig) {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
+export async function syncSpeechEngineTts(
+  config: AssistantConfig,
+  apiKeyOverride?: string,
+) {
+  const apiKey = apiKeyOverride ?? process.env.ELEVENLABS_API_KEY;
   const engineId = process.env.ELEVENLABS_SPEECH_ENGINE_ID;
 
   if (!apiKey || apiKey.includes("your-") || !engineId || engineId.includes("your-")) {

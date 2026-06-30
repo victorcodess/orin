@@ -4,6 +4,10 @@ import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import { verifyConversationAccess } from "@/lib/ai/conversations";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
+import { getQuotaContext } from "@/lib/quotas/context";
+import { isQuotaBlockedError, quotaBlockedResponse } from "@/lib/quotas/errors";
+import { recordUsageEvent } from "@/lib/quotas/record";
+import { resolveElevenLabsKey } from "@/lib/quotas/resolve";
 import {
   clearVoiceSession,
   markVoiceCallPending,
@@ -43,7 +47,7 @@ function voiceTokenError(error: unknown): {
       if (detail?.code === "quota_exceeded") {
         return {
           message:
-            "Out of ElevenLabs credits. Add credits in your ElevenLabs account to use voice calls.",
+            "Out of ElevenLabs credits. Add credits in your ElevenLabs account or add your API key in Settings.",
           status: 402,
           code: detail.code,
         };
@@ -84,18 +88,7 @@ export async function POST(req: Request) {
       return Response.json({ error: "conversationId is required" }, { status: 400 });
     }
 
-    const apiKey = process.env.ELEVENLABS_API_KEY;
     const engineId = process.env.ELEVENLABS_SPEECH_ENGINE_ID;
-
-    if (!apiKey || apiKey.includes("your-")) {
-      return Response.json(
-        {
-          error:
-            "ELEVENLABS_API_KEY is not configured. Set it in .env.local and restart the dev server.",
-        },
-        { status: 500 },
-      );
-    }
 
     if (!engineId || engineId.includes("your-")) {
       return Response.json(
@@ -109,14 +102,20 @@ export async function POST(req: Request) {
 
     await verifyConversationAccess(conversationId);
 
+    const quotaCtx = await getQuotaContext();
+    const elevenlabsResolved = await resolveElevenLabsKey(
+      quotaCtx,
+      "voice_session",
+    );
+
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
     const assistantConfig = await getAssistantConfig(authData.user?.id);
-    await syncSpeechEngineTts(assistantConfig);
+    await syncSpeechEngineTts(assistantConfig, elevenlabsResolved.key);
 
     const pendingToken = await markVoiceCallPending(conversationId);
 
-    const elevenlabs = new ElevenLabsClient({ apiKey });
+    const elevenlabs = new ElevenLabsClient({ apiKey: elevenlabsResolved.key });
     let token: string;
     let speechEngine;
 
@@ -131,6 +130,12 @@ export async function POST(req: Request) {
       await clearVoiceSession(conversationId, pendingToken).catch(() => {});
       throw error;
     }
+
+    await recordUsageEvent({
+      ctx: quotaCtx,
+      type: "voice_minutes",
+      conversationId,
+    });
 
     const turn = speechEngine?.config?.turn;
     const silenceEndCallTimeout =
@@ -148,6 +153,10 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     debugError("api/voice/token", "request failed", error);
+
+    if (isQuotaBlockedError(error)) {
+      return quotaBlockedResponse(error);
+    }
 
     const message = getErrorMessage(error);
     if (message === "Forbidden") {

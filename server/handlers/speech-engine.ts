@@ -31,7 +31,7 @@ export async function attachSpeechEngine(httpServer: HttpServer, path = "/ws") {
 
   // Once a voice session is bound to a conversation it never changes, so cache
   // the lookup and skip a Supabase round-trip on every transcript turn.
-  type BoundConversation = { id: string; user_id: string | null };
+  type BoundConversation = { id: string; user_id: string | null; session_id: string | null };
   const conversationByVoiceSession = new Map<string, BoundConversation>();
 
   async function getBoundConversation(
@@ -87,6 +87,7 @@ export async function attachSpeechEngine(httpServer: HttpServer, path = "/ws") {
         const response = await handleVoiceTranscript({
           conversationId: conversation.id,
           userId: conversation.user_id,
+          sessionId: conversation.session_id,
           transcript,
           signal,
         });

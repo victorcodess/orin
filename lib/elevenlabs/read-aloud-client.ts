@@ -1,4 +1,5 @@
 import type { VoiceSpeed } from "@/lib/orin/voice/speed";
+import { readErrorResponse } from "@/lib/quotas/client-errors";
 
 export async function fetchReadAloudAudio(
   text: string,
@@ -12,10 +13,7 @@ export async function fetchReadAloudAudio(
   });
 
   if (!response.ok) {
-    const data = (await response.json().catch(() => null)) as {
-      error?: string;
-    } | null;
-    throw new Error(data?.error ?? "Failed to generate speech");
+    throw await readErrorResponse(response);
   }
 
   const blob = await response.blob();

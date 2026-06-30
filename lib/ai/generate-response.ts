@@ -1,6 +1,6 @@
 import "server-only";
 
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
@@ -9,6 +9,7 @@ import { loadHistory, saveMessage } from "@/lib/ai/messages";
 import { sanitizeUIMessagesForModel } from "@/lib/ai/message-utils";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
 import type { AssistantConfig } from "@/lib/orin/defaults";
+import { resolveOpenAIKey } from "@/lib/quotas/resolve";
 
 type TranscriptEntry = { role: "user" | "agent"; content: string };
 
@@ -180,11 +181,13 @@ function latestUserText(transcript: TranscriptEntry[]): string {
 export async function handleVoiceTranscript({
   conversationId,
   userId,
+  sessionId,
   transcript,
   signal,
 }: {
   conversationId: string;
   userId?: string | null;
+  sessionId?: string | null;
   transcript: TranscriptEntry[];
   signal: AbortSignal;
 }) {
@@ -196,10 +199,16 @@ export async function handleVoiceTranscript({
 
   // Capture pre-call history *before* persisting this turn so the snapshot never
   // includes live-call turns (which arrive via the transcript instead).
-  const [config, priorHistory] = await Promise.all([
+  const [config, priorHistory, openaiResolved] = await Promise.all([
     ensureAssistantConfig(conversationId, userId),
     ensurePriorHistory(conversationId),
+    resolveOpenAIKey(
+      { userId: userId ?? null, sessionId: sessionId ?? null },
+      "message_turn",
+    ),
   ]);
+
+  const openai = createOpenAI({ apiKey: openaiResolved.key });
 
   const promptMessages: UIMessage[] = [
     ...priorHistory,

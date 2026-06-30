@@ -9,6 +9,11 @@ import {
   getReadAloudOwnerId,
   uploadCachedReadAloudAudio,
 } from "@/lib/elevenlabs/read-aloud-storage";
+import { getErrorMessage } from "@/lib/errors";
+import { getQuotaContext } from "@/lib/quotas/context";
+import { isQuotaBlockedError, quotaBlockedResponse } from "@/lib/quotas/errors";
+import { recordUsageEvent } from "@/lib/quotas/record";
+import { resolveElevenLabsKey } from "@/lib/quotas/resolve";
 import { parseVoiceSpeed, voiceSpeedToNumber } from "@/lib/orin/voice/speed";
 
 type TextToSpeechRequestBody = {
@@ -19,103 +24,110 @@ type TextToSpeechRequestBody = {
 
 export async function POST(req: Request) {
   const startedAt = Date.now();
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-
-  if (!apiKey || apiKey.includes("your-")) {
-    return Response.json(
-      {
-        error:
-          "ELEVENLABS_API_KEY is not configured. Set it in .env.local and restart the dev server.",
-      },
-      { status: 500 }
-    );
-  }
-
-  const body = (await req.json().catch(() => null)) as TextToSpeechRequestBody | null;
-  const rawText = body?.text?.trim();
-  const voiceId = body?.voiceId?.trim();
-  const voiceSpeed = parseVoiceSpeed(body?.voiceSpeed);
-  const speed = voiceSpeedToNumber(voiceSpeed);
-
-  if (!rawText) {
-    return Response.json({ error: "Text is required" }, { status: 400 });
-  }
-
-  const text = prepareReadAloudText(rawText);
-
-  if (!text) {
-    return Response.json({ error: "Nothing to read aloud" }, { status: 400 });
-  }
-
-  if (!voiceId) {
-    return Response.json({ error: "Voice ID is required" }, { status: 400 });
-  }
-
-  let ownerId: string | null = null;
 
   try {
-    ownerId = await getReadAloudOwnerId();
-    const cachedAudio = await downloadCachedReadAloudAudio({
-      ownerId,
-      text,
-      voiceId,
-      voiceSpeed,
-    });
+    const body = (await req.json().catch(() => null)) as TextToSpeechRequestBody | null;
+    const rawText = body?.text?.trim();
+    const voiceId = body?.voiceId?.trim();
+    const voiceSpeed = parseVoiceSpeed(body?.voiceSpeed);
+    const speed = voiceSpeedToNumber(voiceSpeed);
 
-    if (cachedAudio) {
-      debugLog("api/tts", "cache hit", {
-        ownerId,
-        elapsedMs: Date.now() - startedAt,
-      });
-
-      return new Response(cachedAudio, {
-        headers: {
-          "Content-Type": "audio/mpeg",
-          "Cache-Control": "private, max-age=31536000, immutable",
-          "X-Read-Aloud-Cache": "hit",
-        },
-      });
+    if (!rawText) {
+      return Response.json({ error: "Text is required" }, { status: 400 });
     }
-  } catch (error) {
-    debugLog("api/tts", "cache lookup failed, continuing without cache", error);
-  }
 
-  let audio: ArrayBuffer;
+    const text = prepareReadAloudText(rawText);
 
-  try {
-    audio = await synthesizeSpeech(apiKey, {
-      voiceId,
-      text,
-      speed,
-    });
-  } catch (error) {
-    debugError("api/tts", "synthesis failed", error);
-    return ttsErrorResponse(error);
-  }
+    if (!text) {
+      return Response.json({ error: "Nothing to read aloud" }, { status: 400 });
+    }
 
-  if (ownerId) {
+    if (!voiceId) {
+      return Response.json({ error: "Voice ID is required" }, { status: 400 });
+    }
+
+    const quotaCtx = await getQuotaContext();
+    const elevenlabsResolved = await resolveElevenLabsKey(quotaCtx, "read_aloud");
+
+    let ownerId: string | null = null;
+
     try {
-      await uploadCachedReadAloudAudio({
+      ownerId = await getReadAloudOwnerId();
+      const cachedAudio = await downloadCachedReadAloudAudio({
         ownerId,
         text,
         voiceId,
         voiceSpeed,
-        audio,
       });
-      debugLog("api/tts", "cache stored", {
-        ownerId,
-        elapsedMs: Date.now() - startedAt,
+
+      if (cachedAudio) {
+        debugLog("api/tts", "cache hit", {
+          ownerId,
+          elapsedMs: Date.now() - startedAt,
+        });
+
+        return new Response(cachedAudio, {
+          headers: {
+            "Content-Type": "audio/mpeg",
+            "Cache-Control": "private, max-age=31536000, immutable",
+            "X-Read-Aloud-Cache": "hit",
+          },
+        });
+      }
+    } catch (error) {
+      debugLog("api/tts", "cache lookup failed, continuing without cache", error);
+    }
+
+    let audio: ArrayBuffer;
+
+    try {
+      audio = await synthesizeSpeech(elevenlabsResolved.key, {
+        voiceId,
+        text,
+        speed,
       });
     } catch (error) {
-      debugLog("api/tts", "cache store failed", error);
+      debugError("api/tts", "synthesis failed", error);
+      return ttsErrorResponse(error);
     }
-  }
 
-  return new Response(audio, {
-    headers: {
-      "Content-Type": "audio/mpeg",
-      "Cache-Control": "private, max-age=31536000, immutable",
-      "X-Read-Aloud-Cache": "miss",
-    },
-  });
+    await recordUsageEvent({
+      ctx: quotaCtx,
+      type: "tts_chars",
+    });
+
+    if (ownerId) {
+      try {
+        await uploadCachedReadAloudAudio({
+          ownerId,
+          text,
+          voiceId,
+          voiceSpeed,
+          audio,
+        });
+        debugLog("api/tts", "cache stored", {
+          ownerId,
+          elapsedMs: Date.now() - startedAt,
+        });
+      } catch (error) {
+        debugLog("api/tts", "cache store failed", error);
+      }
+    }
+
+    return new Response(audio, {
+      headers: {
+        "Content-Type": "audio/mpeg",
+        "Cache-Control": "private, max-age=31536000, immutable",
+        "X-Read-Aloud-Cache": "miss",
+      },
+    });
+  } catch (error) {
+    debugError("api/tts", "request failed", error);
+
+    if (isQuotaBlockedError(error)) {
+      return quotaBlockedResponse(error);
+    }
+
+    return Response.json({ error: getErrorMessage(error) }, { status: 500 });
+  }
 }

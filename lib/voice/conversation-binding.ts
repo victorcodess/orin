@@ -75,7 +75,7 @@ export async function resolveConversationByVoiceSession(voiceSessionId: string) 
 
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, user_id")
+    .select("id, user_id, session_id")
     .eq("active_voice_session_id", voiceSessionId)
     .maybeSingle();
 
