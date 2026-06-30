@@ -7,7 +7,7 @@ import type { UserPreferences } from "@/lib/orin/user-preferences";
 export type ProfileSettings = {
   displayName: string;
   email: string;
-  creditsBalance: number;
+  onboardingCompleted: boolean;
 } & UserPreferences;
 
 type ProfilePatch = {

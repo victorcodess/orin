@@ -12,15 +12,16 @@ type ProfilePayload = {
   theme?: string;
   language?: string;
   messageBubbleLayout?: string;
+  onboardingCompleted?: boolean;
 };
 
 function mapProfileRow(
   row: {
     display_name: string | null;
-    credits_balance: number;
     theme: string;
     language: string;
     message_bubble_layout: string;
+    onboarding_completed?: boolean;
   } | null,
   email: string,
   fallbackName: string,
@@ -33,7 +34,7 @@ function mapProfileRow(
   return {
     displayName: row?.display_name ?? fallbackName,
     email,
-    creditsBalance: row?.credits_balance ?? 0,
+    onboardingCompleted: row?.onboarding_completed ?? false,
     theme: isThemePreference(theme) ? theme : DEFAULT_USER_PREFERENCES.theme,
     language,
     messageBubbleLayout: isMessageBubbleLayout(messageBubbleLayout)
@@ -65,7 +66,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "display_name, credits_balance, theme, language, message_bubble_layout",
+        "display_name, theme, language, message_bubble_layout, onboarding_completed",
       )
       .eq("id", authData.user.id)
       .maybeSingle();
@@ -105,6 +106,7 @@ export async function PATCH(req: Request) {
       theme?: string;
       language?: string;
       message_bubble_layout?: string;
+      onboarding_completed?: boolean;
     } = {};
 
     if (body.displayName !== undefined) {
@@ -143,6 +145,10 @@ export async function PATCH(req: Request) {
       updates.message_bubble_layout = body.messageBubbleLayout;
     }
 
+    if (body.onboardingCompleted !== undefined) {
+      updates.onboarding_completed = body.onboardingCompleted;
+    }
+
     if (Object.keys(updates).length === 0) {
       return Response.json({ error: "No changes provided" }, { status: 400 });
     }
@@ -159,7 +165,7 @@ export async function PATCH(req: Request) {
     const { data, error: readError } = await supabase
       .from("profiles")
       .select(
-        "display_name, credits_balance, theme, language, message_bubble_layout",
+        "display_name, theme, language, message_bubble_layout, onboarding_completed",
       )
       .eq("id", authData.user.id)
       .maybeSingle();
