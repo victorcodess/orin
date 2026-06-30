@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowUpRight01Icon,
@@ -28,7 +27,9 @@ import {
 } from "@/lib/keyboard-shortcuts";
 import { openSettings } from "@/lib/settings-routes";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
+import { useThemePreference } from "@/lib/hooks/use-theme-preference";
 import { useKeyboardShortcutLabels } from "@/lib/hooks/use-keyboard-shortcut-labels";
+import { isThemePreference } from "@/lib/orin/user-preferences";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -77,7 +78,7 @@ function useShortcutLabels() {
 
 function ThemePreferenceMenu() {
   const hydrated = useHydrated();
-  const { theme, setTheme } = useTheme();
+  const { theme, setThemePreference } = useThemePreference();
 
   return (
     <DropdownMenuSub>
@@ -92,7 +93,11 @@ function ThemePreferenceMenu() {
       <DropdownMenuSubContent>
         <DropdownMenuRadioGroup
           value={hydrated ? theme : "system"}
-          onValueChange={setTheme}
+          onValueChange={(value) => {
+            if (isThemePreference(value)) {
+              setThemePreference(value);
+            }
+          }}
         >
           <DropdownMenuRadioItem value="system">
             <HugeiconsIcon

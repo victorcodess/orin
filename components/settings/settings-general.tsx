@@ -8,7 +8,6 @@ import {
   Sun01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useTheme } from "next-themes";
 
 import {
   SettingsGroup,
@@ -28,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
-import type { ThemePreference } from "@/lib/orin/user-preferences";
+import { useThemePreference } from "@/lib/hooks/use-theme-preference";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import {
   type MessageBubbleLayout,
@@ -57,20 +56,9 @@ export function SettingsGeneral() {
   const profile = useProfileStore((state) => state.profile);
   const isLoading = useProfileStore((state) => state.isLoading);
   const patch = useProfileStore((state) => state.patch);
-  const { theme, setTheme } = useTheme();
+  const { theme, setThemePreference } = useThemePreference();
   const layout = useMessageStyleStore((state) => state.layout);
   const setLayout = useMessageStyleStore((state) => state.setLayout);
-
-  const handleThemeChange = (value: ThemePreference) => {
-    setTheme(value);
-    if (userId) {
-      void patch({ theme: value }).then((updated) => {
-        if (!updated) {
-          toast.error("Couldn't save theme");
-        }
-      });
-    }
-  };
 
   const handleLayoutChange = (value: MessageBubbleLayout) => {
     setLayout(value);
@@ -116,7 +104,7 @@ export function SettingsGeneral() {
                 <SettingsOption
                   key={option.value}
                   active={active}
-                  onClick={() => handleThemeChange(option.value)}
+                  onClick={() => setThemePreference(option.value)}
                   className="inline-flex items-center gap-2"
                 >
                   <HugeiconsIcon

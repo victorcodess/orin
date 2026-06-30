@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import { useEffect } from "react";
 
 import { signalNewChat } from "@/components/chat/new-chat-view";
 import { KeyboardShortcutsDialog } from "@/components/shell/keyboard-shortcuts-dialog";
+import { useThemePreference } from "@/lib/hooks/use-theme-preference";
 import {
   hasPrimaryModifier,
   isKeyboardShortcutsDialogOpen,
@@ -19,16 +19,9 @@ import { closeSettings, openSettings } from "@/lib/settings-routes";
 import { useMessageStyleStore } from "@/lib/stores/message-style-store";
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 
-function handleThemeToggle(
-  resolvedTheme: string | undefined,
-  setTheme: (theme: string) => void,
-) {
-  setTheme(resolvedTheme === "dark" ? "light" : "dark");
-}
-
 export function AppKeyboardShortcuts() {
   const router = useRouter();
-  const { resolvedTheme, setTheme } = useTheme();
+  const { toggleLightDark } = useThemePreference();
   const open = useKeyboardShortcutsStore((state) => state.open);
   const setOpen = useKeyboardShortcutsStore((state) => state.setOpen);
 
@@ -64,7 +57,7 @@ export function AppKeyboardShortcuts() {
         hasPrimaryModifier(event)
       ) {
         event.preventDefault();
-        handleThemeToggle(resolvedTheme, setTheme);
+        toggleLightDark();
         return;
       }
 
@@ -115,7 +108,7 @@ export function AppKeyboardShortcuts() {
 
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [open, resolvedTheme, router, setOpen, setTheme]);
+  }, [open, router, setOpen, toggleLightDark]);
 
   return <KeyboardShortcutsDialog open={open} onOpenChange={setOpen} />;
 }

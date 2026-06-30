@@ -1,16 +1,16 @@
 "use client";
 
 import { Moon02Icon, Sun01Icon } from "@hugeicons/core-free-icons";
-import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
+import { useThemePreference } from "@/lib/hooks/use-theme-preference";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@/lib/utils";
 
 const ThemeSwitcher = ({className}: {className?: string}) => {
   const hydrated = useHydrated();
-  const { resolvedTheme, setTheme } = useTheme();
+  const { resolvedTheme, toggleLightDark } = useThemePreference();
 
   if (!hydrated) {
     return null;
@@ -25,7 +25,7 @@ const ThemeSwitcher = ({className}: {className?: string}) => {
       variant="ghost"
       size="icon"
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={toggleLightDark}
       className={cn(className, "hover:bg-accent hover:dark:bg-muted")}
     >
       {!isDark ? (
