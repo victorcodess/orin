@@ -5,6 +5,7 @@ import { create } from "zustand";
 import { signOut as signOutAction } from "@/app/auth/actions";
 import { useAssistantConfigStore } from "@/lib/stores/assistant-config-store";
 import { useProfileStore } from "@/lib/stores/profile-store";
+import { useUsageStore } from "@/lib/stores/usage-store";
 
 export type SidebarUser = {
   name: string;
@@ -50,12 +51,15 @@ function handleUserIdChange(nextUserId: string | null | undefined) {
 
   if (!isFirstResolve) {
     useProfileStore.getState().reset();
+    useUsageStore.getState().reset();
     void useAssistantConfigStore.getState().refresh();
   }
 
-  if (nextUserId && (isFirstResolve || nextUserId !== previousUserId)) {
+  if (nextUserId) {
     void useProfileStore.getState().load(nextUserId);
   }
+
+  void useUsageStore.getState().load(nextUserId ?? "anon");
 }
 
 function applySession({ user, userId }: SessionPayload) {
@@ -108,6 +112,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         })
         .catch(() => {
           if (useAuthStore.getState().userId === undefined) {
+            handleUserIdChange(null);
             set({
               user: null,
               userId: null,
