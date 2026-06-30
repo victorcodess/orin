@@ -34,7 +34,7 @@ Shipped so far:
 - **Next.js** — App Router, server components, API routes
 - **Vercel AI SDK** — LLM orchestration (unified brain for text + voice)
 - **ElevenLabs Speech Engine** — Real-time STT/TTS for voice calls
-- **Supabase** — Auth (Google OAuth primary, email secondary), Postgres, Realtime
+- **Supabase** — Auth (Google OAuth), Postgres, Realtime
 - **shadcn/ui** — Generic UI primitives
 - **Nexus UI** — AI-native chat primitives (Thread, Message, PromptInput)
 
@@ -46,8 +46,7 @@ Shipped so far:
 | `/new` | New chat prompt (creates conversation on submit) |
 | `/c/[id]` | Conversation thread |
 | `/onboarding` | Post-signup tone + voice setup (skippable) |
-| `/auth/login` | Sign in (Google primary, email secondary) |
-| `/auth/sign-up` | Create account |
+| `/auth/login` | Sign in with Google |
 | `/api/chat` | Streaming text chat |
 | `/api/conversations` | List / create conversations |
 | `/api/voice/token` | Mint WebRTC token for voice calls |

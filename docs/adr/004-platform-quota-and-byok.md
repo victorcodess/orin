@@ -55,8 +55,7 @@ Settings UI shows masked values (`sk-…xxxx`) after save. Full keys are never r
 
 ### Auth
 
-- **Google OAuth** is the primary sign-up/login method (Supabase Auth)
-- **Email/password** remains as secondary
+- **Google OAuth** is the only sign-up/login method (Supabase Auth)
 
 ### Onboarding
 
