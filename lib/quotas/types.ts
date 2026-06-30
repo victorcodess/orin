@@ -20,11 +20,17 @@ export type ResolvedKeys = {
   elevenlabsSource: KeySource;
 };
 
+export type QuotaKeysSummary = {
+  openaiMasked: string | null;
+  elevenlabsMasked: string | null;
+  hasOpenaiKey: boolean;
+  hasElevenlabsKey: boolean;
+};
+
 export type QuotaUsageSummary = {
   tier: QuotaTier;
   limits: Record<QuotaOperation, number>;
   used: Record<QuotaOperation, number>;
   remaining: Record<QuotaOperation, number>;
-  hasOpenaiKey: boolean;
-  hasElevenlabsKey: boolean;
+  keys: QuotaKeysSummary;
 };

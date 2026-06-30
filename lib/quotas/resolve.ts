@@ -20,13 +20,16 @@ const OPERATION_KEY_NEEDS: Record<
   read_aloud: { openai: false, elevenlabs: true },
 };
 
-const ANON_BLOCKED: QuotaOperation[] = ["voice_session", "read_aloud"];
+const ANON_BLOCKED_OPERATIONS: QuotaOperation[] = [
+  "voice_session",
+  "read_aloud",
+];
 
 export async function assertQuotaAllowed(
   ctx: QuotaContext,
   operation: QuotaOperation,
 ): Promise<void> {
-  if (!ctx.userId && ANON_BLOCKED.includes(operation)) {
+  if (!ctx.userId && ANON_BLOCKED_OPERATIONS.includes(operation)) {
     throw new QuotaBlockedError(
       "Sign in to use voice calls and read aloud.",
       "feature_requires_auth",

@@ -1,6 +1,10 @@
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { getMaskedUserKeys, saveUserKeys } from "@/lib/quotas/keys";
+import {
+  validateElevenLabsKey,
+  validateOpenAIKey,
+} from "@/lib/quotas/validate-keys";
 import { createClient } from "@/lib/supabase/server";
 
 type KeysPayload = {
@@ -59,6 +63,26 @@ export async function PATCH(req: Request) {
 
     if (body.openaiKey === undefined && body.elevenlabsKey === undefined) {
       return Response.json({ error: "No changes provided" }, { status: 400 });
+    }
+
+    if (body.openaiKey) {
+      const validation = await validateOpenAIKey(body.openaiKey.trim());
+      if (!validation.valid) {
+        return Response.json(
+          { error: validation.error ?? "Invalid OpenAI API key" },
+          { status: 400 },
+        );
+      }
+    }
+
+    if (body.elevenlabsKey) {
+      const validation = await validateElevenLabsKey(body.elevenlabsKey.trim());
+      if (!validation.valid) {
+        return Response.json(
+          { error: validation.error ?? "Invalid ElevenLabs API key" },
+          { status: 400 },
+        );
+      }
     }
 
     await saveUserKeys(authData.user.id, body);

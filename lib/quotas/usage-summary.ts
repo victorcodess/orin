@@ -30,6 +30,8 @@ export async function buildQuotaUsageSummary(
     ctx.userId != null
       ? await getMaskedUserKeys(ctx.userId)
       : {
+          openaiMasked: null,
+          elevenlabsMasked: null,
           hasOpenaiKey: false,
           hasElevenlabsKey: false,
         };
@@ -39,7 +41,6 @@ export async function buildQuotaUsageSummary(
     limits: { ...limits },
     used,
     remaining,
-    hasOpenaiKey: masked.hasOpenaiKey,
-    hasElevenlabsKey: masked.hasElevenlabsKey,
+    keys: masked,
   };
 }
