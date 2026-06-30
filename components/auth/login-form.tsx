@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 
 import { signInWithPassword, type AuthActionResult } from "@/app/auth/actions";
+import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,12 +32,23 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>
-            Enter your email below to login to your account
-          </CardDescription>
+          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardDescription>Sign in to sync chats and unlock voice</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-6">
+          <GoogleAuthButton />
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card text-muted-foreground px-2">
+                Or continue with email
+              </span>
+            </div>
+          </div>
+
           <form action={formAction}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
@@ -70,7 +82,7 @@ export function LoginForm({
                 <p className="text-sm text-red-500">{state.error}</p>
               )}
               <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? "Logging in..." : "Login"}
+                {isPending ? "Logging in..." : "Sign in with email"}
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">

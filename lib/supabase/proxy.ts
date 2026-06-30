@@ -48,6 +48,14 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims;
 
   const pathname = request.nextUrl.pathname;
+
+  // Supabase falls back to Site URL (/) when redirectTo doesn't match the allow list.
+  if (pathname === "/" && request.nextUrl.searchParams.has("code")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    return NextResponse.redirect(url);
+  }
+
   const isPublicPath =
     pathname === "/" ||
     pathname === "/new" ||
@@ -59,7 +67,10 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/api/elevenlabs") ||
     pathname.startsWith("/api/assistant-config") ||
     pathname.startsWith("/api/profile") ||
+    pathname.startsWith("/api/usage") ||
+    pathname.startsWith("/api/keys") ||
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/auth/callback") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth");
 

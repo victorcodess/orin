@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getOnboardingCompleted } from "@/lib/auth/post-auth";
 import { createClient } from "@/lib/supabase/server";
 
 function toSidebarUser(authUser: {
@@ -24,15 +25,18 @@ export async function GET() {
 
   if (!authUser) {
     return NextResponse.json(
-      { user: null, userId: null },
+      { user: null, userId: null, onboardingCompleted: null },
       { headers: { "Cache-Control": "no-store" } },
     );
   }
+
+  const onboardingCompleted = await getOnboardingCompleted(authUser.id);
 
   return NextResponse.json(
     {
       user: toSidebarUser(authUser),
       userId: authUser.id,
+      onboardingCompleted,
     },
     { headers: { "Cache-Control": "no-store" } },
   );

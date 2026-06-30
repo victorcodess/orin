@@ -1,21 +1,37 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { getAuthCallbackUrl, getAuthSiteOrigin } from "@/lib/auth/site-url";
+import {
+  completePostAuth,
+  postAuthRedirectPath,
+  setOnboardingCompleted,
+} from "@/lib/auth/post-auth";
 import { safeRedirectUrl } from "@/lib/safe-redirect";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthActionResult = { error?: string };
 export type PasswordResetResult = AuthActionResult | { success: true };
 
-async function siteOrigin() {
-  const headerList = await headers();
-  const host =
-    headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "localhost:3000";
-  const protocol = headerList.get("x-forwarded-proto") ?? "http";
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: await getAuthCallbackUrl(),
+    },
+  });
 
-  return `${protocol}://${host}`;
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (data.url) {
+    redirect(data.url);
+  }
+
+  return { error: "Could not start Google sign-in" };
 }
 
 export async function signInWithPassword(
@@ -34,6 +50,21 @@ export async function signInWithPassword(
 
   if (error) {
     return { error: error.message };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    const { onboardingCompleted } = await completePostAuth(user.id);
+    redirect(
+      postAuthRedirectPath({
+        onboardingCompleted,
+        isSignup: false,
+        next: formData.get("next") as string | null,
+      }),
+    );
   }
 
   redirect(safeRedirectUrl(formData.get("next") as string | null));
@@ -56,7 +87,7 @@ export async function signUpWithPassword(
     return { error: "Passwords do not match" };
   }
 
-  const origin = await siteOrigin();
+  const origin = await getAuthSiteOrigin();
   const { error } = await supabase.auth.signUp({
     email,
     password,
@@ -83,7 +114,7 @@ export async function requestPasswordReset(
     return { error: "Email is required" };
   }
 
-  const origin = await siteOrigin();
+  const origin = await getAuthSiteOrigin();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/update-password`,
   });
@@ -134,4 +165,18 @@ export async function signOut() {
   }
 
   await supabase.auth.signOut();
+}
+
+export async function completeOnboarding() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/auth/login");
+  }
+
+  await setOnboardingCompleted(user.id);
+  redirect("/new");
 }
