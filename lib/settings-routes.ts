@@ -43,7 +43,7 @@ export const SETTINGS_ROUTES: {
     label: "Usage & API keys",
     hash: "#settings/usage",
     title: "Usage & API keys",
-    description: "Credits, usage, and developer access.",
+    description: "Free allowance, access status, and your API keys.",
   },
 ];
 

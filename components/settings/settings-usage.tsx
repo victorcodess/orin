@@ -1,79 +1,315 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useRef, useState, useTransition } from "react";
 
 import {
-  SettingsEmptyState,
   SettingsField,
   SettingsGroup,
   SettingsPage,
-  SettingsRow,
+  SettingsSectionIntro,
   SettingsSignInPrompt,
   SettingsSkeletonRows,
-  SettingsStat,
 } from "@/components/settings/settings-ui";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/nexus-ui/toaster";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  buildCapabilitySnapshots,
+  type AllowancePart,
+  type CapabilitySnapshot,
+  type CredentialStatusKind,
+} from "@/lib/quotas/credential-status";
+import { useSettingsRouteDirty } from "@/lib/hooks/use-settings-route-dirty";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import type { QuotaOperation, QuotaUsageSummary } from "@/lib/quotas/types";
+import { useUsageStore } from "@/lib/stores/usage-store";
+import type { QuotaUsageSummary } from "@/lib/quotas/types";
+import { cn } from "@/lib/utils";
 
-const OPERATION_LABELS: Record<QuotaOperation, string> = {
-  new_conversation: "New chats",
-  message_turn: "Messages sent",
-  voice_session: "Voice calls",
-  read_aloud: "Read aloud",
+const KEY_INPUT_CLASS =
+  "mt-2 h-10 rounded-full border-input bg-card px-4 shadow-none dark:bg-input/30";
+
+const STATUS_BADGE: Record<
+  CredentialStatusKind,
+  {
+    variant: "secondary" | "outline" | "destructive";
+    className: string;
+  }
+> = {
+  platform: {
+    variant: "secondary",
+    className: "rounded-full py-1 font-normal shadow-none hover:bg-secondary",
+  },
+  user: {
+    variant: "outline",
+    className:
+      "rounded-full py-1 font-normal shadow-none hover:bg-transparent",
+  },
+  blocked: {
+    variant: "destructive",
+    className:
+      "rounded-full py-1 font-normal shadow-none hover:bg-destructive",
+  },
+  sign_in_required: {
+    variant: "outline",
+    className:
+      "rounded-full py-1 font-normal shadow-none hover:bg-transparent",
+  },
 };
 
-type MaskedKeys = {
-  openaiMasked: string | null;
-  elevenlabsMasked: string | null;
-  hasOpenaiKey: boolean;
-  hasElevenlabsKey: boolean;
-};
+function AllowanceDisplay({ parts }: { parts: AllowancePart[] }) {
+  return (
+    <div className="flex flex-col gap-4 sm:items-end">
+      {parts.map((part) => (
+        <div key={part.label} className="sm:text-right">
+          <p className="text-foreground text-3xl font-semibold tabular-nums leading-none tracking-tight">
+            {part.remaining}
+            <span className="text-muted-foreground ml-0.25 text-base font-medium">
+              /<span className="ml-0.25">{part.total}</span>
+            </span>
+          </p>
+          <p className="text-muted-foreground mt-1.5 text-sm leading-snug">
+            {part.label}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CapabilityRow({
+  capability,
+  onAddKeys,
+  withSeparator = false,
+}: {
+  capability: CapabilitySnapshot;
+  onAddKeys?: () => void;
+  withSeparator?: boolean;
+}) {
+  const badge = STATUS_BADGE[capability.kind];
+  const showAllowance = Boolean(capability.allowance?.length);
+  const showAddKeys = capability.kind === "blocked" && onAddKeys;
+
+  return (
+    <>
+      {withSeparator ? <Separator className="bg-border/40" /> : null}
+      <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 sm:max-w-[42%]">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-foreground text-sm font-medium">
+              {capability.label}
+            </p>
+            <Badge variant={badge.variant} className={badge.className}>
+              {capability.statusLabel}
+            </Badge>
+          </div>
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+            {capability.description}
+          </p>
+          {capability.nextStep ? (
+            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              {capability.nextStep}
+            </p>
+          ) : null}
+        </div>
+        {showAllowance || showAddKeys ? (
+          <div className="flex min-w-0 flex-1 sm:max-w-[52%] sm:justify-end sm:pt-0.5">
+            {showAllowance && capability.allowance ? (
+              <AllowanceDisplay parts={capability.allowance} />
+            ) : null}
+            {showAddKeys ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onAddKeys}
+              >
+                Add keys
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
+function ApiKeyField({
+  id,
+  label,
+  placeholder,
+  helper,
+  masked,
+  value,
+  isPending,
+  onChange,
+  onClear,
+}: {
+  id: string;
+  label: string;
+  placeholder: string;
+  helper: string;
+  masked: string | null;
+  value: string;
+  isPending: boolean;
+  onChange: (value: string) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </label>
+      {masked ? (
+        <div className="mt-2 flex items-center gap-2">
+          <code className="bg-muted rounded-md px-2 py-1 text-xs">{masked}</code>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isPending}
+            onClick={onClear}
+          >
+            Remove
+          </Button>
+        </div>
+      ) : null}
+      <Input
+        id={id}
+        type="password"
+        autoComplete="off"
+        placeholder={placeholder}
+        value={value}
+        className={KEY_INPUT_CLASS}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <p className="text-muted-foreground mt-2 text-xs">{helper}</p>
+    </div>
+  );
+}
+
+function ApiKeysSection({
+  usage,
+  openaiKey,
+  elevenlabsKey,
+  keysBlocked,
+  onOpenaiKeyChange,
+  onElevenlabsKeyChange,
+  onSave,
+  onClear,
+  isPending,
+  sectionRef,
+  highlight,
+}: {
+  usage: QuotaUsageSummary;
+  openaiKey: string;
+  elevenlabsKey: string;
+  keysBlocked: boolean;
+  onOpenaiKeyChange: (value: string) => void;
+  onElevenlabsKeyChange: (value: string) => void;
+  onSave: () => void;
+  onClear: (provider: "openai" | "elevenlabs") => void;
+  isPending: boolean;
+  sectionRef: React.RefObject<HTMLDivElement | null>;
+  highlight: boolean;
+}) {
+  const canSave =
+    openaiKey.trim().length > 0 || elevenlabsKey.trim().length > 0;
+
+  return (
+    <div
+      ref={sectionRef}
+      className={cn(
+        highlight &&
+          "ring-primary/40 rounded-3xl ring-2 ring-offset-2 ring-offset-background",
+      )}
+    >
+      <SettingsGroup>
+        <div className="px-4 py-4">
+          <SettingsField
+            label="Your API keys"
+            description={
+              keysBlocked
+                ? "Add the keys below to keep using Orin after your free allowance."
+                : "Save keys now so chat, voice, and read aloud continue automatically when limits are reached."
+            }
+          >
+            <div className="space-y-6">
+              <ApiKeyField
+                id="openai-key"
+                label="OpenAI"
+                placeholder="sk-..."
+                helper="Powers text chat and voice responses."
+                masked={
+                  usage.keys.hasOpenaiKey ? usage.keys.openaiMasked : null
+                }
+                value={openaiKey}
+                isPending={isPending}
+                onChange={onOpenaiKeyChange}
+                onClear={() => onClear("openai")}
+              />
+              <ApiKeyField
+                id="elevenlabs-key"
+                label="ElevenLabs"
+                placeholder="sk_..."
+                helper="Powers voice calls and read aloud."
+                masked={
+                  usage.keys.hasElevenlabsKey
+                    ? usage.keys.elevenlabsMasked
+                    : null
+                }
+                value={elevenlabsKey}
+                isPending={isPending}
+                onChange={onElevenlabsKeyChange}
+                onClear={() => onClear("elevenlabs")}
+              />
+              <Button
+                type="button"
+                size="sm"
+                disabled={isPending || !canSave}
+                onClick={onSave}
+              >
+                {isPending ? "Verifying..." : "Save and verify keys"}
+              </Button>
+            </div>
+          </SettingsField>
+        </div>
+      </SettingsGroup>
+    </div>
+  );
+}
 
 export function SettingsUsage() {
   const userId = useAuthStore((state) => state.userId);
-  const [usage, setUsage] = useState<QuotaUsageSummary | null>(null);
-  const [keys, setKeys] = useState<MaskedKeys | null>(null);
+  const usage = useUsageStore((state) => state.usage);
+  const isLoading = useUsageStore((state) => state.isLoading);
+  const refreshUsage = useUsageStore((state) => state.refresh);
   const [openaiKey, setOpenaiKey] = useState("");
   const [elevenlabsKey, setElevenlabsKey] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [highlightKeys, setHighlightKeys] = useState(false);
+  const keysSectionRef = useRef<HTMLDivElement>(null);
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
+  const scrollToKeys = useCallback(() => {
+    keysSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+    setHighlightKeys(true);
+    window.setTimeout(() => setHighlightKeys(false), 2_000);
+  }, []);
 
-    try {
-      const [usageResponse, keysResponse] = await Promise.all([
-        fetch("/api/usage", { cache: "no-store" }),
-        userId
-          ? fetch("/api/keys", { cache: "no-store" })
-          : Promise.resolve(null),
-      ]);
+  const hasEdits =
+    openaiKey.trim().length > 0 || elevenlabsKey.trim().length > 0;
 
-      if (usageResponse.ok) {
-        const data = (await usageResponse.json()) as { usage: QuotaUsageSummary };
-        setUsage(data.usage);
-      }
+  const discardEdits = useCallback(() => {
+    setOpenaiKey("");
+    setElevenlabsKey("");
+  }, []);
 
-      if (keysResponse?.ok) {
-        const data = (await keysResponse.json()) as { keys: MaskedKeys };
-        setKeys(data.keys);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    if (userId === undefined) {
-      return;
-    }
-
-    void loadData();
-  }, [loadData, userId]);
+  useSettingsRouteDirty("usage", hasEdits, discardEdits);
 
   const handleSaveKeys = () => {
     startTransition(async () => {
@@ -107,8 +343,8 @@ export function SettingsUsage() {
 
       setOpenaiKey("");
       setElevenlabsKey("");
-      toast.success("API keys saved");
-      await loadData();
+      toast.success("API keys verified and saved");
+      await refreshUsage();
     });
   };
 
@@ -124,157 +360,65 @@ export function SettingsUsage() {
       }
 
       toast.success("API key removed");
-      await loadData();
+      await refreshUsage();
     });
   };
 
-  if (userId === undefined) {
+  if (userId === undefined || (isLoading && !usage)) {
     return <SettingsSkeletonRows count={2} />;
   }
 
-  if (userId === null) {
-    return (
-      <SettingsPage>
-        <SettingsSignInPrompt
-          title="Sign in to view usage"
-          description="Track your free allowance and add your own API keys after limits are reached."
-        />
-        <Button asChild>
-          <Link href="/auth/login">Sign in with Google</Link>
-        </Button>
-      </SettingsPage>
-    );
-  }
-
-  const operations = Object.keys(OPERATION_LABELS) as QuotaOperation[];
+  const capabilities = usage ? buildCapabilitySnapshots(usage) : [];
+  const keysBlocked = capabilities.some(
+    (capability) => capability.kind === "blocked",
+  );
 
   return (
     <SettingsPage className="gap-5">
       <SettingsGroup>
-        <SettingsRow
-          title="Free allowance"
-          description="Platform-provided usage before your own API keys are needed."
-        >
-          <div className="grid gap-3 sm:grid-cols-2">
-            {operations.map((operation) => (
-              <SettingsStat
-                key={operation}
-                loading={isLoading && !usage}
-                value={usage?.remaining[operation] ?? 0}
-                label={`${OPERATION_LABELS[operation]} left`}
-              />
-            ))}
-          </div>
-        </SettingsRow>
-
-        <SettingsRow
-          title="Used"
-          description="Operations counted against your free allowance."
-          withSeparator
-        >
-          {usage ? (
-            <div className="grid gap-2 text-sm">
-              {operations.map((operation) => (
-                <div
-                  key={operation}
-                  className="flex items-center justify-between gap-4"
-                >
-                  <span className="text-muted-foreground">
-                    {OPERATION_LABELS[operation]}
-                  </span>
-                  <span className="font-medium tabular-nums">
-                    {usage.used[operation]} / {usage.limits[operation]}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <SettingsEmptyState>
-              {isLoading ? "Loading usage..." : "No usage data yet."}
-            </SettingsEmptyState>
-          )}
-        </SettingsRow>
+        <SettingsSectionIntro
+          title={userId ? "Free allowance" : "Free to try"}
+          description={
+            userId
+              ? "Platform-provided usage for text chat, voice, and read aloud. Add your own keys when it runs out."
+              : "A small demo allowance in this browser. Sign in for voice, read aloud, and more."
+          }
+        />
+        {capabilities.map((capability, index) => (
+          <CapabilityRow
+            key={capability.id}
+            capability={capability}
+            withSeparator={index > 0}
+            onAddKeys={userId ? scrollToKeys : undefined}
+          />
+        ))}
       </SettingsGroup>
 
-      <SettingsGroup>
-        <div className="px-4 py-4">
-          <SettingsField
-            label="Bring your own keys"
-            description="After the free allowance, add your OpenAI and ElevenLabs keys to keep chatting, calling, and using read aloud."
-          >
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="openai-key" className="text-sm font-medium">
-                  OpenAI API key
-                </label>
-                {keys?.hasOpenaiKey && keys.openaiMasked ? (
-                  <div className="flex items-center gap-2">
-                    <code className="bg-muted rounded-md px-2 py-1 text-xs">
-                      {keys.openaiMasked}
-                    </code>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={isPending}
-                      onClick={() => handleClearKey("openai")}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ) : null}
-                <Input
-                  id="openai-key"
-                  type="password"
-                  autoComplete="off"
-                  placeholder="sk-..."
-                  value={openaiKey}
-                  onChange={(event) => setOpenaiKey(event.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="elevenlabs-key" className="text-sm font-medium">
-                  ElevenLabs API key
-                </label>
-                {keys?.hasElevenlabsKey && keys.elevenlabsMasked ? (
-                  <div className="flex items-center gap-2">
-                    <code className="bg-muted rounded-md px-2 py-1 text-xs">
-                      {keys.elevenlabsMasked}
-                    </code>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={isPending}
-                      onClick={() => handleClearKey("elevenlabs")}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ) : null}
-                <Input
-                  id="elevenlabs-key"
-                  type="password"
-                  autoComplete="off"
-                  placeholder="xi-..."
-                  value={elevenlabsKey}
-                  onChange={(event) => setElevenlabsKey(event.target.value)}
-                />
-              </div>
-
-              <Button
-                type="button"
-                size="sm"
-                disabled={isPending}
-                onClick={handleSaveKeys}
-              >
-                {isPending ? "Saving..." : "Save API keys"}
-              </Button>
-            </div>
-          </SettingsField>
-        </div>
-      </SettingsGroup>
+      {!userId ? (
+        <>
+          <SettingsSignInPrompt
+            title="Sign in to unlock more"
+            description="Voice calls, read aloud, higher limits, and the option to add your own API keys when the free allowance runs out."
+          />
+          <Button asChild>
+            <Link href="/auth/login">Sign in with Google</Link>
+          </Button>
+        </>
+      ) : usage ? (
+        <ApiKeysSection
+          usage={usage}
+          openaiKey={openaiKey}
+          elevenlabsKey={elevenlabsKey}
+          keysBlocked={keysBlocked}
+          onOpenaiKeyChange={setOpenaiKey}
+          onElevenlabsKeyChange={setElevenlabsKey}
+          onSave={handleSaveKeys}
+          onClear={handleClearKey}
+          isPending={isPending}
+          sectionRef={keysSectionRef}
+          highlight={highlightKeys}
+        />
+      ) : null}
     </SettingsPage>
   );
 }
