@@ -35,6 +35,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSettingsRouteDirty } from "@/lib/hooks/use-settings-route-dirty";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useConversationsStore } from "@/lib/stores/conversations-store";
 import { useMessagesStore } from "@/lib/stores/messages-store";
@@ -143,6 +144,7 @@ function IdentityCard({
     handleBlur,
     handleKeyDown,
     startEdit: seedEditDraft,
+    discardEdit,
   } = useDisplayNameEdit({
     displayName,
     isEditing,
@@ -170,6 +172,17 @@ function IdentityCard({
       event.currentTarget.select();
     });
   };
+
+  const discardEdits = useCallback(() => {
+    discardEdit();
+    inputRef.current?.blur();
+  }, [discardEdit]);
+
+  useSettingsRouteDirty(
+    "account",
+    isEditing && nameDraft.trim() !== displayName.trim(),
+    discardEdits,
+  );
 
   return (
     <div className="flex items-start gap-4 px-4 py-4">

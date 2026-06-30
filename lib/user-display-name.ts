@@ -105,6 +105,11 @@ export function useDisplayNameEdit({
     await persistDisplayName(trimmed, displayName, revertProfile);
   }, [cancelEdit, displayName, isEditing, nameDraft, onFinishEdit]);
 
+  const discardEdit = useCallback(() => {
+    skipBlurSaveRef.current = true;
+    onFinishEdit();
+  }, [onFinishEdit]);
+
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key === "Escape") {
@@ -133,5 +138,6 @@ export function useDisplayNameEdit({
     handleBlur,
     handleKeyDown,
     startEdit,
+    discardEdit,
   };
 }
