@@ -3,7 +3,7 @@
 import {
   Copy01Icon,
   Delete02Icon,
-  Edit02Icon,
+  Edit04Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
@@ -43,13 +43,16 @@ export function ChatOptionsMenuContent({
     >
       <DropdownMenuItem disabled={!isLoggedIn} onSelect={onRename}>
         <HugeiconsIcon
-          icon={Edit02Icon}
+          icon={Edit04Icon}
           strokeWidth={2}
           className="size-4 shrink-0"
         />
         Rename
       </DropdownMenuItem>
-      <DropdownMenuDeferredItem disabled={!isLoggedIn} onSelect={() => onFavorite?.()}>
+      <DropdownMenuDeferredItem
+        disabled={!isLoggedIn}
+        onSelect={() => onFavorite?.()}
+      >
         <FavoriteHeartIcon filled={isFavorited} />
         {isFavorited ? "Unfavorite" : "Favorite"}
       </DropdownMenuDeferredItem>

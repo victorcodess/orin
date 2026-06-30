@@ -60,7 +60,7 @@ export function SettingsRow({
       {withSeparator ? <Separator className="bg-border/40" /> : null}
       <div
         className={cn(
-          "flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between",
+          "flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between",
           className
         )}
       >
