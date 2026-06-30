@@ -3,6 +3,7 @@
 import { create } from "zustand";
 
 import type { UserPreferences } from "@/lib/orin/user-preferences";
+import { syncAuthDisplayName } from "@/lib/user-display-name";
 
 export type ProfileSettings = {
   displayName: string;
@@ -15,6 +16,7 @@ type ProfilePatch = {
   theme?: string;
   language?: string;
   messageBubbleLayout?: string;
+  onboardingCompleted?: boolean;
 };
 
 type ProfileState = {
@@ -23,7 +25,10 @@ type ProfileState = {
   isLoading: boolean;
   error: string | null;
   load: (userId: string) => Promise<void>;
-  patch: (payload: ProfilePatch) => Promise<ProfileSettings | null>;
+  patch: (
+    payload: ProfilePatch,
+    revertSnapshot?: ProfileSettings | null,
+  ) => Promise<ProfileSettings | null>;
   reset: () => void;
 };
 
@@ -47,6 +52,9 @@ function applyPatch(
           messageBubbleLayout:
             payload.messageBubbleLayout as ProfileSettings["messageBubbleLayout"],
         }
+      : {}),
+    ...(payload.onboardingCompleted !== undefined
+      ? { onboardingCompleted: payload.onboardingCompleted }
       : {}),
   };
 }
@@ -91,6 +99,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
         if (get().userId === userId) {
           set({ profile: data.profile, isLoading: false });
+          syncAuthDisplayName(data.profile.displayName);
         }
       } catch (error) {
         if (get().userId === userId) {
@@ -110,10 +119,12 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     return inflight;
   },
 
-  patch: async (payload) => {
-    const previous = get().profile;
-    if (previous) {
-      set({ profile: applyPatch(previous, payload) });
+  patch: async (payload, revertSnapshot) => {
+    const previous = revertSnapshot ?? get().profile;
+    const current = get().profile;
+
+    if (current) {
+      set({ profile: applyPatch(current, payload) });
     }
 
     const response = await fetch("/api/profile", {
@@ -131,6 +142,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
     const data = (await response.json()) as { profile: ProfileSettings };
     set({ profile: data.profile });
+    syncAuthDisplayName(data.profile.displayName);
     return data.profile;
   },
 }));

@@ -21,17 +21,22 @@ type AuthState = {
   signOut: () => Promise<void>;
 };
 
-async function fetchSession() {
+type SessionPayload = {
+  user: SidebarUser | null;
+  userId: string | null;
+};
+
+let initialSessionFetchStarted = false;
+let syncInFlight: Promise<void> | null = null;
+
+async function fetchSession(): Promise<SessionPayload> {
   const response = await fetch("/api/auth/session", { cache: "no-store" });
 
   if (!response.ok) {
     throw new Error("Failed to load session");
   }
 
-  return (await response.json()) as {
-    user: SidebarUser | null;
-    userId: string | null;
-  };
+  return (await response.json()) as SessionPayload;
 }
 
 function handleUserIdChange(nextUserId: string | null | undefined) {
@@ -53,28 +58,64 @@ function handleUserIdChange(nextUserId: string | null | undefined) {
   }
 }
 
+function applySession({ user, userId }: SessionPayload) {
+  handleUserIdChange(userId);
+
+  const profile = useProfileStore.getState().profile;
+  const mergedUser =
+    user && profile ? { ...user, name: profile.displayName } : user;
+
+  setAuthState({
+    user: mergedUser,
+    userId,
+    isLoggedIn: Boolean(user),
+  });
+}
+
+function setAuthState(state: {
+  user: SidebarUser | null | undefined;
+  userId: string | null | undefined;
+  isLoggedIn: boolean;
+}) {
+  useAuthStore.setState(state);
+}
+
+async function resolveSessionForSync(): Promise<SessionPayload> {
+  const current = useAuthStore.getState();
+  let session = await fetchSession();
+
+  // getUser() can briefly return null during token refresh; retry before demoting.
+  if (session.userId === null && current.userId) {
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    session = await fetchSession();
+  }
+
+  return session;
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: undefined,
   userId: undefined,
   isLoggedIn: false,
 
   init: () => {
-    void fetchSession()
-      .then(({ user, userId }) => {
-        handleUserIdChange(userId);
-        set({
-          user,
-          userId,
-          isLoggedIn: Boolean(user),
+    if (!initialSessionFetchStarted) {
+      initialSessionFetchStarted = true;
+
+      void fetchSession()
+        .then((session) => {
+          applySession(session);
+        })
+        .catch(() => {
+          if (useAuthStore.getState().userId === undefined) {
+            set({
+              user: null,
+              userId: null,
+              isLoggedIn: false,
+            });
+          }
         });
-      })
-      .catch(() => {
-        set({
-          user: null,
-          userId: null,
-          isLoggedIn: false,
-        });
-      });
+    }
 
     const onFocus = () => {
       void useAuthStore.getState().syncSession();
@@ -88,17 +129,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   syncSession: async () => {
-    try {
-      const { user, userId } = await fetchSession();
-      handleUserIdChange(userId);
-      set({
-        user,
-        userId,
-        isLoggedIn: Boolean(user),
-      });
-    } catch {
-      // Keep the current session on transient network errors.
+    if (syncInFlight) {
+      return syncInFlight;
     }
+
+    syncInFlight = (async () => {
+      try {
+        const session = await resolveSessionForSync();
+        applySession(session);
+      } catch {
+        // Keep the current session on transient network errors.
+      } finally {
+        syncInFlight = null;
+      }
+    })();
+
+    return syncInFlight;
   },
 
   signOut: async () => {

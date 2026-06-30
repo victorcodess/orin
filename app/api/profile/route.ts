@@ -1,3 +1,5 @@
+import { ensureUserProfile } from "@/lib/auth/ensure-profile";
+import { resolvedDisplayName } from "@/lib/auth/google-display-name";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import {
@@ -23,8 +25,10 @@ function mapProfileRow(
     message_bubble_layout: string;
     onboarding_completed?: boolean;
   } | null,
-  email: string,
-  fallbackName: string,
+  authUser: {
+    email?: string | null;
+    user_metadata?: Record<string, unknown>;
+  },
 ) {
   const theme = row?.theme ?? DEFAULT_USER_PREFERENCES.theme;
   const language = row?.language ?? DEFAULT_USER_PREFERENCES.language;
@@ -32,8 +36,8 @@ function mapProfileRow(
     row?.message_bubble_layout ?? DEFAULT_USER_PREFERENCES.messageBubbleLayout;
 
   return {
-    displayName: row?.display_name ?? fallbackName,
-    email,
+    displayName: resolvedDisplayName(row?.display_name, authUser),
+    email: authUser.email ?? "",
     onboardingCompleted: row?.onboarding_completed ?? false,
     theme: isThemePreference(theme) ? theme : DEFAULT_USER_PREFERENCES.theme,
     language,
@@ -41,17 +45,6 @@ function mapProfileRow(
       ? messageBubbleLayout
       : DEFAULT_USER_PREFERENCES.messageBubbleLayout,
   };
-}
-
-function fallbackName(authUser: {
-  user_metadata?: Record<string, unknown>;
-  email?: string | null;
-}) {
-  return (
-    (authUser.user_metadata?.full_name as string | undefined) ??
-    authUser.email?.split("@")[0] ??
-    "User"
-  );
 }
 
 export async function GET() {
@@ -62,6 +55,8 @@ export async function GET() {
     if (!authData.user) {
       return Response.json({ profile: null }, { headers: { "Cache-Control": "no-store" } });
     }
+
+    await ensureUserProfile(authData.user);
 
     const { data, error } = await supabase
       .from("profiles")
@@ -77,11 +72,7 @@ export async function GET() {
 
     return Response.json(
       {
-        profile: mapProfileRow(
-          data,
-          authData.user.email ?? "",
-          fallbackName(authData.user),
-        ),
+        profile: mapProfileRow(data, authData.user),
       },
       { headers: { "Cache-Control": "no-store" } },
     );
@@ -99,6 +90,8 @@ export async function PATCH(req: Request) {
     if (!authData.user) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    await ensureUserProfile(authData.user);
 
     const body = (await req.json()) as ProfilePayload;
     const updates: {
@@ -176,11 +169,7 @@ export async function PATCH(req: Request) {
 
     return Response.json(
       {
-        profile: mapProfileRow(
-          data,
-          authData.user.email ?? "",
-          fallbackName(authData.user),
-        ),
+        profile: mapProfileRow(data, authData.user),
       },
       { headers: { "Cache-Control": "no-store" } },
     );
