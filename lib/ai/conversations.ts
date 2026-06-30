@@ -186,7 +186,9 @@ export async function listConversations(limit = 30): Promise<ConversationRow[]> 
 
   let query = supabase
     .from("conversations")
-    .select("id, user_id, session_id, title, is_favorited, created_at, updated_at")
+    .select(
+      "id, user_id, session_id, title, is_favorited, created_at, updated_at, messages!inner(id)",
+    )
     .order("updated_at", { ascending: false })
     .limit(limit);
 
@@ -208,7 +210,7 @@ export async function listConversations(limit = 30): Promise<ConversationRow[]> 
 
   debugLog("sidebar", "supabase conversations", data ?? []);
 
-  return (data ?? []) as ConversationRow[];
+  return (data ?? []).map(({ messages: _messages, ...conversation }) => conversation) as ConversationRow[];
 }
 
 export async function deleteConversation(
