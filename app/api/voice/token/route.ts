@@ -4,13 +4,76 @@ import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import { verifyConversationAccess } from "@/lib/ai/conversations";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
-import { markVoiceCallPending } from "@/lib/voice/conversation-binding";
+import {
+  clearVoiceSession,
+  markVoiceCallPending,
+} from "@/lib/voice/conversation-binding";
 import { syncSpeechEngineTts } from "@/lib/voice/speech-engine-config";
 import { createClient } from "@/lib/supabase/server";
 
 type VoiceTokenRequest = {
   conversationId?: string;
 };
+
+function voiceTokenError(error: unknown): {
+  message: string;
+  status: number;
+  code?: string;
+} {
+  const raw = error instanceof Error ? error.message : String(error);
+  const bodyMatch = raw.match(/Body:\s*(\{[\s\S]*\})/);
+
+  if (bodyMatch) {
+    try {
+      const detail = (
+        JSON.parse(bodyMatch[1]) as {
+          detail?: { code?: string; message?: string };
+        }
+      ).detail;
+
+      if (detail?.code === "concurrent_limit_exceeded") {
+        return {
+          message:
+            "ElevenLabs voice capacity is full. End any open calls, wait a minute, and try again.",
+          status: 429,
+          code: detail.code,
+        };
+      }
+
+      if (detail?.code === "quota_exceeded") {
+        return {
+          message:
+            "Out of ElevenLabs credits. Add credits in your ElevenLabs account to use voice calls.",
+          status: 402,
+          code: detail.code,
+        };
+      }
+
+      if (detail?.message) {
+        return {
+          message: detail.message,
+          status: raw.includes("Status code: 429") ? 429 : 502,
+          code: detail.code,
+        };
+      }
+    } catch {
+      // Ignore malformed error bodies.
+    }
+  }
+
+  if (raw.includes("Status code: 429")) {
+    return {
+      message: "ElevenLabs rate limit reached. Wait a moment and try again.",
+      status: 429,
+    };
+  }
+
+  return {
+    message:
+      error instanceof Error ? error.message : "Failed to start voice call",
+    status: 502,
+  };
+}
 
 export async function POST(req: Request) {
   try {
@@ -54,12 +117,20 @@ export async function POST(req: Request) {
     const pendingToken = await markVoiceCallPending(conversationId);
 
     const elevenlabs = new ElevenLabsClient({ apiKey });
-    const [{ token }, speechEngine] = await Promise.all([
-      elevenlabs.conversationalAi.conversations.getWebrtcToken({
-        agentId: engineId,
-      }),
-      elevenlabs.speechEngine.get(engineId).catch(() => null),
-    ]);
+    let token: string;
+    let speechEngine;
+
+    try {
+      [{ token }, speechEngine] = await Promise.all([
+        elevenlabs.conversationalAi.conversations.getWebrtcToken({
+          agentId: engineId,
+        }),
+        elevenlabs.speechEngine.get(engineId).catch(() => null),
+      ]);
+    } catch (error) {
+      await clearVoiceSession(conversationId, pendingToken).catch(() => {});
+      throw error;
+    }
 
     const turn = speechEngine?.config?.turn;
     const silenceEndCallTimeout =
@@ -79,13 +150,17 @@ export async function POST(req: Request) {
     debugError("api/voice/token", "request failed", error);
 
     const message = getErrorMessage(error);
-    const status =
-      message === "Forbidden"
-        ? 403
-        : message === "Conversation not found"
-          ? 404
-          : 500;
+    if (message === "Forbidden") {
+      return Response.json({ error: message }, { status: 403 });
+    }
+    if (message === "Conversation not found") {
+      return Response.json({ error: message }, { status: 404 });
+    }
 
-    return Response.json({ error: message }, { status });
+    const parsed = voiceTokenError(error);
+    return Response.json(
+      { error: parsed.message, code: parsed.code },
+      { status: parsed.status },
+    );
   }
 }
