@@ -153,9 +153,12 @@ export type Database = {
           created_at: string
           credits_balance: number
           display_name: string | null
+          elevenlabs_api_key_encrypted: string | null
           id: string
           language: string
           message_bubble_layout: string
+          onboarding_completed: boolean
+          openai_api_key_encrypted: string | null
           theme: string
           updated_at: string
         }
@@ -163,9 +166,12 @@ export type Database = {
           created_at?: string
           credits_balance?: number
           display_name?: string | null
+          elevenlabs_api_key_encrypted?: string | null
           id: string
           language?: string
           message_bubble_layout?: string
+          onboarding_completed?: boolean
+          openai_api_key_encrypted?: string | null
           theme?: string
           updated_at?: string
         }
@@ -173,9 +179,12 @@ export type Database = {
           created_at?: string
           credits_balance?: number
           display_name?: string | null
+          elevenlabs_api_key_encrypted?: string | null
           id?: string
           language?: string
           message_bubble_layout?: string
+          onboarding_completed?: boolean
+          openai_api_key_encrypted?: string | null
           theme?: string
           updated_at?: string
         }
@@ -224,7 +233,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      merge_anon_session_to_user: {
+        Args: {
+          anon_session_id: string
+          target_user_id: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       credit_transaction_type: "purchase" | "grant" | "usage" | "refund"
