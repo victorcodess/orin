@@ -11,7 +11,7 @@ import {
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 
 type VoiceCallButtonProps = {
-  conversationId: string;
+  conversationId?: string;
   disabled?: boolean;
 };
 
@@ -20,9 +20,18 @@ export function VoiceCallButton({
   disabled = false,
 }: VoiceCallButtonProps) {
   const status = useVoiceCallStore((state) => state.status);
+  const activeConversationId = useVoiceCallStore(
+    (state) => state.conversationId,
+  );
   const requestStart = useVoiceCallStore((state) => state.requestStart);
+  const requestStartNewChat = useVoiceCallStore(
+    (state) => state.requestStartNewChat,
+  );
+
+  const targetId = conversationId ?? activeConversationId;
   const isActive =
-    useVoiceCallStore((state) => state.conversationId) === conversationId &&
+    targetId != null &&
+    activeConversationId === targetId &&
     status !== "idle";
 
   return (
@@ -38,7 +47,11 @@ export function VoiceCallButton({
           className="hover:bg-accent hover:dark:bg-muted"
           disabled={disabled || status === "connecting"}
           aria-label={isActive ? "Voice call active" : "Start voice call"}
-          onClick={() => requestStart(conversationId)}
+          onClick={() =>
+            conversationId
+              ? requestStart(conversationId)
+              : requestStartNewChat()
+          }
         >
           <HugeiconsIcon
             icon={Call02Icon}

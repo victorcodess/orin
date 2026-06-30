@@ -6,21 +6,24 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 
 import { ChatInput } from "@/components/chat/chat-input";
 import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
+import { useNewChatVoiceCall } from "@/lib/hooks/use-new-chat-voice-call";
 import { titleFromUserMessage } from "@/lib/conversation-title";
 import { prefetchDictationToken } from "@/lib/elevenlabs/scribe-token-client";
 import { setPendingFirstMessage } from "@/lib/pending-first-message";
 import { useConversationsStore } from "@/lib/stores/conversations-store";
+import { cn } from "@/lib/utils";
 
 const EASE = [0.25, 0.1, 0.25, 1] as const;
-const NEW_CHAT = "orin:new-chat";
+export const NEW_CHAT_EVENT = "orin:new-chat";
 
 export function signalNewChat() {
-  window.dispatchEvent(new CustomEvent(NEW_CHAT));
+  window.dispatchEvent(new CustomEvent(NEW_CHAT_EVENT));
 }
 
 export function NewChatView() {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
+  const { suppressChrome } = useNewChatVoiceCall();
   const [input, setInput] = useState("");
   const [replay, setReplay] = useState(0);
   const submitLockRef = useRef(false);
@@ -40,8 +43,8 @@ export function NewChatView() {
       setReplay((n) => n + 1);
     };
 
-    window.addEventListener(NEW_CHAT, onNewChat);
-    return () => window.removeEventListener(NEW_CHAT, onNewChat);
+    window.addEventListener(NEW_CHAT_EVENT, onNewChat);
+    return () => window.removeEventListener(NEW_CHAT_EVENT, onNewChat);
   }, []);
 
   const handleSubmit = useCallback(
@@ -66,7 +69,7 @@ export function NewChatView() {
       setInput("");
       router.push(`/c/${conversationId}?new=1`);
     },
-    [input, router]
+    [input, router],
   );
 
   const chatInputProps = {
@@ -75,6 +78,11 @@ export function NewChatView() {
     isSubmitting: false,
     handleSubmit,
   };
+
+  const chromeClass = cn(
+    "transition-opacity duration-250 ease-out",
+    suppressChrome && "pointer-events-none opacity-0",
+  );
 
   return (
     <motion.div
@@ -88,7 +96,12 @@ export function NewChatView() {
     >
       <div className="absolute inset-0 bottom-0 size-full bg-[radial-gradient(110%_90%_at_50%_20%,transparent_55%,#f97015_150%)] dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_60%,#f97015_280%)] md:dark:bg-[radial-gradient(110%_90%_at_50%_20%,transparent_65%,#f97015_290%)]" />
       <div className="absolute top-[calc(50%-138px)] left-1/2 -mt-10 flex w-full -translate-x-1/2 flex-col items-center justify-center gap-12 px-10 md:top-[calc(50%-103.5px)] md:px-20">
-        <div className="flex flex-col items-center justify-center gap-3 md:gap-2.75">
+        <div
+          className={cn(
+            "flex flex-col items-center justify-center gap-3 md:gap-2.75",
+            chromeClass,
+          )}
+        >
           <p className="text-muted-foreground text-center text-sm font-medium tracking-normal md:hidden">
             Good morning, Victor!
           </p>
@@ -99,20 +112,24 @@ export function NewChatView() {
 
         <div className="hidden w-full max-w-2xl flex-col gap-6 md:flex">
           <ChatInput {...chatInputProps} />
-          <NewChatSuggestions
-            key={`d-${replay}`}
-            onSelect={handleSubmit}
-            placement="bottom"
-          />
+          {!suppressChrome ? (
+            <NewChatSuggestions
+              key={`d-${replay}`}
+              onSelect={handleSubmit}
+              placement="bottom"
+            />
+          ) : null}
         </div>
       </div>
 
       <div className="mt-auto flex w-full max-w-3xl flex-col items-center gap-5 pb-5 text-center md:hidden">
-        <NewChatSuggestions
-          key={`m-${replay}`}
-          onSelect={handleSubmit}
-          placement="top"
-        />
+        {!suppressChrome ? (
+          <NewChatSuggestions
+            key={`m-${replay}`}
+            onSelect={handleSubmit}
+            placement="top"
+          />
+        ) : null}
         <ChatInput {...chatInputProps} />
       </div>
     </motion.div>

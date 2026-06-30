@@ -2,18 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
-import { BubbleChatTemporaryIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 
 import { ChatTitle } from "@/components/chat/chat-title";
 import { VoiceCallButton } from "@/components/voice/voice-call-button";
-import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useIsLoggedIn } from "@/lib/stores/auth-store";
 
 function getChatContext(pathname: string) {
@@ -48,27 +40,8 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2">
-        {conversationId ? <VoiceCallButton conversationId={conversationId} /> : null}
-        {isEmptyChat ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-lg"
-                className="hover:bg-accent hover:dark:bg-muted"
-                aria-label="Start temporary chat"
-              >
-                <HugeiconsIcon
-                  icon={BubbleChatTemporaryIcon}
-                  strokeWidth={2}
-                  className="size-4.75 shrink-0"
-                />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left" align="center">
-              Temporary chat
-            </TooltipContent>
-          </Tooltip>
+        {isEmptyChat || conversationId ? (
+          <VoiceCallButton conversationId={conversationId ?? undefined} />
         ) : null}
       </div>
     </header>

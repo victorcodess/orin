@@ -43,6 +43,19 @@ function hasSpeech(text: string): boolean {
   return /[\p{L}\p{N}]/u.test(text);
 }
 
+async function ensureNewChatConversation(conversationId: string) {
+  const response = await fetch("/api/conversations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: conversationId }),
+  });
+
+  if (!response.ok) {
+    const body = (await response.json()) as { error?: string };
+    throw new Error(body.error ?? "Failed to create conversation");
+  }
+}
+
 function VoiceCallControls({
   mode,
   canToggleMute,
@@ -368,6 +381,12 @@ export function VoiceCallOverlay() {
 
     void (async () => {
       try {
+        const { origin } = useVoiceCallStore.getState();
+
+        if (origin === "new-chat") {
+          await ensureNewChatConversation(conversationId);
+        }
+
         const response = await fetch("/api/voice/token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

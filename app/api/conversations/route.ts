@@ -30,9 +30,9 @@ export async function POST(req: Request) {
     const message = body.message?.trim();
     const id = body.id?.trim() || undefined;
 
-    if (!message) {
+    if (!message && !id) {
       return NextResponse.json(
-        { error: "message is required" },
+        { error: "message or id is required" },
         { status: 400 },
       );
     }

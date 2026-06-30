@@ -37,7 +37,7 @@ export function VoiceCallTooltip({
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent className="rounded-full" side="bottom" align="center">
+      <TooltipContent className="rounded-full" side="left" align="center">
         {label}
         {keys?.length ? (
           <KbdGroup className="ml-1.5">
@@ -61,6 +61,10 @@ export {
 };
 
 function getConversationIdFromPathname(pathname: string) {
+  if (pathname === "/new") {
+    return null;
+  }
+
   const match = pathname.match(/^\/c\/([^/]+)$/);
   return match ? match[1] : null;
 }
@@ -74,6 +78,9 @@ export function VoiceCallKeyboardShortcuts() {
 
   const status = useVoiceCallStore((state) => state.status);
   const requestStart = useVoiceCallStore((state) => state.requestStart);
+  const requestStartNewChat = useVoiceCallStore(
+    (state) => state.requestStartNewChat,
+  );
   const toggleMode = useVoiceCallStore((state) => state.toggleMode);
   const setDisconnecting = useVoiceCallStore((state) => state.setDisconnecting);
 
@@ -103,11 +110,14 @@ export function VoiceCallKeyboardShortcuts() {
       if (
         matchesShortcut(event, "c", { shift: true }) &&
         !event.altKey &&
-        status === "idle" &&
-        conversationId
+        status === "idle"
       ) {
         event.preventDefault();
-        requestStart(conversationId);
+        if (conversationId) {
+          requestStart(conversationId);
+        } else if (pathname === "/new") {
+          requestStartNewChat();
+        }
         return;
       }
 
@@ -138,7 +148,9 @@ export function VoiceCallKeyboardShortcuts() {
     conversationId,
     isCallLive,
     isMuted,
+    pathname,
     requestStart,
+    requestStartNewChat,
     setDisconnecting,
     setMuted,
     status,
