@@ -1,8 +1,8 @@
 import { debugError } from "@/lib/debug";
-import {
-  READ_ALOUD_MAX_CHARS,
-  READ_ALOUD_TTS_MODEL,
-} from "@/lib/elevenlabs/tts-config";
+import { READ_ALOUD_TTS_MODEL } from "@/lib/ai/model";
+
+/** v3 models cap around 5k chars per request. */
+const READ_ALOUD_MAX_CHARS = 5_000;
 
 export class TtsSynthesisError extends Error {
   readonly status: number;

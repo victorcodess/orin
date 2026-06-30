@@ -16,6 +16,7 @@ import {
   updateUserMessageAndDeleteAfter,
 } from "@/lib/ai/messages";
 import { sanitizeUIMessagesForModel } from "@/lib/ai/message-utils";
+import { TEXT_CHAT_MODEL } from "@/lib/ai/model";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
 import { debugError, debugLog } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
@@ -150,7 +151,7 @@ export async function POST(req: Request) {
     });
 
     const result = streamText({
-      model: openai("gpt-4o-mini"),
+      model: openai(TEXT_CHAT_MODEL),
       system,
       messages: modelMessages,
       onError: ({ error }) => {

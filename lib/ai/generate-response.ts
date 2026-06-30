@@ -4,9 +4,12 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
-import { toUIMessages } from "@/lib/ai/message-utils";
+import { VOICE_CHAT_MODEL } from "@/lib/ai/model";
+import {
+  sanitizeUIMessagesForModel,
+  toUIMessages,
+} from "@/lib/ai/message-utils";
 import { loadHistory, saveMessage } from "@/lib/ai/messages";
-import { sanitizeUIMessagesForModel } from "@/lib/ai/message-utils";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 import { resolveOpenAIKey } from "@/lib/quotas/resolve";
@@ -227,7 +230,7 @@ export async function handleVoiceTranscript({
 
   async function* textStream() {
     const result = streamText({
-      model: openai("gpt-4o-mini"),
+      model: openai(VOICE_CHAT_MODEL),
       system: buildPersonalityPrompt(config.personalitySettings),
       messages: modelMessages,
       abortSignal: signal,

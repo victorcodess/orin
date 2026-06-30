@@ -3,7 +3,7 @@ import type { TtsConversationalConfigInput } from "@elevenlabs/elevenlabs-js/api
 import type { TtsConversationalModel } from "@elevenlabs/elevenlabs-js/api/types/TtsConversationalModel";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
-import { VOICE_CALL_TTS_MODEL } from "@/lib/elevenlabs/tts-config";
+import { VOICE_CALL_TTS_MODEL } from "@/lib/ai/model";
 
 import { debugError, debugLog } from "@/lib/debug";
 import { DEFAULT_ASSISTANT, type AssistantConfig } from "@/lib/orin/defaults";

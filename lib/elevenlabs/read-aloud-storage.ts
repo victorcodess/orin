@@ -4,8 +4,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ensureSessionCookie, getSessionId } from "@/lib/session";
 
-import { READ_ALOUD_BUCKET, READ_ALOUD_TTS_MODEL } from "./tts-config";
+import { READ_ALOUD_TTS_MODEL } from "@/lib/ai/model";
 import type { VoiceSpeed } from "@/lib/orin/voice/speed";
+
+const READ_ALOUD_BUCKET = "read-aloud";
 
 export function readAloudContentHash(
   text: string,

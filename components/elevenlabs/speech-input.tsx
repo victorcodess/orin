@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Mic02Icon, StopIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
+import { DICTATION_STT_MODEL } from "@/lib/ai/model";
 import { cn } from "@/lib/utils";
 import {
   beginDictationSession,
@@ -399,7 +400,7 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       onStop,
       className,
       size = "default",
-      modelId = "scribe_v2_realtime",
+      modelId = DICTATION_STT_MODEL,
       baseUri,
       commitStrategy,
       vadSilenceThresholdSecs = 1,
