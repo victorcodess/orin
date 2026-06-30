@@ -55,14 +55,9 @@ export function SettingsAccount() {
           title="Sign in to manage your account"
           description="Personalization and voice settings work without an account. Account settings require sign in."
         />
-        <div className="flex flex-wrap gap-2">
-          <Button asChild>
-            <Link href="/auth/login">Sign in</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/auth/sign-up">Create account</Link>
-          </Button>
-        </div>
+        <Button asChild>
+          <Link href="/auth/login">Sign in with Google</Link>
+        </Button>
       </SettingsPage>
     );
   }

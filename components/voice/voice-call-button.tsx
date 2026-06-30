@@ -44,7 +44,7 @@ export function VoiceCallButton({
         action: {
           label: "Sign up",
           onClick: () => {
-            window.location.href = "/auth/sign-up";
+            window.location.href = "/auth/login";
           },
         },
       });

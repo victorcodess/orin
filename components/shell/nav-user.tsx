@@ -18,7 +18,6 @@ import {
   Settings02Icon,
   Sun01Icon,
   UnfoldMoreIcon,
-  UserCircle02Icon,
 } from "@hugeicons/core-free-icons";
 
 import { useAuthStore, type SidebarUser } from "@/lib/stores/auth-store";
@@ -459,17 +458,7 @@ export function NavUser() {
                               strokeWidth={2}
                               className="size-4 shrink-0"
                             />
-                            Sign in
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/auth/sign-up">
-                            <HugeiconsIcon
-                              icon={UserCircle02Icon}
-                              strokeWidth={2}
-                              className="size-4 shrink-0"
-                            />
-                            Create account
+                            Sign in with Google
                           </Link>
                         </DropdownMenuItem>
                       </DropdownMenuGroup>

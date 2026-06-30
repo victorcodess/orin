@@ -66,14 +66,9 @@ export function HomeNavActions({
   }
 
   return (
-    <>
-      <Button asChild size="sm" variant="ghost">
-        <Link href="/auth/login">Log in</Link>
-      </Button>
-      <Button asChild size="sm" variant="default">
-        <Link href="/auth/sign-up">Sign up</Link>
-      </Button>
-    </>
+    <Button asChild size="sm" variant="default">
+      <Link href="/auth/login">Sign in</Link>
+    </Button>
   );
 }
 
@@ -96,7 +91,7 @@ export function HomeHeroActions({
         </LogOutButton>
       ) : (
         <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto">
-          <Link href="/auth/sign-up">Create account</Link>
+          <Link href="/auth/login">Sign in</Link>
         </Button>
       )}
     </>

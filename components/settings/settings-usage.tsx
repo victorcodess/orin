@@ -139,14 +139,9 @@ export function SettingsUsage() {
           title="Sign in to view usage"
           description="Track your free allowance and add your own API keys after limits are reached."
         />
-        <div className="flex flex-wrap gap-2">
-          <Button asChild>
-            <Link href="/auth/login">Sign in</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/auth/sign-up">Create account</Link>
-          </Button>
-        </div>
+        <Button asChild>
+          <Link href="/auth/login">Sign in with Google</Link>
+        </Button>
       </SettingsPage>
     );
   }

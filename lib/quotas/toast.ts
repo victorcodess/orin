@@ -16,7 +16,7 @@ export function toastQuotaError(error: FetchError | Error) {
       action: {
         label: "Sign up",
         onClick: () => {
-          window.location.href = "/auth/sign-up";
+          window.location.href = "/auth/login";
         },
       },
       duration: 10000,
