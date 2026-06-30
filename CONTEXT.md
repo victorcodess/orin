@@ -4,7 +4,7 @@ Orin is a voice-enabled AI companion you can text and call. Orin acts like a fri
 
 ## Current status
 
-**Phase 4 complete.** Quotas, BYOK, Google auth, and onboarding are shipped.
+**Phase 4 complete.** Quotas, BYOK, Google auth, and onboarding are shipped. **Phase 5 (consequential tests) is next** — the app has no tests today.
 
 Shipped so far:
 
@@ -97,6 +97,6 @@ See [docs/adr/](docs/adr/) for architecture decisions. Build order:
 | 2 | Voice calls + live transcript in chat | Done |
 | 3 | Customization (name, personality, voice) | Done |
 | 4 | Auth (Google primary), onboarding, quotas, BYOK, settings keys/usage | Done |
-| 5 | Polish and scale (mobile call UI, reconnection, observability) | Planned |
+| 5 | Consequential tests (quotas, crypto, redirects, shared lib logic) | Planned |
 
 Billing and Stripe were removed from scope — see [ADR 004](docs/adr/004-platform-quota-and-byok.md).

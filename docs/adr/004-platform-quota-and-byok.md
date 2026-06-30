@@ -71,7 +71,7 @@ On first auth, attach orphan conversations (matching `orin_session` cookie) to t
 - Stripe / Checkout / webhooks
 - `credit_transactions` table (deprecated; do not build against it)
 - `profiles.credits_balance` as a payment concept (deprecate or repurpose for display-only quota remaining)
-- Phase 5 billing from the build plan
+- Phase 5 billing from the build plan (Phase 5 is now consequential tests)
 
 ## Consequences
 
