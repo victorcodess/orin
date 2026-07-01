@@ -66,6 +66,7 @@ export function useDisplayNameEdit({
   const skipBlurSaveRef = useRef(false);
   const [editDraft, setEditDraft] = useState<string | null>(null);
   const [prevIsEditing, setPrevIsEditing] = useState(isEditing);
+  const [isSaving, setIsSaving] = useState(false);
 
   if (isEditing !== prevIsEditing) {
     setPrevIsEditing(isEditing);
@@ -102,7 +103,12 @@ export function useDisplayNameEdit({
     applyDisplayNameOptimistic(trimmed);
     onFinishEdit();
 
-    await persistDisplayName(trimmed, displayName, revertProfile);
+    setIsSaving(true);
+    try {
+      await persistDisplayName(trimmed, displayName, revertProfile);
+    } finally {
+      setIsSaving(false);
+    }
   }, [cancelEdit, displayName, isEditing, nameDraft, onFinishEdit]);
 
   const discardEdit = useCallback(() => {
@@ -139,5 +145,6 @@ export function useDisplayNameEdit({
     handleKeyDown,
     startEdit,
     discardEdit,
+    isSaving,
   };
 }

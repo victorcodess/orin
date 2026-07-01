@@ -64,9 +64,12 @@ export function SettingsGeneral() {
     setLayout(value);
     if (userId) {
       void patch({ messageBubbleLayout: value }).then((updated) => {
-        if (!updated) {
-          toast.error("Couldn't save chat layout");
+        if (updated) {
+          toast.success("Chat layout saved", { position: "bottom-center" });
+          return;
         }
+
+        toast.error("Couldn't save chat layout");
       });
     }
   };
