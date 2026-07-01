@@ -12,7 +12,7 @@ import {
 import { loadHistory, saveMessage } from "@/lib/ai/messages";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
 import type { AssistantConfig } from "@/lib/orin/defaults";
-import { resolveOpenAIKey } from "@/lib/quotas/resolve";
+import { resolveOpenAIKeyForVoiceTurn } from "@/lib/quotas/resolve";
 
 type TranscriptEntry = { role: "user" | "agent"; content: string };
 
@@ -205,9 +205,9 @@ export async function handleVoiceTranscript({
   const [config, priorHistory, openaiResolved] = await Promise.all([
     ensureAssistantConfig(conversationId, userId),
     ensurePriorHistory(conversationId),
-    resolveOpenAIKey(
+    resolveOpenAIKeyForVoiceTurn(
       { userId: userId ?? null, sessionId: sessionId ?? null },
-      "message_turn",
+      conversationId,
     ),
   ]);
 

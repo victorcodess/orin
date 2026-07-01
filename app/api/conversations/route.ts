@@ -8,7 +8,7 @@ import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { getQuotaContext } from "@/lib/quotas/context";
 import { isQuotaBlockedError, quotaBlockedResponse } from "@/lib/quotas/errors";
-import { resolveOpenAIKey } from "@/lib/quotas/resolve";
+import { assertQuotaAllowed, resolveOpenAIKey } from "@/lib/quotas/resolve";
 import { ensureSessionCookie } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 
@@ -48,7 +48,12 @@ export async function POST(req: Request) {
     }
 
     const quotaCtx = await getQuotaContext();
-    await resolveOpenAIKey(quotaCtx, "new_conversation");
+    if (message) {
+      await resolveOpenAIKey(quotaCtx, "new_conversation");
+    } else {
+      await assertQuotaAllowed(quotaCtx, "voice_session");
+      await assertQuotaAllowed(quotaCtx, "new_conversation");
+    }
 
     const conversation = await createConversation({
       id,

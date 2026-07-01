@@ -6,11 +6,10 @@ import {
   handleVoiceTranscript,
 } from "@/lib/ai/generate-response";
 import {
-  clearVoiceSession,
   resolveConversationByVoiceSession,
 } from "@/lib/voice/conversation-binding";
 
-const BIND_RETRY_ATTEMPTS = 10;
+const BIND_RETRY_ATTEMPTS = 30;
 const BIND_RETRY_DELAY_MS = 200;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -136,6 +135,5 @@ export async function attachSpeechEngine(httpServer: HttpServer, path = "/ws") {
     }
 
     await clearVoiceHistorySnapshot(conversation.id);
-    await clearVoiceSession(conversation.id);
   }
 }

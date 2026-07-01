@@ -9,6 +9,7 @@ import {
   getStoredUserKeys,
   userHasKeysForOperation,
 } from "@/lib/quotas/keys";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const OPERATION_KEY_NEEDS: Record<
   QuotaOperation,
@@ -129,4 +130,56 @@ export async function resolveElevenLabsKey(
   }
 
   return { key: keys.elevenlabsKey, source: "user" };
+}
+
+async function conversationHasActiveVoiceSession(
+  conversationId: string,
+): Promise<boolean> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("active_voice_session_id")
+    .eq("id", conversationId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(data?.active_voice_session_id);
+}
+
+/** OpenAI key for an in-flight voice turn (call already authorized at token time). */
+export async function resolveOpenAIKeyForVoiceTurn(
+  ctx: QuotaContext,
+  conversationId: string,
+): Promise<{ key: string; source: "platform" | "user" }> {
+  const active = await conversationHasActiveVoiceSession(conversationId);
+
+  // In-flight calls were authorized at token time; never re-check text quotas.
+  if (active) {
+    if (ctx.userId) {
+      const keys = await getStoredUserKeys(ctx.userId);
+      const onByok =
+        !(await isUnderQuota(ctx, "voice_session")) &&
+        userHasKeysForOperation(keys, OPERATION_KEY_NEEDS.voice_session);
+
+      if (onByok) {
+        if (!keys.openaiKey) {
+          throw new QuotaBlockedError(
+            "Add your OpenAI API key in Settings to continue.",
+            "keys_required",
+            "add_keys",
+          );
+        }
+
+        return { key: keys.openaiKey, source: "user" };
+      }
+    }
+
+    return { key: getPlatformOpenAIKey(), source: "platform" };
+  }
+
+  // Session binding may have cleared after hangup; still meter on voice only.
+  return resolveOpenAIKey(ctx, "voice_session");
 }

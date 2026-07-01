@@ -86,11 +86,16 @@ export async function resolveConversationByVoiceSession(voiceSessionId: string) 
   return data;
 }
 
+type ClearVoiceSessionOptions = {
+  pendingToken?: string;
+  voiceSessionId?: string;
+};
+
 export async function clearVoiceSession(
   conversationId: string,
-  pendingToken?: string,
+  options?: ClearVoiceSessionOptions,
 ) {
-  if (pendingToken) {
+  if (options?.pendingToken || options?.voiceSessionId) {
     await verifyConversationAccess(conversationId);
   }
 
@@ -100,10 +105,12 @@ export async function clearVoiceSession(
     .update({ active_voice_session_id: null })
     .eq("id", conversationId);
 
-  if (pendingToken) {
+  if (options?.voiceSessionId) {
+    query = query.eq("active_voice_session_id", options.voiceSessionId);
+  } else if (options?.pendingToken) {
     query = query.eq(
       "active_voice_session_id",
-      pendingVoiceSessionId(pendingToken),
+      pendingVoiceSessionId(options.pendingToken),
     );
   }
 

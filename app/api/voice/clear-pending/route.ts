@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       );
     }
 
-    await clearVoiceSession(conversationId, pendingToken);
+    await clearVoiceSession(conversationId, { pendingToken });
 
     return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {

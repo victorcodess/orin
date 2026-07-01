@@ -6,7 +6,6 @@ import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { getQuotaContext } from "@/lib/quotas/context";
 import { isQuotaBlockedError, quotaBlockedResponse } from "@/lib/quotas/errors";
-import { recordUsageEvent } from "@/lib/quotas/record";
 import { resolveElevenLabsKey } from "@/lib/quotas/resolve";
 import {
   clearVoiceSession,
@@ -127,15 +126,9 @@ export async function POST(req: Request) {
         elevenlabs.speechEngine.get(engineId).catch(() => null),
       ]);
     } catch (error) {
-      await clearVoiceSession(conversationId, pendingToken).catch(() => {});
+      await clearVoiceSession(conversationId, { pendingToken }).catch(() => {});
       throw error;
     }
-
-    await recordUsageEvent({
-      ctx: quotaCtx,
-      type: "voice_minutes",
-      conversationId,
-    });
 
     const turn = speechEngine?.config?.turn;
     const silenceEndCallTimeout =
@@ -148,6 +141,7 @@ export async function POST(req: Request) {
         token,
         pendingToken,
         silenceEndCallTimeout,
+        keySource: elevenlabsResolved.source,
       },
       { headers: { "Cache-Control": "no-store" } },
     );
