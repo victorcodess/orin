@@ -1,24 +1,32 @@
 import Link from "next/link";
-import { cache, Suspense } from "react";
+import { Suspense } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { CircleIcon } from "@hugeicons/core-free-icons";
 
 import {
   HomeAuthInit,
-  HomeHeroActions,
+  HomeHeroSecondaryAction,
+  HomeHeroSecondarySkeleton,
   HomeNavActions,
+  HomeNavActionsSkeleton,
 } from "@/components/marketing/home-auth-actions";
-import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
+import { getRequestIsLoggedIn } from "@/lib/auth/request-session";
 
-const getInitialIsLoggedIn = cache(async () => {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  return Boolean(data.user);
-});
+async function HomeNavActionsWithAuth() {
+  return <HomeNavActions initialIsLoggedIn={await getRequestIsLoggedIn()} />;
+}
 
-function HomeBody({ initialIsLoggedIn }: { initialIsLoggedIn: boolean }) {
+async function HomeHeroSecondaryWithAuth() {
+  return (
+    <HomeHeroSecondaryAction initialIsLoggedIn={await getRequestIsLoggedIn()} />
+  );
+}
+
+export function HomeContent() {
   return (
     <>
+      <HomeAuthInit />
       <nav className="absolute top-5.5 md:top-8 left-1/2 z-10 h-12 md:h-14 w-[calc(100%-40px)] md:w-180 -translate-x-1/2 rounded-full overflow-hidden">
         <div className="bg-secondary backdrop-blur-xl flex h-full w-full items-center justify-between pl-2.5 pr-2.5 md:pr-4">
           <Link href="/" className="flex items-center gap-1 md:gap-1.25 ml-2 h-6 md:h-7">
@@ -30,7 +38,9 @@ function HomeBody({ initialIsLoggedIn }: { initialIsLoggedIn: boolean }) {
           </Link>
 
           <div className="flex items-center gap-1">
-            <HomeNavActions initialIsLoggedIn={initialIsLoggedIn} />
+            <Suspense fallback={<HomeNavActionsSkeleton />}>
+              <HomeNavActionsWithAuth />
+            </Suspense>
           </div>
         </div>
       </nav>
@@ -45,24 +55,14 @@ function HomeBody({ initialIsLoggedIn }: { initialIsLoggedIn: boolean }) {
         </p>
 
         <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2 w-full">
-          <HomeHeroActions initialIsLoggedIn={initialIsLoggedIn} />
+          <Button asChild size="lg" className="w-full sm:w-auto">
+            <Link href="/new">Meet Orin</Link>
+          </Button>
+          <Suspense fallback={<HomeHeroSecondarySkeleton />}>
+            <HomeHeroSecondaryWithAuth />
+          </Suspense>
         </div>
       </div>
-    </>
-  );
-}
-
-async function HomeBodyWithAuth() {
-  return <HomeBody initialIsLoggedIn={await getInitialIsLoggedIn()} />;
-}
-
-export function HomeContent() {
-  return (
-    <>
-      <HomeAuthInit />
-      <Suspense fallback={<HomeBody initialIsLoggedIn={false} />}>
-        <HomeBodyWithAuth />
-      </Suspense>
     </>
   );
 }
