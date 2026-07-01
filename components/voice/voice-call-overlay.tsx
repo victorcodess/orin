@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/nexus-ui/toaster";
 import { isFetchError, readErrorResponse } from "@/lib/quotas/client-errors";
 import { toastQuotaError } from "@/lib/quotas/toast";
+import type { KeySource } from "@/lib/quotas/types";
 import {
   useVoiceCallStore,
   type VoiceCallMode,
@@ -45,6 +46,33 @@ function hasSpeech(text: string): boolean {
   return /[\p{L}\p{N}]/u.test(text);
 }
 
+function reportVoiceCallComplete(
+  conversationId: string | null,
+  activeSince: number | null,
+  keySource: KeySource,
+  voiceSessionId: string | null,
+) {
+  if (!conversationId || activeSince == null) {
+    return;
+  }
+
+  const durationSeconds = Math.round((Date.now() - activeSince) / 1000);
+  if (durationSeconds < 1) {
+    return;
+  }
+
+  void fetch("/api/voice/complete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      conversationId,
+      durationSeconds,
+      keySource,
+      voiceSessionId: voiceSessionId ?? undefined,
+    }),
+  });
+}
+
 async function ensureNewChatConversation(conversationId: string) {
   const response = await fetch("/api/conversations", {
     method: "POST",
@@ -53,8 +81,7 @@ async function ensureNewChatConversation(conversationId: string) {
   });
 
   if (!response.ok) {
-    const body = (await response.json()) as { error?: string };
-    throw new Error(body.error ?? "Failed to create conversation");
+    throw await readErrorResponse(response);
   }
 }
 
@@ -214,12 +241,42 @@ export function VoiceCallOverlay() {
     (state) => state.setAgentTranscript
   );
 
-  const pendingTokenRef = useRef<string | null>(null);
+  const bindTokenRef = useRef<string | null>(null);
+  const keySourceRef = useRef<KeySource>("platform");
   const conversationIdRef = useRef<string | null>(null);
   const sessionStartingRef = useRef(false);
+  const bindSucceededRef = useRef(false);
+  const completionReportedRef = useRef(false);
+  const voiceSessionIdRef = useRef<string | null>(null);
   const lastErrorAtRef = useRef<number | null>(null);
 
   conversationIdRef.current = conversationId;
+
+  const resetCallRefs = () => {
+    sessionStartingRef.current = false;
+    bindTokenRef.current = null;
+    bindSucceededRef.current = false;
+    completionReportedRef.current = false;
+    voiceSessionIdRef.current = null;
+    keySourceRef.current = "platform";
+  };
+
+  const reportCallCompleteOnce = (
+    activeConversationId: string | null,
+    activeSince: number | null,
+  ) => {
+    if (completionReportedRef.current) {
+      return;
+    }
+
+    completionReportedRef.current = true;
+    reportVoiceCallComplete(
+      activeConversationId,
+      activeSince,
+      keySourceRef.current,
+      voiceSessionIdRef.current,
+    );
+  };
 
   const conversation = useConversation({
     onMessage: ({ role, message }) => {
@@ -257,9 +314,16 @@ export function VoiceCallOverlay() {
     },
     onConnect: async ({ conversationId: voiceSessionId }) => {
       const activeConversationId = conversationIdRef.current;
-      const token = pendingTokenRef.current;
+      const token =
+        bindTokenRef.current ?? useVoiceCallStore.getState().pendingToken;
 
       if (!activeConversationId || !token) {
+        conversationRef.current.endSession();
+        setError("Voice session binding failed");
+        toast.error("Could not start voice call", {
+          description: "Missing session token. Try again.",
+        });
+        reset();
         return;
       }
 
@@ -275,12 +339,15 @@ export function VoiceCallOverlay() {
         });
 
         if (!response.ok) {
-          const body = (await response.json()) as { error?: string };
-          throw new Error(body.error ?? "Failed to bind voice session");
+          throw await readErrorResponse(response);
         }
 
+        voiceSessionIdRef.current = voiceSessionId;
+        bindSucceededRef.current = true;
+        bindTokenRef.current = null;
         setActive();
       } catch (error) {
+        bindTokenRef.current = null;
         conversation.endSession();
         setError(
           error instanceof Error ? error.message : "Failed to start call"
@@ -292,12 +359,20 @@ export function VoiceCallOverlay() {
       sessionStartingRef.current = false;
       toast.dismiss("voice-silence-countdown");
 
-      if (useVoiceCallStore.getState().status !== "disconnecting") {
+      const state = useVoiceCallStore.getState();
+
+      // WebRTC can emit a disconnect before onConnect/bind finishes. Resetting
+      // here would wipe the pending token and leave a connected call unbound.
+      if (state.status === "connecting" && !bindSucceededRef.current) {
+        return;
+      }
+
+      if (state.status !== "disconnecting") {
         const {
           lastUserSpeechAt,
           silenceEndCallTimeout,
           activeSince,
-        } = useVoiceCallStore.getState();
+        } = state;
         const recentError =
           lastErrorAtRef.current != null &&
           Date.now() - lastErrorAtRef.current < 5_000;
@@ -332,6 +407,15 @@ export function VoiceCallOverlay() {
       }
 
       lastErrorAtRef.current = null;
+
+      if (state.status === "active" || state.status === "disconnecting") {
+        reportCallCompleteOnce(
+          state.conversationId,
+          state.activeSince,
+        );
+      }
+
+      bindTokenRef.current = null;
       reset();
     },
     onError: (message, context) => {
@@ -367,8 +451,7 @@ export function VoiceCallOverlay() {
   useEffect(() => {
     if (status !== "connecting" || !conversationId) {
       if (status === "idle") {
-        sessionStartingRef.current = false;
-        pendingTokenRef.current = null;
+        resetCallRefs();
       }
       return;
     }
@@ -378,6 +461,10 @@ export function VoiceCallOverlay() {
     }
 
     sessionStartingRef.current = true;
+    bindSucceededRef.current = false;
+    completionReportedRef.current = false;
+    bindTokenRef.current = null;
+    voiceSessionIdRef.current = null;
     bindLiveConversation(conversationId);
     let cancelled = false;
 
@@ -403,6 +490,7 @@ export function VoiceCallOverlay() {
           token?: string;
           pendingToken?: string;
           silenceEndCallTimeout?: number | null;
+          keySource?: KeySource;
         };
 
         if (cancelled) {
@@ -413,7 +501,8 @@ export function VoiceCallOverlay() {
           throw new Error("Failed to create voice token");
         }
 
-        pendingTokenRef.current = data.pendingToken;
+        bindTokenRef.current = data.pendingToken;
+        keySourceRef.current = data.keySource ?? "platform";
         setPendingToken(
           data.pendingToken,
           data.silenceEndCallTimeout ?? null
@@ -446,14 +535,6 @@ export function VoiceCallOverlay() {
 
     return () => {
       cancelled = true;
-      const pendingToken = pendingTokenRef.current;
-      if (pendingToken) {
-        void fetch("/api/voice/clear-pending", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ conversationId, pendingToken }),
-        });
-      }
     };
   }, [bindLiveConversation, conversationId, setError, setPendingToken, status]);
 
@@ -481,8 +562,19 @@ export function VoiceCallOverlay() {
       return;
     }
 
-    sessionStartingRef.current = false;
-    pendingTokenRef.current = null;
+    const { conversationId: activeId, activeSince } = useVoiceCallStore.getState();
+    reportCallCompleteOnce(activeId, activeSince);
+
+    const pendingToken = bindTokenRef.current;
+    if (pendingToken && !bindSucceededRef.current && activeId) {
+      void fetch("/api/voice/clear-pending", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: activeId, pendingToken }),
+      });
+    }
+
+    resetCallRefs();
     conversationRef.current.endSession();
     reset();
   }, [status, reset]);

@@ -21,6 +21,7 @@ export function useNewChatVoiceCall() {
   const commitNewChatCall = useVoiceCallStore((state) => state.commitNewChatCall);
   const liveMessages = useVoiceLiveMessagesStore((state) => state.messages);
   const routedRef = useRef(false);
+  const titledRef = useRef(false);
 
   const suppressChrome = origin === "new-chat" && status !== "idle";
 
@@ -31,6 +32,7 @@ export function useNewChatVoiceCall() {
         setDisconnecting();
       }
       routedRef.current = false;
+      titledRef.current = false;
     };
 
     window.addEventListener(NEW_CHAT_EVENT, onNewChat);
@@ -38,11 +40,7 @@ export function useNewChatVoiceCall() {
   }, []);
 
   useLayoutEffect(() => {
-    if (
-      origin !== "new-chat" ||
-      !conversationId ||
-      routedRef.current
-    ) {
+    if (origin !== "new-chat" || !conversationId) {
       return;
     }
 
@@ -50,7 +48,22 @@ export function useNewChatVoiceCall() {
       (message) => message.role === "user" && hasSpeech(message.text),
     );
 
-    if (!firstUserMessage) {
+    if (routedRef.current) {
+      if (firstUserMessage && !titledRef.current) {
+        titledRef.current = true;
+        useConversationsStore
+          .getState()
+          .renameConversation(
+            conversationId,
+            titleFromUserMessage(firstUserMessage.text),
+          );
+      }
+      return;
+    }
+
+    // Open the chat thread once the call connects so live voice transcripts
+    // render in ChatView instead of the empty new-chat shell.
+    if (status !== "active" && !firstUserMessage) {
       return;
     }
 
@@ -59,7 +72,9 @@ export function useNewChatVoiceCall() {
 
     useConversationsStore.getState().prependConversation({
       id: conversationId,
-      title: titleFromUserMessage(firstUserMessage.text),
+      title: firstUserMessage
+        ? titleFromUserMessage(firstUserMessage.text)
+        : "New chat",
       is_favorited: false,
       created_at: now,
       updated_at: now,
@@ -67,7 +82,14 @@ export function useNewChatVoiceCall() {
 
     commitNewChatCall();
     router.push(`/c/${conversationId}?new=1`);
-  }, [commitNewChatCall, conversationId, liveMessages, origin, router]);
+  }, [
+    commitNewChatCall,
+    conversationId,
+    liveMessages,
+    origin,
+    router,
+    status,
+  ]);
 
   return { suppressChrome };
 }
