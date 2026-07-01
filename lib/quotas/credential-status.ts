@@ -72,7 +72,7 @@ const STATUS_LABELS: Record<CredentialStatusKind, string> = {
   platform: "Free allowance",
   user: "Your keys",
   blocked: "Blocked",
-  sign_in_required: "Sign in required",
+  sign_in_required: "Sign up required",
 };
 
 function isUnderAllowance(
@@ -171,7 +171,7 @@ function resolveNextStep(
 
   if (kind === "sign_in_required") {
     if (config.requiresAuth && usage.tier === "anon") {
-      return "Sign in to unlock voice calls and read aloud.";
+      return "Sign up to unlock voice calls and read aloud.";
     }
 
     return "Free allowance used. Create an account to continue.";

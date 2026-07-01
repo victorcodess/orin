@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { SignUpWithGoogleLink } from "@/components/auth/login-link";
 import { useCallback, useRef, useState, useTransition } from "react";
 
 import {
@@ -388,7 +388,7 @@ export function SettingsUsage() {
           description={
             userId
               ? "Platform-provided usage for text chat, voice, and read aloud. Add your own keys when it runs out."
-              : "A small demo allowance in this browser. Sign in for voice, read aloud, and more."
+              : "A small demo allowance in this browser. Sign up for voice, read aloud, and more."
           }
         />
         {capabilities.map((capability, index) => (
@@ -404,11 +404,11 @@ export function SettingsUsage() {
       {!userId ? (
         <>
           <SettingsSignInPrompt
-            title="Sign in to unlock more"
+            title="Sign up to unlock more"
             description="Voice calls, read aloud, higher limits, and the option to add your own API keys when the free allowance runs out."
           />
           <Button asChild>
-            <Link href="/auth/login">Sign in with Google</Link>
+            <SignUpWithGoogleLink />
           </Button>
         </>
       ) : usage ? (

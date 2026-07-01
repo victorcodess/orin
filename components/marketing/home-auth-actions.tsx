@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useTransition } from "react";
 
+import { buildLoginHref, navigateAfterLogout } from "@/lib/auth/return-url";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -44,7 +45,7 @@ function LogOutButton({
       onClick={() => {
         startTransition(async () => {
           await signOut();
-          router.refresh();
+          navigateAfterLogout(router);
         });
       }}
       {...props}
@@ -66,9 +67,14 @@ export function HomeNavActions({
   }
 
   return (
-    <Button asChild size="sm" variant="default">
-      <Link href="/auth/login">Sign in</Link>
-    </Button>
+    <div className="flex items-center gap-1.5">
+      <Button asChild size="sm" variant="secondary">
+        <Link href={buildLoginHref({ intent: "login" })}>Log in</Link>
+      </Button>
+      <Button asChild size="sm" variant="default">
+        <Link href={buildLoginHref({ intent: "signup" })}>Sign up</Link>
+      </Button>
+    </div>
   );
 }
 
@@ -91,7 +97,7 @@ export function HomeHeroActions({
         </LogOutButton>
       ) : (
         <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto">
-          <Link href="/auth/login">Sign in</Link>
+          <Link href={buildLoginHref({ intent: "signup" })}>Create account</Link>
         </Button>
       )}
     </>

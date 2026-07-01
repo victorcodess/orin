@@ -3,14 +3,17 @@
 import { useTransition } from "react";
 
 import { signInWithGoogle } from "@/app/auth/actions";
+import { GoogleAuthLabel } from "@/components/auth/google-logo";
 import { Button } from "@/components/ui/button";
 
 type GoogleAuthButtonProps = {
   label?: string;
+  returnUrl?: string;
 };
 
 export function GoogleAuthButton({
-  label = "Continue with Google",
+  label = "Log in with Google",
+  returnUrl,
 }: GoogleAuthButtonProps) {
   const [isPending, startTransition] = useTransition();
 
@@ -22,11 +25,15 @@ export function GoogleAuthButton({
       disabled={isPending}
       onClick={() => {
         startTransition(async () => {
-          await signInWithGoogle();
+          await signInWithGoogle(returnUrl);
         });
       }}
     >
-      {isPending ? "Redirecting..." : label}
+      {isPending ? (
+        "Redirecting..."
+      ) : (
+        <GoogleAuthLabel>{label}</GoogleAuthLabel>
+      )}
     </Button>
   );
 }

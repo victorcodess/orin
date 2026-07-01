@@ -9,6 +9,7 @@ import {
   voiceCallStartKeys,
 } from "@/components/voice/voice-call-keyboard-shortcuts";
 import { toast } from "@/components/nexus-ui/toaster";
+import { buildLoginHrefFromHere } from "@/lib/auth/return-url";
 import { openSettings } from "@/lib/settings-routes";
 import type { QuotaUsageSummary } from "@/lib/quotas/types";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -78,12 +79,12 @@ export function VoiceCallButton({
 
   const handleClick = () => {
     if (userId === null) {
-      toast.error("Sign in for voice calls", {
+      toast.error("Sign up for voice calls", {
         description: "Voice calls are available after you create an account.",
         action: {
           label: "Sign up",
           onClick: () => {
-            window.location.href = "/auth/login";
+            window.location.href = buildLoginHrefFromHere("signup");
           },
         },
       });

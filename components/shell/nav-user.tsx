@@ -1,5 +1,6 @@
 "use client";
 
+import { SignUpWithGoogleLink } from "@/components/auth/login-link";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -11,7 +12,6 @@ import {
   CrownIcon,
   GlobeIcon,
   InformationCircleIcon,
-  Login01Icon,
   Logout01Icon,
   MagicWand01Icon,
   Moon02Icon,
@@ -20,6 +20,7 @@ import {
   UnfoldMoreIcon,
 } from "@hugeicons/core-free-icons";
 
+import { navigateAfterLogout } from "@/lib/auth/return-url";
 import { useAuthStore, type SidebarUser } from "@/lib/stores/auth-store";
 import {
   openKeyboardShortcutsDialog,
@@ -273,7 +274,7 @@ export function NavUser() {
 
   async function handleSignOut() {
     await signOut();
-    router.push("/new");
+    navigateAfterLogout(router);
   }
 
   return (
@@ -452,14 +453,7 @@ export function NavUser() {
 
                       <DropdownMenuGroup>
                         <DropdownMenuItem asChild>
-                          <Link href="/auth/login">
-                            <HugeiconsIcon
-                              icon={Login01Icon}
-                              strokeWidth={2}
-                              className="size-4 shrink-0"
-                            />
-                            Sign in with Google
-                          </Link>
+                          <SignUpWithGoogleLink />
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
 

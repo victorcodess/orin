@@ -32,7 +32,7 @@ export async function assertQuotaAllowed(
 ): Promise<void> {
   if (!ctx.userId && ANON_BLOCKED_OPERATIONS.includes(operation)) {
     throw new QuotaBlockedError(
-      "Sign in to use voice calls and read aloud.",
+      "Sign up to use voice calls and read aloud.",
       "feature_requires_auth",
       "signup",
     );
@@ -114,7 +114,7 @@ export async function resolveElevenLabsKey(
 
   if (!ctx.userId) {
     throw new QuotaBlockedError(
-      "Sign in to use this feature.",
+      "Sign up to use this feature.",
       "feature_requires_auth",
       "signup",
     );
