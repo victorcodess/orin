@@ -6,7 +6,6 @@ import {
   HomeHeroSecondaryAction,
   HomeHeroSecondarySkeleton,
 } from "@/components/marketing/home-auth-actions";
-// import { HomeNav } from "@/components/marketing/home-nav";
 import { Button } from "@/components/ui/button";
 import { getRequestIsLoggedIn } from "@/lib/auth/request-session";
 
@@ -20,7 +19,6 @@ export function HomeContent() {
   return (
     <>
       <HomeAuthInit />
-      {/* <HomeNav /> */}
 
       <div className="relative z-10 flex flex-col items-center justify-center gap-4 -mt-30 sm:-mt-20">
         <h1 className="font-heading text-center text-5xl md:text-7xl lg:text-8xl leading-13 md:leading-16 lg:leading-24 tracking-tight font-semibold!">
