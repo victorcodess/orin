@@ -179,9 +179,6 @@
   body:has([data-chat-route]) {
     @apply md:bg-sidebar;
   }
-  body:has([data-home-route]) {
-    @apply bg-sidebar!;
-  }
   html {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
@@ -234,6 +231,11 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+}
+
+html:has([data-marketing-inset]),
+body:has([data-marketing-inset]) {
+  background-color: var(--sidebar);
 }
 
 @source "../node_modules/streamdown/dist/index.js";
