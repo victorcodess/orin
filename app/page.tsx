@@ -26,6 +26,12 @@ export default function Home() {
             GitHub
           </Link>
           <Link
+            href="/terms"
+            className="hover:text-primary underline underline-offset-2 transition-colors"
+          >
+            Terms
+          </Link>
+          <Link
             href="/privacy"
             className="hover:text-primary underline underline-offset-2 transition-colors"
           >
