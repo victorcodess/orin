@@ -1,4 +1,5 @@
 import { StoreInit } from "@/components/shell/store-init";
+import { MarketingInsetLayout } from "@/components/marketing/marketing-inset-layout";
 
 export default function OnboardingLayout({
   children,
@@ -8,7 +9,9 @@ export default function OnboardingLayout({
   return (
     <>
       <StoreInit />
-      {children}
+      <MarketingInsetLayout centered scrollable panelClassName="px-4 py-10">
+        {children}
+      </MarketingInsetLayout>
     </>
   );
 }

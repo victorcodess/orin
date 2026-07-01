@@ -113,94 +113,92 @@ export function OnboardingScreen() {
     voiceSpeed !== DEFAULT_ASSISTANT.voiceSpeed;
 
   return (
-    <div className="bg-background flex min-h-svh flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-xl space-y-8">
-        <div className="space-y-2 text-center">
-          <p className="text-muted-foreground text-sm font-medium">Welcome to Orin</p>
-          <h1 className="font-sans text-3xl font-semibold tracking-tight">
-            Make Orin yours
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Pick a tone and voice. You can change these anytime in Settings.
-          </p>
-        </div>
+    <div className="w-full max-w-xl space-y-8">
+      <div className="space-y-2 text-center">
+        <p className="text-muted-foreground text-sm font-medium">Welcome to Orin</p>
+        <h1 className="font-sans text-3xl font-semibold tracking-tight">
+          Make Orin yours
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Pick a tone and voice. You can change these anytime in Settings.
+        </p>
+      </div>
 
-        <div className="border-border/60 space-y-6 rounded-3xl border p-6 shadow-sm">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="space-y-2 text-sm">
-              <span className="font-medium">Style</span>
-              <TraitDropdown
-                value={personalitySettings.baseStyle}
-                options={BASE_STYLE_OPTIONS}
-                onValueChange={(baseStyle) =>
-                  updateSettings({ baseStyle: baseStyle as PersonalitySettings["baseStyle"] })
-                }
-              />
-            </label>
-            <label className="space-y-2 text-sm">
-              <span className="font-medium">Warmth</span>
-              <TraitDropdown
-                value={personalitySettings.warm}
-                options={TRAIT_LEVEL_OPTIONS}
-                onValueChange={(warm) =>
-                  updateSettings({ warm: warm as PersonalitySettings["warm"] })
-                }
-              />
-            </label>
-          </div>
-
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium">Custom instructions</span>
-            <Textarea
-              value={personalitySettings.customInstructions}
-              rows={4}
-              maxLength={4000}
-              placeholder="Optional — how should Orin talk to you?"
-              onChange={(event) =>
-                updateSettings({ customInstructions: event.target.value })
+      <div className="border-border/60 space-y-6 rounded-3xl border p-6 shadow-sm">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="space-y-2 text-sm">
+            <span className="font-medium">Style</span>
+            <TraitDropdown
+              value={personalitySettings.baseStyle}
+              options={BASE_STYLE_OPTIONS}
+              onValueChange={(baseStyle) =>
+                updateSettings({ baseStyle: baseStyle as PersonalitySettings["baseStyle"] })
               }
             />
           </label>
-
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Voice</p>
-            <VoicePicker
-              voices={CURATED_VOICES}
-              value={voiceId}
-              voiceSpeed={voiceSpeed}
-              onValueChange={setVoiceId}
-              placeholder="Select a voice..."
-            />
-          </div>
-
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium">Speaking speed</span>
+          <label className="space-y-2 text-sm">
+            <span className="font-medium">Warmth</span>
             <TraitDropdown
-              value={voiceSpeed}
-              options={VOICE_SPEED_OPTIONS}
-              onValueChange={(value) => setVoiceSpeed(value as VoiceSpeed)}
+              value={personalitySettings.warm}
+              options={TRAIT_LEVEL_OPTIONS}
+              onValueChange={(warm) =>
+                updateSettings({ warm: warm as PersonalitySettings["warm"] })
+              }
             />
           </label>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={isPending}
-            onClick={handleSkip}
-          >
-            Skip for now
-          </Button>
-          <Button
-            type="button"
-            disabled={isPending}
-            onClick={handleContinue}
-            className={cn(!hasEdits && "sm:min-w-32")}
-          >
-            {isPending ? "Saving..." : "Continue to Orin"}
-          </Button>
+        <label className="block space-y-2 text-sm">
+          <span className="font-medium">Custom instructions</span>
+          <Textarea
+            value={personalitySettings.customInstructions}
+            rows={4}
+            maxLength={4000}
+            placeholder="Optional — how should Orin talk to you?"
+            onChange={(event) =>
+              updateSettings({ customInstructions: event.target.value })
+            }
+          />
+        </label>
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Voice</p>
+          <VoicePicker
+            voices={CURATED_VOICES}
+            value={voiceId}
+            voiceSpeed={voiceSpeed}
+            onValueChange={setVoiceId}
+            placeholder="Select a voice..."
+          />
         </div>
+
+        <label className="block space-y-2 text-sm">
+          <span className="font-medium">Speaking speed</span>
+          <TraitDropdown
+            value={voiceSpeed}
+            options={VOICE_SPEED_OPTIONS}
+            onValueChange={(value) => setVoiceSpeed(value as VoiceSpeed)}
+          />
+        </label>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={isPending}
+          onClick={handleSkip}
+        >
+          Skip for now
+        </Button>
+        <Button
+          type="button"
+          disabled={isPending}
+          onClick={handleContinue}
+          className={cn(!hasEdits && "sm:min-w-32")}
+        >
+          {isPending ? "Saving..." : "Continue to Orin"}
+        </Button>
       </div>
     </div>
   );
