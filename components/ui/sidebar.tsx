@@ -597,7 +597,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
         "bg-background relative flex w-full flex-1 flex-col",
 
         // Inset spacing & shape (md+, inset variant)
-        "md:peer-data-[variant=inset]:m-3 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-3xl",
+        "md:peer-data-[variant=inset]:m-3 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-4xl",
         "md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-3",
 
         // Collapsed card chrome — shadow after sidebar finishes closing
