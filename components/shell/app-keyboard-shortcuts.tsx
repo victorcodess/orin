@@ -5,7 +5,6 @@ import { useEffect } from "react";
 
 import { signalNewChat } from "@/components/chat/new-chat-view";
 import { KeyboardShortcutsDialog } from "@/components/shell/keyboard-shortcuts-dialog";
-import { useThemePreference } from "@/lib/hooks/use-theme-preference";
 import {
   hasPrimaryModifier,
   isKeyboardShortcutsDialogOpen,
@@ -21,7 +20,6 @@ import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 
 export function AppKeyboardShortcuts() {
   const router = useRouter();
-  const { toggleLightDark } = useThemePreference();
   const open = useKeyboardShortcutsStore((state) => state.open);
   const setOpen = useKeyboardShortcutsStore((state) => state.setOpen);
 
@@ -47,17 +45,6 @@ export function AppKeyboardShortcuts() {
       }
 
       if (shortcutsDialogOpen) {
-        return;
-      }
-
-      if (
-        event.shiftKey &&
-        !event.altKey &&
-        (event.key.toLowerCase() === "l" || event.code === "KeyL") &&
-        hasPrimaryModifier(event)
-      ) {
-        event.preventDefault();
-        toggleLightDark();
         return;
       }
 
@@ -108,7 +95,7 @@ export function AppKeyboardShortcuts() {
 
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [open, router, setOpen, toggleLightDark]);
+  }, [open, router, setOpen]);
 
   return <KeyboardShortcutsDialog open={open} onOpenChange={setOpen} />;
 }

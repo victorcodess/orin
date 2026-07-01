@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { AppToaster } from "@/components/shell/app-toaster";
+import { ThemeKeyboardShortcut } from "@/components/shell/theme-keyboard-shortcut";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   getHeadingFontFamilyVariable,
@@ -60,6 +61,7 @@ export default function RootLayout({
         >
           <TooltipProvider>
             {children}
+            <ThemeKeyboardShortcut />
             <AppToaster />
           </TooltipProvider>
         </ThemeProvider>
