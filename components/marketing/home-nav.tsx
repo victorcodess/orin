@@ -37,9 +37,18 @@ export function HomeNav() {
 
         <div
           className={cn(
-            "text-muted-foreground/80 absolute top-1/2 left-1/2 hidden w-fit -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-10 text-sm font-medium md:flex",
+            "text-muted-foreground/80 absolute top-1/2 left-1/2 hidden w-fit -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-10 text-sm font-medium md:flex"
           )}
         >
+          {MARKETING_LEGAL_LINKS.map(({ href, label, page }) => (
+            <Link
+              key={page}
+              href={href}
+              className={cn(navLinkClass, "whitespace-nowrap")}
+            >
+              {label}
+            </Link>
+          ))}
           {MARKETING_SOCIAL_LINKS.map(({ href, label }) => (
             <Link
               key={href}
@@ -47,15 +56,6 @@ export function HomeNav() {
               target="_blank"
               rel="noreferrer"
               className={navLinkClass}
-            >
-              {label}
-            </Link>
-          ))}
-          {MARKETING_LEGAL_LINKS.map(({ href, label, page }) => (
-            <Link
-              key={page}
-              href={href}
-              className={cn(navLinkClass, "whitespace-nowrap")}
             >
               {label}
             </Link>
