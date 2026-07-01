@@ -9,7 +9,7 @@ export type CredentialStatusKind =
   | "sign_in_required";
 
 export type AllowancePart = {
-  remaining: number;
+  used: number;
   total: number;
   label: string;
 };
@@ -77,9 +77,9 @@ const STATUS_LABELS: Record<CredentialStatusKind, string> = {
 
 function isUnderAllowance(
   usage: QuotaUsageSummary,
-  operations: QuotaOperation[],
+  config: CapabilityConfig,
 ): boolean {
-  return operations.some((operation) => usage.remaining[operation] > 0);
+  return config.operations.some((operation) => usage.remaining[operation] > 0);
 }
 
 function missingProviders(
@@ -105,26 +105,32 @@ function allowanceParts(
   if (config.id === "text_chat") {
     return [
       {
-        remaining: usage.remaining.message_turn,
+        used: usage.used.message_turn,
         total: usage.limits.message_turn,
         label: "messages",
       },
       {
-        remaining: usage.remaining.new_conversation,
+        used: usage.used.new_conversation,
         total: usage.limits.new_conversation,
         label: "new chats",
       },
     ];
   }
 
-  const remaining = usage.remaining[config.primaryOperation];
+  const used = usage.used[config.primaryOperation];
   const total = usage.limits[config.primaryOperation];
 
   if (config.id === "voice") {
-    return [{ remaining, total, label: "calls" }];
+    return [
+      {
+        used: usage.used.voice_session,
+        total: usage.limits.voice_session,
+        label: "minutes",
+      },
+    ];
   }
 
-  return [{ remaining, total, label: "read-aloud uses" }];
+  return [{ used, total, label: "read-aloud uses" }];
 }
 
 function resolveKind(
@@ -135,7 +141,7 @@ function resolveKind(
     return "sign_in_required";
   }
 
-  if (isUnderAllowance(usage, config.operations)) {
+  if (isUnderAllowance(usage, config)) {
     return "platform";
   }
 
@@ -179,6 +185,13 @@ function resolveNextStep(
   return `Add your ${missing.join(" and ")} API key${missing.length > 1 ? "s" : ""} below to continue.`;
 }
 
+function shouldShowAllowance(
+  kind: CredentialStatusKind,
+  config: CapabilityConfig,
+): boolean {
+  return !(kind === "sign_in_required" && config.requiresAuth);
+}
+
 export function buildCapabilitySnapshots(
   usage: QuotaUsageSummary,
 ): CapabilitySnapshot[] {
@@ -191,8 +204,9 @@ export function buildCapabilitySnapshots(
       description: config.description,
       kind,
       statusLabel: STATUS_LABELS[kind],
-      allowance:
-        kind === "platform" ? allowanceParts(usage, config) : undefined,
+      allowance: shouldShowAllowance(kind, config)
+        ? allowanceParts(usage, config)
+        : undefined,
       nextStep: resolveNextStep(kind, config, usage),
     };
   });

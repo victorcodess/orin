@@ -65,7 +65,7 @@ function AllowanceDisplay({ parts }: { parts: AllowancePart[] }) {
       {parts.map((part) => (
         <div key={part.label} className="sm:text-right">
           <p className="text-foreground text-3xl font-semibold tabular-nums leading-none tracking-tight">
-            {part.remaining}
+            {part.used}
             <span className="text-muted-foreground ml-0.25 text-base font-medium">
               /<span className="ml-0.25">{part.total}</span>
             </span>
@@ -115,7 +115,14 @@ function CapabilityRow({
           ) : null}
         </div>
         {showAllowance || showAddKeys ? (
-          <div className="flex min-w-0 flex-1 sm:max-w-[52%] sm:justify-end sm:pt-0.5">
+          <div
+            className={cn(
+              "flex min-w-0 flex-1 sm:max-w-[52%] sm:pt-0.5",
+              showAllowance && showAddKeys
+                ? "flex-col items-start gap-4 sm:items-end"
+                : "sm:justify-end",
+            )}
+          >
             {showAllowance && capability.allowance ? (
               <AllowanceDisplay parts={capability.allowance} />
             ) : null}

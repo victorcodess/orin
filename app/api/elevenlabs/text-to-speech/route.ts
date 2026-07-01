@@ -94,6 +94,7 @@ export async function POST(req: Request) {
     await recordUsageEvent({
       ctx: quotaCtx,
       type: "tts_chars",
+      source: elevenlabsResolved.source,
     });
 
     if (ownerId) {
