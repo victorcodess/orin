@@ -12,7 +12,7 @@ import {
 
 import { cn } from "@/lib/utils";
 
-const NAV_OFFSET_PX = 112;
+const NAV_OFFSET_PX = 24;
 const OBSERVER_ROOT_MARGIN = `-${NAV_OFFSET_PX}px 0px -40% 0px`;
 
 type TocItem = {
@@ -55,7 +55,7 @@ function getNestedHeadings(headingElements: HTMLElement[]): TocItem[] {
 
 function useHeadingsData(
   articleRef: RefObject<HTMLElement | null>,
-  contentKey: ReactNode,
+  contentKey: ReactNode
 ) {
   const [nestedHeadings, setNestedHeadings] = useState<TocItem[]>([]);
   const [headingElements, setHeadingElements] = useState<HTMLElement[]>([]);
@@ -64,7 +64,9 @@ function useHeadingsData(
     const article = articleRef.current;
     if (!article) return;
 
-    const elements = Array.from(article.querySelectorAll<HTMLElement>("h2, h3"));
+    const elements = Array.from(
+      article.querySelectorAll<HTMLElement>("h2, h3")
+    );
     setHeadingElements(elements);
     setNestedHeadings(getNestedHeadings(elements));
   }, [articleRef, contentKey]);
@@ -75,11 +77,13 @@ function useHeadingsData(
 function useIntersectionObserver(
   setActiveId: (id: string) => void,
   activeId: string | undefined,
-  headingElements: HTMLElement[],
+  headingElements: HTMLElement[]
 ) {
   const activeIdRef = useRef(activeId);
   activeIdRef.current = activeId;
-  const headingElementsRef = useRef<Record<string, IntersectionObserverEntry>>({});
+  const headingElementsRef = useRef<Record<string, IntersectionObserverEntry>>(
+    {}
+  );
 
   useEffect(() => {
     if (headingElements.length === 0) return;
@@ -88,16 +92,13 @@ function useIntersectionObserver(
       headingElements.findIndex((heading) => heading.id === id);
 
     const callback = (entries: IntersectionObserverEntry[]) => {
-      headingElementsRef.current = entries.reduce(
-        (map, entry) => {
-          map[entry.target.id] = entry;
-          return map;
-        },
-        headingElementsRef.current,
-      );
+      headingElementsRef.current = entries.reduce((map, entry) => {
+        map[entry.target.id] = entry;
+        return map;
+      }, headingElementsRef.current);
 
       const visibleHeadings = Object.values(headingElementsRef.current).filter(
-        (entry) => entry.isIntersecting,
+        (entry) => entry.isIntersecting
       );
 
       if (visibleHeadings.length === 1) {
@@ -107,7 +108,7 @@ function useIntersectionObserver(
 
       if (visibleHeadings.length > 1) {
         const sorted = visibleHeadings.sort(
-          (a, b) => getIndexFromId(a.target.id) - getIndexFromId(b.target.id),
+          (a, b) => getIndexFromId(a.target.id) - getIndexFromId(b.target.id)
         );
         setActiveId(sorted[0].target.id);
         return;
@@ -116,7 +117,9 @@ function useIntersectionObserver(
       const currentActiveId = activeIdRef.current;
       if (!currentActiveId) return;
 
-      const activeElement = headingElements.find((el) => el.id === currentActiveId);
+      const activeElement = headingElements.find(
+        (el) => el.id === currentActiveId
+      );
       const activeIndex = getIndexFromId(currentActiveId);
       const activeY = activeElement?.getBoundingClientRect().y;
 
@@ -136,7 +139,7 @@ function useIntersectionObserver(
 }
 
 const legalProseClass =
-  "bg-card/75 border-border/40 min-w-0 rounded-3xl border p-6 backdrop-blur-sm md:p-8 lg:p-10 [&_a]:text-primary [&_a]:underline-offset-4 hover:[&_a]:underline [&_h2:not(:first-of-type)]:border-border/40 [&_h2:not(:first-of-type)]:mt-10 [&_h2:not(:first-of-type)]:border-t [&_h2:not(:first-of-type)]:pt-10 [&_h2:first-of-type]:mt-4 [&_h2]:scroll-mt-28 [&_h2]:mb-1 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h3]:scroll-mt-28 [&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_li]:leading-relaxed [&_p]:text-muted-foreground [&_p]:text-[15px] [&_p]:leading-7 [&_p:first-of-type]:text-foreground [&_p:first-of-type]:text-base [&_p:first-of-type]:leading-7 [&_strong]:text-foreground [&_strong]:font-semibold [&_ul]:mt-3 [&_ul]:space-y-2 [&_ul]:pl-0 [&_ul]:text-[15px] [&_ul]:leading-7 [&_ul>li]:relative [&_ul>li]:pl-5 [&_ul>li]:before:absolute [&_ul>li]:before:top-[0.65em] [&_ul>li]:before:left-0 [&_ul>li]:before:size-1.5 [&_ul>li]:before:rounded-full [&_ul>li]:before:bg-primary/70";
+  "bg-sidebar/90 backdrop-blur-sm border-border/40 min-w-0 rounded-3xl border p-6 md:p-8 lg:p-10 [&_a]:text-primary [&_a]:underline-offset-4 hover:[&_a]:underline [&_h2:not(:first-of-type)]:border-border/40 [&_h2:not(:first-of-type)]:mt-10 [&_h2:not(:first-of-type)]:border-t [&_h2:not(:first-of-type)]:pt-10 [&_h2:first-of-type]:mt-4 [&_h2]:scroll-mt-6 [&_h2]:mb-1 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h3]:scroll-mt-6 [&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_li]:leading-relaxed [&_p]:text-muted-foreground [&_p]:text-[15px] [&_p]:leading-7 [&_p:first-of-type]:text-foreground [&_p:first-of-type]:text-base [&_p:first-of-type]:leading-7 [&_strong]:text-foreground [&_strong]:font-semibold [&_ul]:mt-3 [&_ul]:space-y-2 [&_ul]:pl-0 [&_ul]:text-[15px] [&_ul]:leading-7 [&_ul>li]:relative [&_ul>li]:pl-5 [&_ul>li]:before:absolute [&_ul>li]:before:top-[0.65em] [&_ul>li]:before:left-0 [&_ul>li]:before:size-1.5 [&_ul>li]:before:rounded-full [&_ul>li]:before:bg-primary/70";
 
 type LegalArticleProps = {
   header: ReactNode;
@@ -147,11 +150,7 @@ function scrollToHeading(id: string) {
   const target = document.getElementById(id);
   if (!target) return;
 
-  const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? "auto"
-    : "smooth";
-
-  target.scrollIntoView({ behavior, block: "start" });
+  target.scrollIntoView({ behavior: "auto", block: "start" });
   window.history.replaceState(null, "", `#${id}`);
 }
 
@@ -178,11 +177,11 @@ function TocLink({
         onNavigate(id);
       }}
       className={cn(
-        "block rounded-full py-1.5 text-[13px] leading-snug transition-colors",
+        "block rounded-full py-1.5 text-[13px] leading-snug font-[450]",
         nested ? "pr-3 pl-5" : "pr-3 pl-3",
         activeId === id
-          ? "bg-primary/10 text-foreground font-[550]"
-          : "text-muted-foreground hover:text-foreground",
+          ? "bg-border/50 text-foreground"
+          : "text-muted-foreground hover:text-foreground"
       )}
     >
       {title}
@@ -204,7 +203,7 @@ function TableOfContents({
   return (
     <nav
       aria-label="On this page"
-      className="sticky top-28 max-h-[calc(100vh-8rem)] space-y-1 overflow-y-auto overscroll-contain pr-2"
+      className="sticky top-20 max-h-[calc(100%-3rem)] space-y-1 overflow-y-auto overscroll-contain pr-2"
     >
       <p className="text-muted-foreground mb-3 text-[11px] font-semibold tracking-[0.14em] uppercase">
         On this page
@@ -243,7 +242,10 @@ function TableOfContents({
 export function LegalArticle({ header, children }: LegalArticleProps) {
   const articleRef = useRef<HTMLElement>(null);
   const [activeId, setActiveId] = useState<string>();
-  const { nestedHeadings, headingElements } = useHeadingsData(articleRef, children);
+  const { nestedHeadings, headingElements } = useHeadingsData(
+    articleRef,
+    children
+  );
 
   useIntersectionObserver(setActiveId, activeId, headingElements);
 
@@ -258,7 +260,7 @@ export function LegalArticle({ header, children }: LegalArticleProps) {
   }, [headingElements]);
 
   return (
-    <div className="flex flex-col gap-8 lg:flex-row lg:gap-14">
+    <div className="mt-5 flex flex-col gap-8 md:mt-10 lg:flex-row lg:gap-14">
       <div className="hidden w-48 shrink-0 lg:block xl:w-52">
         <TableOfContents
           headings={nestedHeadings}
