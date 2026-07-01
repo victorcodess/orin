@@ -98,7 +98,7 @@ async function main() {
     "\nDuring a call, the sidecar should log:\n  [SpeechEngine] upgrade request: GET /ws\n  [SpeechEngine] upgrading connection to WebSocket\n  [orin:voice] session init ...\n",
   );
   console.log(
-    "If those lines never appear, ElevenLabs cannot reach your tunnel. Prefer `npm run dev:tunnel` (cloudflared) over ngrok free.",
+    "If those lines never appear, ElevenLabs cannot reach your tunnel. Run `npm run dev:tunnel`, then `npx tsx update-engine.mts`.",
   );
 }
 

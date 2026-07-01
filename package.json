@@ -4,7 +4,7 @@
     "dev": "concurrently -n web,voice -c blue,magenta \"next dev\" \"npm run dev:voice\"",
     "dev:web": "next dev",
     "dev:voice": "node --require ./server/stubs/register-server-only.cjs --import tsx server/index.ts",
-    "dev:tunnel": "cloudflared tunnel --url http://localhost:3001",
+    "dev:tunnel": "ngrok http 3001",
     "verify:voice": "tsx scripts/verify-voice-setup.mts",
     "build": "next build",
     "start": "next start",
