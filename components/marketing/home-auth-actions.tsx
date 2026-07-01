@@ -113,7 +113,7 @@ export function HomeNavActions({
 
   return (
     <div className="flex items-center gap-1.5">
-      <Button asChild size="sm" variant="secondary">
+      <Button asChild size="sm" variant="secondary" className="bg-secondary-foreground/10 text-secondary-foreground hover:bg-secondary-foreground/5">
         <Link href={buildLoginHref({ intent: "login" })}>Log in</Link>
       </Button>
       <Button asChild size="sm" variant="default">

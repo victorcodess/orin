@@ -179,6 +179,9 @@
   body:has([data-chat-route]) {
     @apply md:bg-sidebar;
   }
+  body:has([data-home-route]) {
+    @apply bg-sidebar!;
+  }
   html {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
