@@ -1,6 +1,6 @@
 "use client";
 
-import { SignUpWithGoogleLink } from "@/components/auth/login-link";
+import { LoginWithGoogleLink } from "@/components/auth/login-link";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -9,7 +9,6 @@ import {
   ChatFeedback01Icon,
   Coins01Icon,
   ComputerIcon,
-  CrownIcon,
   GlobeIcon,
   InformationCircleIcon,
   Logout01Icon,
@@ -59,6 +58,7 @@ import {
 
 const TWITTER_URL = "https://x.com/orin__chat";
 const GITHUB_URL = "https://github.com/victorcodess/orin";
+const GITHUB_ISSUES_URL = "https://github.com/victorcodess/orin/issues";
 
 function MenuShortcutKeys({ keys }: { keys: string[] }) {
   return (
@@ -191,7 +191,7 @@ function UserMenuHeader({
   subtitle: string;
 }) {
   return (
-    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+    <div className="flex w-full items-center gap-2 px-1 py-1.5 text-left text-sm">
       <Avatar className="size-9 rounded-full">
         {user?.avatar ? (
           <AvatarImage src={user.avatar} alt={displayName} />
@@ -246,16 +246,9 @@ function LearnMoreMenu() {
 function SupportMenuGroup() {
   return (
     <DropdownMenuGroup>
-      <DropdownMenuItem asChild>
-        <Link href="/feedback">
-          <HugeiconsIcon
-            icon={ChatFeedback01Icon}
-            strokeWidth={2}
-            className="size-4 shrink-0"
-          />
-          Feedback
-        </Link>
-      </DropdownMenuItem>
+      <ExternalMenuItem href={GITHUB_ISSUES_URL} icon={ChatFeedback01Icon}>
+        Feedback
+      </ExternalMenuItem>
       <LearnMoreMenu />
     </DropdownMenuGroup>
   );
@@ -271,6 +264,14 @@ export function NavUser() {
   const displayName = user?.name ?? "Guest";
   const displayEmail = user?.email ?? "Not signed in";
   const initials = displayName.slice(0, 2).toUpperCase();
+  const menuHeader = (
+    <UserMenuHeader
+      user={user ?? null}
+      displayName={displayName}
+      initials={initials}
+      subtitle={user ? "Free" : displayEmail}
+    />
+  );
 
   async function handleSignOut() {
     await signOut();
@@ -342,30 +343,24 @@ export function NavUser() {
                   align="start"
                   sideOffset={6}
                 >
-                  <DropdownMenuLabel className="p-0 font-normal">
-                    <UserMenuHeader
-                      user={user}
-                      displayName={displayName}
-                      initials={initials}
-                      subtitle={user ? "Free" : displayEmail}
-                    />
-                  </DropdownMenuLabel>
+                  {user ? (
+                    <DropdownMenuItem
+                      onSelect={() => openSettings("account")}
+                      className="cursor-pointer p-0 pl-1 font-normal focus:bg-accent"
+                    >
+                      {menuHeader}
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuLabel className="p-0 pl-1 font-normal">
+                      {menuHeader}
+                    </DropdownMenuLabel>
+                  )}
 
                   <DropdownMenuSeparator />
 
                   {user ? (
                     <>
                       <DropdownMenuGroup>
-                        <DropdownMenuItem asChild>
-                          <Link href="/upgrade">
-                            <HugeiconsIcon
-                              icon={CrownIcon}
-                              strokeWidth={2}
-                              className="size-4 shrink-0"
-                            />
-                            Upgrade plan
-                          </Link>
-                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onSelect={() => openSettings("personalization")}
                         >
@@ -404,16 +399,13 @@ export function NavUser() {
                       <DropdownMenuSeparator />
 
                       <DropdownMenuGroup>
-                        <DropdownMenuItem disabled className="opacity-100">
+                        <DropdownMenuItem onSelect={() => openSettings("usage")}>
                           <HugeiconsIcon
                             icon={Coins01Icon}
                             strokeWidth={2}
                             className="size-4 shrink-0"
                           />
-                          Credits
-                          <span className="text-muted-foreground ml-auto text-xs">
-                            Free
-                          </span>
+                          Usage
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => void handleSignOut()}>
                           <HugeiconsIcon
@@ -453,7 +445,7 @@ export function NavUser() {
 
                       <DropdownMenuGroup>
                         <DropdownMenuItem asChild>
-                          <SignUpWithGoogleLink />
+                          <LoginWithGoogleLink />
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
 
