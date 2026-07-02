@@ -11,8 +11,6 @@ import {
   type ReactNode,
 } from "react";
 
-import { Call02Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Message,
   MessageContent,
@@ -270,19 +268,13 @@ export function ChatMessageList({
                         Thinking...
                       </TextShimmer>
                     ) : (
-                      <>
-                        {isVoiceMessage ? (
-                          <div className="text-muted-foreground mb-2 flex items-center gap-1.5 text-xs font-medium">
-                            <HugeiconsIcon
-                              icon={Call02Icon}
-                              strokeWidth={2}
-                              className="size-3.5 shrink-0"
-                            />
-                            <span>Spoken</span>
-                          </div>
-                        ) : null}
-                        <MessageMarkdown>{text}</MessageMarkdown>
-                      </>
+                      <MessageMarkdown
+                        className={cn(
+                          isUser && isVoiceMessage && "italic"
+                        )}
+                      >
+                        {text}
+                      </MessageMarkdown>
                     )}
                   </MessageContent>
                   {showActions ? (
