@@ -1,6 +1,6 @@
 "use client";
 
-import { SignUpWithGoogleLink } from "@/components/auth/login-link";
+import { LoginWithGoogleLink } from "@/components/auth/login-link";
 import { useCallback, useRef, useState, useTransition } from "react";
 
 import {
@@ -109,7 +109,7 @@ function CapabilityRow({
             {capability.description}
           </p>
           {capability.nextStep ? (
-            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+            <p className="text-muted-foreground/50 mt-2 text-sm leading-relaxed">
               {capability.nextStep}
             </p>
           ) : null}
@@ -404,11 +404,11 @@ export function SettingsUsage() {
       {!userId ? (
         <>
           <SettingsSignInPrompt
-            title="Sign up to unlock more"
+            title="Log in to unlock more"
             description="Voice calls, read aloud, higher limits, and the option to add your own API keys when the free allowance runs out."
           />
           <Button asChild>
-            <SignUpWithGoogleLink />
+            <LoginWithGoogleLink />
           </Button>
         </>
       ) : usage ? (

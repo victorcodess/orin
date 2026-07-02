@@ -21,22 +21,35 @@ export function LoginLink({ href, intent, ...props }: LoginLinkProps) {
   );
 }
 
-type SignUpWithGoogleLinkProps = Omit<LoginLinkProps, "children" | "intent"> & {
+type GoogleAuthLinkProps = Omit<LoginLinkProps, "children" | "intent"> & {
+  intent?: AuthIntent;
   label?: string;
 };
 
-export function SignUpWithGoogleLink({
-  label = "Sign up with Google",
+function GoogleAuthLink({
+  intent = "login",
+  label,
   className,
   ...props
-}: SignUpWithGoogleLinkProps) {
+}: GoogleAuthLinkProps) {
+  const resolvedLabel =
+    label ?? (intent === "signup" ? "Sign up with Google" : "Log in with Google");
+
   return (
     <LoginLink
-      intent="signup"
+      intent={intent}
       className={cn("inline-flex items-center gap-2", className)}
       {...props}
     >
-      <GoogleAuthLabel>{label}</GoogleAuthLabel>
+      <GoogleAuthLabel>{resolvedLabel}</GoogleAuthLabel>
     </LoginLink>
   );
+}
+
+export function SignUpWithGoogleLink(props: Omit<GoogleAuthLinkProps, "intent">) {
+  return <GoogleAuthLink intent="signup" {...props} />;
+}
+
+export function LoginWithGoogleLink(props: Omit<GoogleAuthLinkProps, "intent">) {
+  return <GoogleAuthLink intent="login" {...props} />;
 }

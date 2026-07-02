@@ -8,7 +8,7 @@ import {
   Logout01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { SignUpWithGoogleLink } from "@/components/auth/login-link";
+import { LoginWithGoogleLink } from "@/components/auth/login-link";
 import { GoogleLogo } from "@/components/auth/google-logo";
 import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
@@ -46,8 +46,8 @@ import { useProfileStore } from "@/lib/stores/profile-store";
 import { useDisplayNameEdit } from "@/lib/user-display-name";
 import { cn } from "@/lib/utils";
 
-const SIGN_UP_BENEFITS = [
-  "Chats from this browser carry over when you sign up",
+const LOGIN_BENEFITS = [
+  "Chats from this browser carry over when you log in",
   "Higher message limits and more new chats",
   "Voice calls and read aloud unlock",
   "Add your own API keys after the free allowance",
@@ -158,19 +158,19 @@ function IdentityCard({
   useSettingsRouteDirty(
     "account",
     isEditing && nameDraft.trim() !== displayName.trim(),
-    discardEdits,
+    discardEdits
   );
 
   return (
     <div className="flex items-start gap-4 px-4 py-4">
       <Avatar className="size-14 rounded-full">
         {avatar ? <AvatarImage src={avatar} alt={displayName} /> : null}
-        <AvatarFallback className="rounded-full bg-border text-base font-medium">
+        <AvatarFallback className="bg-border rounded-full text-base font-medium">
           {initials}
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1 pt-0.5">
-        <div className="flex w-fit max-w-full items-center -space-x-1 rounded-full -ml-2.75">
+        <div className="-ml-2.75 flex w-fit max-w-full items-center -space-x-1 rounded-full">
           <Input
             ref={inputRef}
             id="account-display-name"
@@ -185,10 +185,10 @@ function IdentityCard({
             maxLength={64}
             aria-label="Display name"
             className={cn(
-              "field-sizing-content h-7 w-fit max-w-80 min-w-0 rounded-full border-none px-2.5 text-base md:text-base font-medium shadow-none outline-none cursor-text",
+              "field-sizing-content h-7 w-fit max-w-80 min-w-0 cursor-text rounded-full border-none px-2.5 text-base font-medium shadow-none outline-none md:text-base",
               isEditing
                 ? "focus-visible:ring-ring/50 bg-accent dark:bg-muted transition-[color,box-shadow] focus-visible:ring-2"
-                : "bg-transparent dark:bg-transparent hover:bg-accent hover:dark:bg-muted truncate transition-colors focus-visible:ring-0",
+                : "hover:bg-accent hover:dark:bg-muted truncate bg-transparent transition-colors focus-visible:ring-0 dark:bg-transparent"
             )}
           />
           <Button
@@ -200,7 +200,7 @@ function IdentityCard({
             disabled={isSaving}
             className={cn(
               "hover:bg-accent hover:dark:bg-muted shrink-0",
-              isEditing && !isSaving && "pointer-events-none opacity-0",
+              isEditing && !isSaving && "pointer-events-none opacity-0"
             )}
             aria-hidden={isEditing && !isSaving}
             tabIndex={isEditing && !isSaving ? -1 : 0}
@@ -213,7 +213,11 @@ function IdentityCard({
                 className="size-3.5 animate-spin"
               />
             ) : (
-              <HugeiconsIcon icon={Edit04Icon} strokeWidth={2} className="size-3.5" />
+              <HugeiconsIcon
+                icon={Edit04Icon}
+                strokeWidth={2}
+                className="size-3.5"
+              />
             )}
           </Button>
         </div>
@@ -253,24 +257,19 @@ export function SettingsAccount() {
     return (
       <SettingsPage className="gap-5">
         <SettingsSignInPrompt
-          title="Sign up to save your chats"
-          description="Personalization and general settings work without an account. Sign up when you want your conversations, voice history, and higher limits to follow you."
+          title="Log in to save your chats"
+          description="Personalization and general settings work without an account. Log in when you want your conversations, voice history, and higher limits to follow you."
         />
         <SettingsGroup>
           <SettingsSectionIntro title="What you get" />
-          <ul className="text-muted-foreground flex flex-col gap-2 px-4 pb-4 text-sm">
-            {SIGN_UP_BENEFITS.map((benefit) => (
-              <li key={benefit} className="flex gap-2">
-                <span aria-hidden className="text-foreground/70">
-                  ·
-                </span>
-                <span>{benefit}</span>
-              </li>
+          <ul className="text-muted-foreground mt-1 list-disc space-y-2 px-4 pb-4 pl-8 text-sm marker:text-base marker:text-muted-foreground/50">
+            {LOGIN_BENEFITS.map((benefit) => (
+              <li key={benefit}>{benefit}</li>
             ))}
           </ul>
         </SettingsGroup>
         <Button asChild>
-          <SignUpWithGoogleLink />
+          <LoginWithGoogleLink />
         </Button>
       </SettingsPage>
     );
@@ -302,7 +301,9 @@ export function SettingsAccount() {
     setIsExporting(true);
 
     try {
-      const response = await fetch("/api/account/export", { cache: "no-store" });
+      const response = await fetch("/api/account/export", {
+        cache: "no-store",
+      });
 
       if (!response.ok) {
         throw new Error("Couldn't export data");
@@ -321,9 +322,7 @@ export function SettingsAccount() {
       URL.revokeObjectURL(url);
       toast.success("Export downloaded", { position: "bottom-center" });
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Couldn't export data",
-      );
+      toast.error(err instanceof Error ? err.message : "Couldn't export data");
     } finally {
       setIsExporting(false);
     }
@@ -347,9 +346,7 @@ export function SettingsAccount() {
       toast.success("All chats deleted", { position: "bottom-center" });
       router.push("/new");
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Couldn't delete chats",
-      );
+      toast.error(err instanceof Error ? err.message : "Couldn't delete chats");
     } finally {
       setIsDeletingChats(false);
     }
@@ -376,7 +373,7 @@ export function SettingsAccount() {
       router.push("/");
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Couldn't delete account",
+        err instanceof Error ? err.message : "Couldn't delete account"
       );
     } finally {
       setIsDeletingAccount(false);
