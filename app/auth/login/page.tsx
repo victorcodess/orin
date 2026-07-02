@@ -10,7 +10,5 @@ export default async function Page({
   const { next, intent } = await searchParams;
   const returnUrl = safeReturnUrl(next) ?? undefined;
 
-  return (
-    <LoginForm returnUrl={returnUrl} intent={parseAuthIntent(intent)} />
-  );
+  return <LoginForm returnUrl={returnUrl} intent={parseAuthIntent(intent)} />;
 }

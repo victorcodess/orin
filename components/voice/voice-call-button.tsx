@@ -1,6 +1,6 @@
 "use client";
 
-import { Call02Icon } from "@hugeicons/core-free-icons";
+import { CallIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 import { Button } from "@/components/ui/button";
@@ -138,7 +138,7 @@ export function VoiceCallButton({
           onClick={handleClick}
         >
           <HugeiconsIcon
-            icon={Call02Icon}
+            icon={CallIcon}
             strokeWidth={2}
             className="size-5 shrink-0"
           />

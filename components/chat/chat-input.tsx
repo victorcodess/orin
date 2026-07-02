@@ -2,7 +2,7 @@
 
 import { useConversationInput } from "@elevenlabs/react";
 import {
-  ArrowUp01Icon,
+  ArrowUp02Icon,
   StopIcon,
   Mic01Icon,
   MicOff01Icon,
@@ -99,7 +99,7 @@ export function ChatInput({
       <PromptInput
         onSubmit={(value) => void handleSubmit(value)}
         className={cn(
-          "bg-sidebar dark:bg-border/90 shadow-sidebar-foreground/5 dark:shadow-sidebar-border/5 border-none shadow-md backdrop-blur-lg transition-opacity duration-200 ease-out dark:shadow-sm",
+          "bg-sidebar dark:bg-border/90 shadow-sidebar-foreground/15 dark:shadow-sidebar-border/5 border-none shadow-xs backdrop-blur-lg transition-opacity duration-200 ease-out dark:shadow-sm",
           isMultirow
             ? "flex-col rounded-3xl"
             : "flex-row items-end justify-end rounded-4xl",
@@ -189,7 +189,7 @@ export function ChatInput({
                   <HugeiconsIcon
                     icon={StopIcon}
                     strokeWidth={2}
-                    className="size-3.5 shrink-0"
+                    className="size-3.75 shrink-0"
                   />
                 </Button>
               ) : (
@@ -200,7 +200,7 @@ export function ChatInput({
                   disabled={!input.trim() || isSubmitting}
                 >
                   <HugeiconsIcon
-                    icon={ArrowUp01Icon}
+                    icon={ArrowUp02Icon}
                     strokeWidth={2}
                     className="text-foreground size-4.5 shrink-0"
                   />

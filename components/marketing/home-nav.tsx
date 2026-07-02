@@ -25,7 +25,7 @@ export function HomeNav() {
   return (
     <nav className="mx-auto my-auto h-12 w-[calc(100%-20px)] overflow-hidden rounded-full md:h-14 md:w-[calc(100%-40px)]">
       <div className="relative flex h-full w-full items-center justify-between pr-2 pl-2 backdrop-blur-xl md:pr-2.5 md:pl-0">
-        <Link href="/" className="ml-1.5 flex h-7.5 gap-1 md:gap-1.25">
+        <Link href="/" className="ml-1.5 flex h-6.5 md:h-7.5 gap-1 md:gap-1.25">
           <HugeiconsIcon
             icon={CircleIcon}
             className="size-6 shrink-0 fill-current/90 text-[#f97015] md:size-7.5"

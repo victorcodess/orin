@@ -33,7 +33,7 @@ export function SettingsGroup({
   return (
     <div
       className={cn(
-        "border-border/40 bg-secondary/30 backdrop-blur-md overflow-hidden rounded-3xl border",
+        "border-border/40 bg-secondary/30 overflow-hidden rounded-3xl border backdrop-blur-md",
         className
       )}
     >
@@ -235,7 +235,7 @@ export function SettingsEmptyState({
   return (
     <div
       className={cn(
-        "border-border/40 bg-muted/30 text-muted-foreground rounded-xl border px-4 py-5 text-sm",
+        "border-border/40 bg-muted/30 text-muted-foreground rounded-3xl flex flex-col gap-1 border px-4 py-5 text-sm",
         className
       )}
     >
