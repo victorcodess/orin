@@ -20,33 +20,15 @@ import {
 } from "@/components/nexus-ui/message";
 import { Button } from "@/components/ui/button";
 import type { ReadAloudState } from "@/lib/hooks/use-read-aloud";
+import {
+  IconSwapPresence,
+  iconSwapTransition,
+} from "@/components/motion/icon-swap";
 import { cn } from "@/lib/utils";
 
-const COPIED_RESET_MS = 1500;
+const COPIED_RESET_MS = 2500;
 const messageActionButtonClassName =
   "text-muted-foreground hover:text-foreground hover:bg-muted/70 hover:dark:bg-secondary/70";
-
-const SPEECH_UI_EASE = [0.25, 0.1, 0.25, 1] as const;
-
-function speechUiTransition(reduceMotion: boolean | null, duration = 0.2) {
-  return reduceMotion ? { duration: 0 } : { duration, ease: SPEECH_UI_EASE };
-}
-
-function speechUiIconMotion(reduceMotion: boolean | null) {
-  const blur = reduceMotion ? "blur(0px)" : "blur(1px)";
-
-  return {
-    initial: { opacity: 0, scale: 0.9, filter: blur },
-    animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
-    exit: {
-      opacity: 0,
-      scale: 0.9,
-      filter: blur,
-      transition: speechUiTransition(reduceMotion, 0.15),
-    },
-    transition: speechUiTransition(reduceMotion, 0.2),
-  } as const;
-}
 
 type ReadAloudIconState = "loading" | "pause" | "play";
 
@@ -67,6 +49,7 @@ type ChatMessageActionsProps = {
 function CopyMessageAction({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reduceMotion = useReducedMotion();
 
   const handleCopy = useCallback(() => {
     if (timeoutRef.current) {
@@ -94,17 +77,34 @@ function CopyMessageAction({ text }: { text: string }) {
       <Button
         type="button"
         variant="ghost"
-        size="icon-sm"
+        size="icon-md"
         className={messageActionButtonClassName}
         aria-label={copied ? "Copied message" : "Copy message"}
         disabled={!text.trim()}
         onClick={handleCopy}
       >
-        <HugeiconsIcon
-          icon={copied ? Tick02Icon : Copy01Icon}
-          strokeWidth={1.75}
-          className={copied ? "size-4.5" : "size-4"}
-        />
+        <span className="relative flex size-5 items-center justify-center">
+          <IconSwapPresence
+            reduceMotion={reduceMotion}
+            activeKey={copied ? "copied" : "copy"}
+            icons={{
+              copied: (
+                <HugeiconsIcon
+                  icon={Tick02Icon}
+                  strokeWidth={1.75}
+                  className="size-5"
+                />
+              ),
+              copy: (
+                <HugeiconsIcon
+                  icon={Copy01Icon}
+                  strokeWidth={1.75}
+                  className="size-4.75"
+                />
+              ),
+            }}
+          />
+        </span>
       </Button>
     </MessageAction>
   );
@@ -126,9 +126,9 @@ function readAloudActionMotion(reduceMotion: boolean | null) {
       scale: 0.88,
       maxWidth: 0,
       filter: blur,
-      transition: speechUiTransition(reduceMotion, 0.15),
+      transition: iconSwapTransition(reduceMotion, 0.15),
     },
-    transition: speechUiTransition(reduceMotion, 0.2),
+    transition: iconSwapTransition(reduceMotion, 0.2),
   } as const;
 }
 
@@ -171,7 +171,7 @@ function ReadAloudMessageAction({
       <Button
         type="button"
         variant="ghost"
-        size="icon-sm"
+        size="icon-md"
         className={cn(
           messageActionButtonClassName,
           isPlaying && "text-foreground"
@@ -189,46 +189,34 @@ function ReadAloudMessageAction({
         disabled={isLoadingAudio}
         onClick={handleReadAloud}
       >
-        <span className="relative flex size-4.5 items-center justify-center">
-          <AnimatePresence mode="wait" initial={false}>
-            {iconState === "loading" ? (
-              <motion.span
-                key="loading"
-                {...speechUiIconMotion(reduceMotion)}
-                className="absolute inset-0 flex items-center justify-center"
-              >
+        <span className="relative flex size-5 items-center justify-center">
+          <IconSwapPresence
+            reduceMotion={reduceMotion}
+            activeKey={iconState}
+            icons={{
+              loading: (
                 <HugeiconsIcon
                   icon={Loading03Icon}
                   strokeWidth={1.75}
-                  className="size-4.5 animate-spin"
+                  className="size-5 animate-spin"
                 />
-              </motion.span>
-            ) : iconState === "pause" ? (
-              <motion.span
-                key="pause"
-                {...speechUiIconMotion(reduceMotion)}
-                className="absolute inset-0 flex items-center justify-center"
-              >
+              ),
+              pause: (
                 <HugeiconsIcon
                   icon={PauseIcon}
                   strokeWidth={1.75}
-                  className="size-4.5"
+                  className="size-5"
                 />
-              </motion.span>
-            ) : (
-              <motion.span
-                key="play"
-                {...speechUiIconMotion(reduceMotion)}
-                className="absolute inset-0 flex items-center justify-center"
-              >
+              ),
+              play: (
                 <HugeiconsIcon
                   icon={PlayIcon}
                   strokeWidth={1.75}
-                  className="size-4.5"
+                  className="size-5"
                 />
-              </motion.span>
-            )}
-          </AnimatePresence>
+              ),
+            }}
+          />
         </span>
       </Button>
     </MessageAction>
@@ -284,7 +272,7 @@ export function ChatMessageActions({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-sm"
+                size="icon-md"
                 className={messageActionButtonClassName}
                 aria-label="Retry response"
                 disabled={isLoading}
@@ -293,7 +281,7 @@ export function ChatMessageActions({
                 <HugeiconsIcon
                   icon={Refresh04Icon}
                   strokeWidth={1.75}
-                  className="size-4"
+                  className="size-4.5"
                 />
               </Button>
             </MessageAction>
@@ -303,7 +291,7 @@ export function ChatMessageActions({
             <Button
               type="button"
               variant="ghost"
-              size="icon-sm"
+              size="icon-md"
               className={messageActionButtonClassName}
               aria-label={isEditing ? "Cancel editing message" : "Edit message"}
               disabled={isLoading}
@@ -319,7 +307,7 @@ export function ChatMessageActions({
               <HugeiconsIcon
                 icon={Edit03Icon}
                 strokeWidth={1.75}
-                className="size-4"
+                className="size-4.75"
               />
             </Button>
           </MessageAction>
