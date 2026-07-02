@@ -6,15 +6,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const QUOTA_LIMITS = {
   anon: {
     new_conversation: 1,
-    message_turn: 5,
+    message_turn: 8,
     voice_session: 0,
     read_aloud: 0,
   },
   authed: {
-    new_conversation: 60,
-    message_turn: 20,
-    voice_session: 20,
-    read_aloud: 5,
+    new_conversation: 10,
+    message_turn: 40,
+    voice_session: 10,
+    read_aloud: 15,
   },
 } as const;
 
@@ -150,6 +150,10 @@ export async function isUnderQuota(
   ctx: QuotaContext,
   operation: QuotaOperation,
 ): Promise<boolean> {
+  if (ctx.isAdmin) {
+    return true;
+  }
+
   if (operation === "voice_session") {
     const minutesUsed = await countVoiceMinutesUsed(ctx);
     return minutesUsed + 1 <= quotaLimit(ctx, "voice_session");

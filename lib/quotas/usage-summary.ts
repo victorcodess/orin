@@ -19,11 +19,13 @@ export async function buildQuotaUsageSummary(
   const used = {} as QuotaUsageSummary["used"];
   const remaining = {} as QuotaUsageSummary["remaining"];
 
+  const isAdmin = ctx.isAdmin ?? false;
+
   for (const operation of OPERATIONS) {
     const count = await countQuotaUsage(ctx, operation);
     const limit = quotaLimit(ctx, operation);
     used[operation] = count;
-    remaining[operation] = Math.max(0, limit - count);
+    remaining[operation] = isAdmin ? limit : Math.max(0, limit - count);
   }
 
   const masked =
@@ -38,6 +40,7 @@ export async function buildQuotaUsageSummary(
 
   return {
     tier,
+    isAdmin,
     limits: { ...limits },
     used,
     remaining,
