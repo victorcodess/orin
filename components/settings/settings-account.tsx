@@ -8,8 +8,10 @@ import {
   Logout01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useReducedMotion } from "motion/react";
 import { LoginWithGoogleLink } from "@/components/auth/login-link";
 import { GoogleLogo } from "@/components/auth/google-logo";
+import { IconSwapPresence } from "@/components/motion/icon-swap";
 import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 
@@ -113,6 +115,7 @@ function IdentityCard({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const {
     nameDraft,
@@ -175,7 +178,6 @@ function IdentityCard({
             ref={inputRef}
             id="account-display-name"
             name="account-display-name"
-            autoComplete="off"
             readOnly={!isEditing}
             value={nameDraft}
             onChange={(event) => setNameDraft(event.target.value)}
@@ -206,19 +208,28 @@ function IdentityCard({
             tabIndex={isEditing && !isSaving ? -1 : 0}
             onClick={beginEdit}
           >
-            {isSaving ? (
-              <HugeiconsIcon
-                icon={Loading03Icon}
-                strokeWidth={2}
-                className="size-3.5 animate-spin"
+            <span className="relative flex size-3.5 items-center justify-center">
+              <IconSwapPresence
+                reduceMotion={reduceMotion}
+                activeKey={isSaving ? "saving" : !isEditing ? "edit" : null}
+                icons={{
+                  saving: (
+                    <HugeiconsIcon
+                      icon={Loading03Icon}
+                      strokeWidth={2}
+                      className="size-3.5 animate-spin"
+                    />
+                  ),
+                  edit: (
+                    <HugeiconsIcon
+                      icon={Edit04Icon}
+                      strokeWidth={2}
+                      className="size-3.5"
+                    />
+                  ),
+                }}
               />
-            ) : (
-              <HugeiconsIcon
-                icon={Edit04Icon}
-                strokeWidth={2}
-                className="size-3.5"
-              />
-            )}
+            </span>
           </Button>
         </div>
         <p className="text-muted-foreground mt-0.5 truncate text-sm">{email}</p>

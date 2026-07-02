@@ -101,9 +101,8 @@ export function useDisplayNameEdit({
 
     const revertProfile = useProfileStore.getState().profile;
     applyDisplayNameOptimistic(trimmed);
-    onFinishEdit();
-
     setIsSaving(true);
+    onFinishEdit();
     try {
       await persistDisplayName(trimmed, displayName, revertProfile);
     } finally {
