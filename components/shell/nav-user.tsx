@@ -1,6 +1,11 @@
 "use client";
 
-import { LoginWithGoogleLink } from "@/components/auth/login-link";
+import {
+  GOOGLE_SIGN_IN_LABELS,
+  GOOGLE_SIGN_IN_PENDING_LABEL,
+  useGoogleSignIn,
+} from "@/components/auth/google-auth-button";
+import { GoogleAuthLabel } from "@/components/auth/google-logo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -243,6 +248,29 @@ function LearnMoreMenu() {
   );
 }
 
+function GoogleSignInMenuItem() {
+  const { signIn, isPending } = useGoogleSignIn();
+
+  return (
+    <DropdownMenuItem
+      className={isPending ? "bg-accent text-accent-foreground" : undefined}
+      onSelect={(event) => {
+        event.preventDefault();
+        if (isPending) {
+          return;
+        }
+        signIn();
+      }}
+    >
+      {isPending ? (
+        GOOGLE_SIGN_IN_PENDING_LABEL
+      ) : (
+        <GoogleAuthLabel>{GOOGLE_SIGN_IN_LABELS.login}</GoogleAuthLabel>
+      )}
+    </DropdownMenuItem>
+  );
+}
+
 function SupportMenuGroup() {
   return (
     <DropdownMenuGroup>
@@ -444,9 +472,7 @@ export function NavUser() {
                       <DropdownMenuSeparator />
 
                       <DropdownMenuGroup>
-                        <DropdownMenuItem asChild>
-                          <LoginWithGoogleLink />
-                        </DropdownMenuItem>
+                        <GoogleSignInMenuItem />
                       </DropdownMenuGroup>
 
                       <DropdownMenuSeparator />
