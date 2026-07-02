@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import { resolvedDisplayName } from "@/lib/auth/google-display-name";
-import { getOnboardingCompleted } from "@/lib/auth/post-auth";
 import { createClient } from "@/lib/supabase/server";
 
 function toSidebarUser(
@@ -32,22 +31,21 @@ export async function GET() {
     );
   }
 
-  await ensureUserProfile(authUser);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name, onboarding_completed")
+    .eq("id", authUser.id)
+    .maybeSingle();
 
-  const [{ data: profile }, onboardingCompleted] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", authUser.id)
-      .maybeSingle(),
-    getOnboardingCompleted(authUser.id),
-  ]);
+  if (!profile) {
+    await ensureUserProfile(authUser);
+  }
 
   return NextResponse.json(
     {
       user: toSidebarUser(authUser, profile?.display_name),
       userId: authUser.id,
-      onboardingCompleted,
+      onboardingCompleted: profile?.onboarding_completed ?? false,
     },
     { headers: { "Cache-Control": "no-store" } },
   );

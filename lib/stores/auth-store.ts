@@ -16,6 +16,7 @@ export type SidebarUser = {
 type AuthState = {
   user: SidebarUser | null | undefined;
   userId: string | null | undefined;
+  onboardingCompleted: boolean | null | undefined;
   isLoggedIn: boolean;
   init: () => () => void;
   syncSession: () => Promise<void>;
@@ -25,6 +26,7 @@ type AuthState = {
 type SessionPayload = {
   user: SidebarUser | null;
   userId: string | null;
+  onboardingCompleted: boolean | null;
 };
 
 let initialSessionFetchStarted = false;
@@ -62,8 +64,13 @@ function handleUserIdChange(nextUserId: string | null | undefined) {
   void useUsageStore.getState().load(nextUserId ?? "anon");
 }
 
-function applySession({ user, userId }: SessionPayload) {
-  handleUserIdChange(userId);
+function applySession(
+  { user, userId, onboardingCompleted }: SessionPayload,
+  options?: { skipUserIdChange?: boolean },
+) {
+  if (!options?.skipUserIdChange) {
+    handleUserIdChange(userId);
+  }
 
   const profile = useProfileStore.getState().profile;
   const mergedUser =
@@ -72,6 +79,7 @@ function applySession({ user, userId }: SessionPayload) {
   setAuthState({
     user: mergedUser,
     userId,
+    onboardingCompleted,
     isLoggedIn: Boolean(user),
   });
 }
@@ -79,6 +87,7 @@ function applySession({ user, userId }: SessionPayload) {
 function setAuthState(state: {
   user: SidebarUser | null | undefined;
   userId: string | null | undefined;
+  onboardingCompleted: boolean | null | undefined;
   isLoggedIn: boolean;
 }) {
   useAuthStore.setState(state);
@@ -97,29 +106,39 @@ async function resolveSessionForSync(): Promise<SessionPayload> {
   return session;
 }
 
+/** Seed session from the onboarding bridge without triggering profile/usage loads. */
+export function hydrateOnboardingSession(session: SessionPayload) {
+  initialSessionFetchStarted = true;
+  applySession(session, { skipUserIdChange: true });
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: undefined,
   userId: undefined,
+  onboardingCompleted: undefined,
   isLoggedIn: false,
 
   init: () => {
     if (!initialSessionFetchStarted) {
       initialSessionFetchStarted = true;
 
-      void fetchSession()
-        .then((session) => {
-          applySession(session);
-        })
-        .catch(() => {
-          if (useAuthStore.getState().userId === undefined) {
-            handleUserIdChange(null);
-            set({
-              user: null,
-              userId: null,
-              isLoggedIn: false,
-            });
-          }
-        });
+      if (useAuthStore.getState().userId === undefined) {
+        void fetchSession()
+          .then((session) => {
+            applySession(session);
+          })
+          .catch(() => {
+            if (useAuthStore.getState().userId === undefined) {
+              handleUserIdChange(null);
+              set({
+                user: null,
+                userId: null,
+                onboardingCompleted: null,
+                isLoggedIn: false,
+              });
+            }
+          });
+      }
     }
 
     const onFocus = () => {
@@ -158,6 +177,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({
       user: null,
       userId: null,
+      onboardingCompleted: null,
       isLoggedIn: false,
     });
   },
