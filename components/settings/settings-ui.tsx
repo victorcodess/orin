@@ -33,7 +33,7 @@ export function SettingsGroup({
   return (
     <div
       className={cn(
-        "border-border/40 bg-secondary/30 overflow-hidden rounded-3xl border",
+        "border-border/40 bg-secondary/30 backdrop-blur-md overflow-hidden rounded-3xl border",
         className
       )}
     >
@@ -111,20 +111,26 @@ export function SettingsField({
   description,
   htmlFor,
   children,
+  className,
 }: {
   label: string;
   description?: string;
   htmlFor?: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="flex flex-col gap-2">
-      <Label htmlFor={htmlFor} className="text-sm font-medium">
-        {label}
-      </Label>
-      {description ? (
-        <p className="text-muted-foreground text-sm">{description}</p>
-      ) : null}
+    <div className={cn("flex flex-col gap-3", className)}>
+      <div>
+        <Label htmlFor={htmlFor} className="text-sm font-medium">
+          {label}
+        </Label>
+        {description ? (
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+            {description}
+          </p>
+        ) : null}
+      </div>
       {children}
     </div>
   );
