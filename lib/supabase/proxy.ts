@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { ORIN_AUTH_HEADER } from "@/lib/auth/request-session";
+import { MARKETING_PUBLIC_PATHS } from "@/components/marketing/marketing-links";
 
 import { hasEnvVars } from "../utils";
 
@@ -60,9 +61,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   const isPublicPath =
-    pathname === "/" ||
-    pathname === "/terms" ||
-    pathname === "/privacy" ||
+    MARKETING_PUBLIC_PATHS.has(pathname) ||
     pathname === "/new" ||
     pathname === "/c" ||
     pathname.startsWith("/c/") ||
