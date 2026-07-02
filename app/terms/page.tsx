@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { LegalPage } from "@/components/marketing/legal-page";
+import { LegalPage, LEGAL_LAST_UPDATED } from "@/components/marketing/legal-page";
 
 export const metadata: Metadata = {
   title: "Terms of Service · Orin",
@@ -13,6 +13,7 @@ export default function TermsPage() {
     <LegalPage
       title="Terms of Service"
       description="Rules and guidelines for using Orin, an independent AI companion project."
+      lastUpdated={LEGAL_LAST_UPDATED}
       activePage="terms"
     >
       <p>

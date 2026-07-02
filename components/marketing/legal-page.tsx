@@ -18,7 +18,7 @@ type LegalPageProps = {
 export function LegalPage({
   title,
   description,
-  lastUpdated = LEGAL_LAST_UPDATED,
+  lastUpdated,
   activePage,
   children,
 }: LegalPageProps) {
@@ -32,12 +32,14 @@ export function LegalPage({
         <LegalArticle
           header={
             <>
-              <Badge
-                variant="secondary"
-                className="border-border/20 bg-secondary/50 mb-4 rounded-full px-3 py-1 text-[11px] font-[550] tracking-wide"
-              >
-                Last updated {lastUpdated}
-              </Badge>
+              {lastUpdated ? (
+                <Badge
+                  variant="secondary"
+                  className="border-border/20 bg-secondary/50 mb-4 rounded-full px-3 py-1 text-[11px] font-[550] tracking-wide"
+                >
+                  Last updated {lastUpdated}
+                </Badge>
+              ) : null}
 
               <div className="space-y-3">
                 <h1 className="font-heading text-4xl font-semibold tracking-tight md:text-5xl">

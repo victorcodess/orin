@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { LegalPage } from "@/components/marketing/legal-page";
+import { LegalPage, LEGAL_LAST_UPDATED } from "@/components/marketing/legal-page";
 
 export const metadata: Metadata = {
   title: "Privacy Policy · Orin",
@@ -13,6 +13,7 @@ export default function PrivacyPage() {
     <LegalPage
       title="Privacy Policy"
       description="What we collect, how we use it, and the choices you have over your data."
+      lastUpdated={LEGAL_LAST_UPDATED}
       activePage="privacy"
     >
       <p>

@@ -138,8 +138,37 @@ function useIntersectionObserver(
   }, [setActiveId, headingElements]);
 }
 
-const legalProseClass =
-  "bg-sidebar/90 backdrop-blur-sm border-border/40 min-w-0 rounded-3xl border p-6 md:p-8 lg:p-10 [&_a]:text-primary [&_a]:underline-offset-4 hover:[&_a]:underline [&_h2:not(:first-of-type)]:border-border/40 [&_h2:not(:first-of-type)]:mt-10 [&_h2:not(:first-of-type)]:border-t [&_h2:not(:first-of-type)]:pt-10 [&_h2:first-of-type]:mt-4 [&_h2]:scroll-mt-6 [&_h2]:mb-1 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h3]:scroll-mt-6 [&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold [&_li]:leading-relaxed [&_p]:text-muted-foreground [&_p]:text-[15px] [&_p]:leading-7 [&_p:first-of-type]:text-foreground [&_p:first-of-type]:text-base [&_p:first-of-type]:leading-7 [&_strong]:text-foreground [&_strong]:font-semibold [&_ul]:mt-3 [&_ul]:space-y-2 [&_ul]:pl-0 [&_ul]:text-[15px] [&_ul]:leading-7 [&_ul>li]:relative [&_ul>li]:pl-5 [&_ul>li]:before:absolute [&_ul>li]:before:top-[0.65em] [&_ul>li]:before:left-0 [&_ul>li]:before:size-1.5 [&_ul>li]:before:rounded-full [&_ul>li]:before:bg-primary/70";
+const legalProseClass = cn(
+  // Container
+  "bg-sidebar/90 backdrop-blur-sm border-border/40 min-w-0 rounded-3xl border p-6 md:p-8 lg:p-10",
+
+  // Links
+  "[&_a]:text-primary [&_a]:underline-offset-4 [&_a:hover]:underline",
+
+  // Inline code
+  "[&_code]:bg-border/60 dark:[&_code]:bg-secondary [&_code]:font-mono [&_code]:text-foreground [&_code]:rounded-lg [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_code]:font-medium",
+
+  // Headings
+  "[&_h2:not(:first-of-type)]:border-border/40 [&_h2:not(:first-of-type)]:mt-10 [&_h2:not(:first-of-type)]:border-t [&_h2:not(:first-of-type)]:pt-10",
+  "[&_h2:first-of-type]:mt-4 [&_h2]:scroll-mt-6 [&_h2]:mb-1 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight",
+  "[&_h3]:scroll-mt-6 [&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:text-sm [&_h3]:font-semibold",
+
+  // Lists
+  "[&_li]:leading-relaxed",
+  "[&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-5 [&_ol]:text-[15px] [&_ol]:leading-7",
+  "[&_ul]:mt-3 [&_ul]:space-y-2 [&_ul]:pl-0 [&_ul]:text-[15px] [&_ul]:leading-7",
+  "[&_ul>li]:relative [&_ul>li]:pl-5 [&_ul>li]:before:absolute [&_ul>li]:before:top-[0.65em] [&_ul>li]:before:left-0 [&_ul>li]:before:size-1.5 [&_ul>li]:before:rounded-full [&_ul>li]:before:bg-primary/70",
+
+  // Paragraphs
+  "[&_p]:text-muted-foreground [&_p]:text-[15px] [&_p]:leading-7 [&_p+p]:mt-3",
+  "[&_p:first-of-type]:text-foreground [&_p:first-of-type]:text-base [&_p:first-of-type]:leading-7",
+
+  // Strong
+  "[&_strong]:text-foreground [&_strong]:font-semibold",
+
+  // Block spacing
+  "[&_ul+_p]:mt-3 [&_ol+_p]:mt-3 [&_p+_ul]:mt-3 [&_p+_ol]:mt-3"
+);
 
 type LegalArticleProps = {
   header: ReactNode;
