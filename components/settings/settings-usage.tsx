@@ -186,7 +186,6 @@ function ApiKeyField({
       <Input
         id={id}
         type="password"
-        autoComplete="off"
         placeholder={placeholder}
         value={value}
         className={KEY_INPUT_CLASS}
