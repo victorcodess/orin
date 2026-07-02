@@ -28,6 +28,7 @@ export function useConversationTitleEdit({
   const displayTitle = conversationDisplayTitle(title);
   const [editDraft, setEditDraft] = useState<string | null>(null);
   const [prevIsEditing, setPrevIsEditing] = useState(isEditing);
+  const [isSaving, setIsSaving] = useState(false);
 
   if (isEditing !== prevIsEditing) {
     setPrevIsEditing(isEditing);
@@ -69,14 +70,18 @@ export function useConversationTitleEdit({
 
     const previousTitle = title;
     broadcastConversationTitleChange(conversationId, nextTitle);
+    setIsSaving(true);
     onFinishEdit();
 
     try {
       const updated = await patchConversationTitle(conversationId, titleDraft);
       broadcastConversationTitleChange(conversationId, updated.title);
+      toast.success("Chat title saved", { position: "bottom-center" });
     } catch {
       broadcastConversationTitleChange(conversationId, previousTitle);
       toast.error("Couldn't rename chat");
+    } finally {
+      setIsSaving(false);
     }
   }, [cancelEdit, conversationId, isEditing, onFinishEdit, title, titleDraft]);
 
@@ -124,5 +129,6 @@ export function useConversationTitleEdit({
     handleKeyDown,
     startRenameFromMenu,
     handleRenameMenuClose,
+    isSaving,
   };
 }
