@@ -6,14 +6,30 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 
 import { ChatInput } from "@/components/chat/chat-input";
 import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useNewChatVoiceCall } from "@/lib/hooks/use-new-chat-voice-call";
 import { titleFromUserMessage } from "@/lib/conversation-title";
 import { prefetchDictationToken } from "@/lib/elevenlabs/scribe-token-client";
 import { setPendingFirstMessage } from "@/lib/pending-first-message";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import { useConversationsStore } from "@/lib/stores/conversations-store";
 import { cn } from "@/lib/utils";
 
 const EASE = [0.25, 0.1, 0.25, 1] as const;
+
+function newChatGreeting(displayName: string | undefined) {
+  const hour = new Date().getHours();
+  const period =
+    hour >= 5 && hour < 12
+      ? "Good morning"
+      : hour >= 12 && hour < 17
+        ? "Good afternoon"
+        : "Good evening";
+  const firstName = displayName?.trim().split(/\s+/)[0];
+
+  return firstName ? `${period}, ${firstName}!` : `${period}!`;
+}
+
 export const NEW_CHAT_EVENT = "orin:new-chat";
 
 export function signalNewChat() {
@@ -24,6 +40,8 @@ export function NewChatView() {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const { suppressChrome } = useNewChatVoiceCall();
+  const user = useAuthStore((state) => state.user);
+  const isUserLoading = user === undefined;
   const [input, setInput] = useState("");
   const [replay, setReplay] = useState(0);
   const submitLockRef = useRef(false);
@@ -102,9 +120,16 @@ export function NewChatView() {
             chromeClass,
           )}
         >
-          <p className="text-muted-foreground text-center text-sm font-medium tracking-normal md:hidden">
-            Good morning, Victor!
-          </p>
+          {isUserLoading ? (
+            <Skeleton
+              className="bg-border/30 h-5 w-36 rounded-md md:hidden"
+              aria-hidden
+            />
+          ) : (
+            <p className="text-muted-foreground text-center text-sm font-medium tracking-normal md:hidden">
+              {newChatGreeting(user?.name)}
+            </p>
+          )}
           <h1 className="text-foreground font-heading md:leading-tighter w-full max-w-xs text-center text-[27px] leading-tight tracking-tight md:max-w-lg md:text-3xl lg:text-4xl font-semibold">
             What&apos;s on your mind?
           </h1>
