@@ -8,6 +8,8 @@ export type SettingsRoute = "general" | "personalization" | "account" | "usage";
 
 export const SETTINGS_HASH_PREFIX = "settings";
 
+const SETTINGS_HISTORY_STATE_KEY = "orinSettings";
+
 export const DEFAULT_SETTINGS_ROUTE: SettingsRoute = "general";
 
 export const SETTINGS_ROUTES: {
@@ -141,7 +143,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     ) {
       const { pathname, search } = window.location;
       history.replaceState(
-        null,
+        window.history.state,
         "",
         `${pathname}${search}${settingsHashForRoute(currentRoute)}`,
       );
@@ -173,11 +175,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       return;
     }
 
-    const nextHash = settingsHashForRoute(route).slice(1);
-    const currentHash = window.location.hash.replace(/^#/, "");
+    const { pathname, search } = window.location;
+    const url = `${pathname}${search}${settingsHashForRoute(route)}`;
+    const currentUrl = `${pathname}${search}${window.location.hash}`;
 
-    if (currentHash !== nextHash) {
-      window.location.hash = nextHash;
+    if (currentUrl !== url) {
+      if (get().route !== null) {
+        history.replaceState(window.history.state, "", url);
+      } else {
+        history.pushState({ [SETTINGS_HISTORY_STATE_KEY]: true }, "", url);
+      }
     }
 
     set({ route });
@@ -190,10 +197,20 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
     const { pathname, search, hash } = window.location;
 
-    if (hash) {
-      history.replaceState(null, "", `${pathname}${search}`);
+    if (!parseSettingsHash(hash)) {
+      set({ route: null });
+      return;
     }
 
+    const historyState = window.history.state as Record<string, unknown> | null;
+
+    if (historyState?.[SETTINGS_HISTORY_STATE_KEY]) {
+      set({ route: null });
+      history.back();
+      return;
+    }
+
+    history.replaceState(null, "", `${pathname}${search}`);
     set({ route: null });
   },
 }));

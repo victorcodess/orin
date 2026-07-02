@@ -39,6 +39,7 @@ export function AppKeyboardShortcuts() {
       if (isPlainEscape(event)) {
         if (settingsOpen) {
           event.preventDefault();
+          event.stopPropagation();
           closeSettings();
         }
         return;
