@@ -1,3 +1,5 @@
+import { AuthFooter } from "@/components/auth/auth-footer";
+import { AuthNav } from "@/components/auth/auth-nav";
 import { MarketingInsetLayout } from "@/components/marketing/marketing-inset-layout";
 
 export default function AuthLayout({
@@ -6,7 +8,14 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <MarketingInsetLayout centered scrollable panelClassName="px-6 md:px-10">
+    <MarketingInsetLayout
+      nav={<AuthNav />}
+      footer={<AuthFooter />}
+      centered
+      scrollable
+      edgeGradients={false}
+      panelClassName="items-center justify-center px-6 py-10 md:px-10"
+    >
       {children}
     </MarketingInsetLayout>
   );

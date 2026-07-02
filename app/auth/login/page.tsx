@@ -1,10 +1,8 @@
-import { Suspense } from "react";
-
 import { LoginForm } from "@/components/auth/login-form";
 import { parseAuthIntent } from "@/lib/auth/login-intent";
 import { safeReturnUrl } from "@/lib/auth/return-url";
 
-async function LoginContent({
+export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ next?: string; intent?: string }>;
@@ -14,19 +12,5 @@ async function LoginContent({
 
   return (
     <LoginForm returnUrl={returnUrl} intent={parseAuthIntent(intent)} />
-  );
-}
-
-export default function Page({
-  searchParams,
-}: {
-  searchParams: Promise<{ next?: string; intent?: string }>;
-}) {
-  return (
-    <div className="w-full max-w-sm">
-      <Suspense>
-        <LoginContent searchParams={searchParams} />
-      </Suspense>
-    </div>
   );
 }
