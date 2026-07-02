@@ -43,7 +43,7 @@ export function HomeFooter() {
             href="https://victorwilliams.me"
             target="_blank"
             rel="noreferrer"
-            className="text-muted-foreground/80 hover:text-primary underline-offset-2 transition-colors hover:underline"
+            className="text-foreground hover:text-primary underline-offset-2 transition-colors hover:underline"
           >
             Victor Williams
           </Link>

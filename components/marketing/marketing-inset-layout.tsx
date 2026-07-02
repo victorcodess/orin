@@ -33,6 +33,7 @@ type MarketingInsetLayoutProps = {
   footer?: React.ReactNode;
   scrollable?: boolean;
   centered?: boolean;
+  edgeGradients?: boolean;
   className?: string;
   panelClassName?: string;
 };
@@ -43,6 +44,7 @@ export function MarketingInsetLayout({
   footer,
   scrollable = false,
   centered = false,
+  edgeGradients = true,
   className,
   panelClassName,
 }: MarketingInsetLayoutProps) {
@@ -66,7 +68,9 @@ export function MarketingInsetLayout({
             : "rounded-none sm:rounded-4xl",
         )}
       >
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-20 w-full bg-linear-to-t from-background/0 to-background to-75%" />
+        {edgeGradients ? (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-20 w-full bg-linear-to-t from-background/0 to-background to-75%" />
+        ) : null}
         <MarketingInsetBackground />
         <div
           className={cn(
@@ -79,7 +83,9 @@ export function MarketingInsetLayout({
           {children}
           {footer}
         </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-20 w-full bg-linear-to-b from-background/0 to-background to-75% opacity-50" />
+        {edgeGradients ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-20 w-full bg-linear-to-b from-background/0 to-background to-75% opacity-50" />
+        ) : null}
       </div>
     </main>
   );
