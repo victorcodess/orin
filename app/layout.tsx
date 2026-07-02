@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { AppToaster } from "@/components/shell/app-toaster";
 import { ThemeKeyboardShortcut } from "@/components/shell/theme-keyboard-shortcut";
@@ -8,6 +8,7 @@ import {
   getHeadingFontFamilyVariable,
   getHeadingFontStylesheetUrl,
 } from "@/lib/fonts/heading-font";
+import { cn } from "@/lib/utils";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -27,6 +28,12 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  display: "swap",
+  subsets: ["latin"],
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -35,7 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={geistSans.variable}
+      className={cn(geistSans.variable, geistMono.variable)}
       style={
         {
           "--heading-font-family": getHeadingFontFamilyVariable(),
