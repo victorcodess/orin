@@ -17,7 +17,7 @@ import {
   MessageMarkdown,
   MessageStack,
 } from "@/components/nexus-ui/message";
-import { TextShimmer } from "@/components/nexus-ui/text-shimmer";
+import { Loader } from "@/components/ui/loader";
 import type { MessageRow } from "@/lib/ai/message-utils";
 import { cn } from "@/lib/utils";
 import {
@@ -264,16 +264,16 @@ export function ChatMessageList({
                     )}
                   >
                     {showTyping ? (
-                      <TextShimmer className="text-muted-foreground text-sm">
-                        Thinking...
-                      </TextShimmer>
+                      <Loader variant="typing" size="md" />
                     ) : (
                       <MessageMarkdown
                         className={cn(
-                          isUser && isVoiceMessage && "italic"
+                          isUser &&
+                            isVoiceMessage &&
+                            "text-muted-foreground italic"
                         )}
                       >
-                        {text}
+                        {isUser && isVoiceMessage ? `“${text}”` : text}
                       </MessageMarkdown>
                     )}
                   </MessageContent>
