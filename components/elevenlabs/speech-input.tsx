@@ -601,11 +601,7 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       <SpeechInputContext.Provider value={contextValue}>
         <motion.div
           ref={ref}
-          layout
           initial={false}
-          transition={{
-            layout: speechTransition(reduceMotion),
-          }}
           className={cn(
             "relative inline-flex items-center justify-end overflow-hidden rounded-full",
             showBarBackground ? "bg-background dark:bg-accent/50" : "",
@@ -645,7 +641,6 @@ const SpeechInputRecordButton = React.forwardRef<
       {speechInput.isActive && (
         <motion.div
           key="speech-stop"
-          layout
           initial={{ width: 0, opacity: 0 }}
           animate={{
             width: buttonWidth,
@@ -740,7 +735,6 @@ const SpeechInputPreview = React.forwardRef<
         <motion.div
           ref={ref}
           key="speech-preview"
-          layout
           style={{ transformOrigin: "right center" }}
           initial={{ width: 0, opacity: 0 }}
           animate={{
@@ -816,10 +810,8 @@ const SpeechInputCancelButton = React.forwardRef<
 
   return (
     <motion.div
-      layout
       className="inline-flex shrink-0"
       style={{ width: buttonWidth }}
-      transition={{ layout: speechTransition(reduceMotion) }}
     >
       <motion.div
         animate={{ scale: trailingMode === "cancel" ? 0.9 : 1 }}
@@ -836,7 +828,6 @@ const SpeechInputCancelButton = React.forwardRef<
           <Button
             ref={ref}
             type="button"
-            // size="icon-xl"
             variant={variant}
             onClick={(e) => {
               if (trailingMode === "mic") {
