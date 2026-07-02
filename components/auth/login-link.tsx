@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 
-import { GoogleAuthLabel } from "@/components/auth/google-logo";
+import {
+  GOOGLE_SIGN_IN_LABELS,
+  GoogleSignInTrigger,
+} from "@/components/auth/google-auth-button";
 import type { AuthIntent } from "@/lib/auth/login-intent";
 import { buildLoginHref } from "@/lib/auth/return-url";
 import { useAuthReturnUrl } from "@/lib/hooks/use-auth-return-url";
@@ -21,35 +24,31 @@ export function LoginLink({ href, intent, ...props }: LoginLinkProps) {
   );
 }
 
-type GoogleAuthLinkProps = Omit<LoginLinkProps, "children" | "intent"> & {
-  intent?: AuthIntent;
+type GoogleAuthLinkProps = Omit<
+  React.ComponentPropsWithoutRef<typeof GoogleSignInTrigger>,
+  "label"
+> & {
   label?: string;
 };
 
-function GoogleAuthLink({
-  intent = "login",
-  label,
-  className,
-  ...props
-}: GoogleAuthLinkProps) {
-  const resolvedLabel =
-    label ?? (intent === "signup" ? "Sign up with Google" : "Log in with Google");
-
+function GoogleAuthLink({ label, className, ...props }: GoogleAuthLinkProps) {
   return (
-    <LoginLink
-      intent={intent}
+    <GoogleSignInTrigger
+      label={label}
       className={cn("inline-flex items-center gap-2", className)}
       {...props}
-    >
-      <GoogleAuthLabel>{resolvedLabel}</GoogleAuthLabel>
-    </LoginLink>
+    />
   );
 }
 
-export function SignUpWithGoogleLink(props: Omit<GoogleAuthLinkProps, "intent">) {
-  return <GoogleAuthLink intent="signup" {...props} />;
+export function SignUpWithGoogleLink(
+  props: Omit<GoogleAuthLinkProps, "label">
+) {
+  return <GoogleAuthLink label={GOOGLE_SIGN_IN_LABELS.signup} {...props} />;
 }
 
-export function LoginWithGoogleLink(props: Omit<GoogleAuthLinkProps, "intent">) {
-  return <GoogleAuthLink intent="login" {...props} />;
+export function LoginWithGoogleLink(
+  props: Omit<GoogleAuthLinkProps, "label">
+) {
+  return <GoogleAuthLink label={GOOGLE_SIGN_IN_LABELS.login} {...props} />;
 }
