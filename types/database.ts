@@ -155,6 +155,7 @@ export type Database = {
           display_name: string | null
           elevenlabs_api_key_encrypted: string | null
           id: string
+          is_admin: boolean
           language: string
           message_bubble_layout: string
           onboarding_completed: boolean
@@ -168,6 +169,7 @@ export type Database = {
           display_name?: string | null
           elevenlabs_api_key_encrypted?: string | null
           id: string
+          is_admin?: boolean
           language?: string
           message_bubble_layout?: string
           onboarding_completed?: boolean
@@ -181,6 +183,7 @@ export type Database = {
           display_name?: string | null
           elevenlabs_api_key_encrypted?: string | null
           id?: string
+          is_admin?: boolean
           language?: string
           message_bubble_layout?: string
           onboarding_completed?: boolean
