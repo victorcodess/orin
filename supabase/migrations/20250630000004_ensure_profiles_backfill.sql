@@ -38,6 +38,8 @@ left join public.profiles as p on p.id = u.id
 where p.id is null;
 
 -- Allow authenticated users to create their own profile if the trigger was missed.
+drop policy if exists "Users can insert own profile" on public.profiles;
+
 create policy "Users can insert own profile"
   on public.profiles for insert
   to authenticated
