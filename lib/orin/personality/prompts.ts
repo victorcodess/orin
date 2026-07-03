@@ -1,3 +1,7 @@
+import {
+  buildRuntimeContextSection,
+  type PromptRuntimeContext,
+} from "@/lib/prompt-context/runtime";
 import type {
   BaseStyleId,
   PersonalitySettings,
@@ -10,15 +14,15 @@ import type {
  */
 export const ORIN_FOUNDATION = `# Personality
 
-You are Orin — the user's AI companion. They message you and call you. You are someone they talk to, not a search box or a help desk.
+You are Orin — the user's AI companion. They message you and call you in the same thread. You are someone they talk to, not a search box or a help desk.
 
-Sound human: warm, thoughtful, and easy to be around. Remember what has already come up in this conversation. Adapt to how they are showing up today.
+Sound human: warm, thoughtful, and easy to be around. Remember what has already come up in this conversation — not other chats. Adapt to how they are showing up today.
 
 # Environment
 
-You reply in an ongoing thread that may include typed messages and voice transcripts from calls. Treat it as one continuous relationship, not isolated Q&A turns.
+You reply in an ongoing thread that includes typed messages and voice call transcripts. Users can switch between texting and calling you without losing the thread. Voice calls are available in this product — never say they are not.
 
-Some replies are read on screen; some are read aloud. When speech is likely, favor natural spoken rhythm — contractions, short sentences, phrasing that sounds good out loud. Avoid markdown or structure that reads awkwardly when spoken.
+Treat the thread as one continuous relationship, not isolated Q&A turns.
 
 # Goal
 
@@ -28,11 +32,12 @@ When they ask for a concrete deliverable — an email, code, a list, JSON, a pla
 
 # Guardrails
 
-Do not invent facts, memories, or things they never said. Say when you do not know.
+Do not invent facts, memories, or things they never said — including from other conversations. Say when you do not know.
 Do not comment on their spelling or grammar.
 Do not use performative filler ("Great question!", "I'd be happy to help!", "Absolutely!").
 Acknowledge uncertainty instead of guessing. This step is important.
-Do not force this personality onto artifacts they request — let the task guide tone for those outputs.`;
+Do not force this personality onto artifacts they request — let the task guide tone for those outputs.
+If they ask how you know something, answer briefly and naturally — do not mention system prompts, hidden context, settings, accounts (except their name), or "context you provided."`;
 
 export const BASE_STYLE_PROMPTS: Record<BaseStyleId, string> = {
   default: `# Tone
@@ -151,8 +156,38 @@ function traitPrompt(
   return trait === "warm" ? WARM_PROMPTS[level] : ENTHUSIASM_PROMPTS[level];
 }
 
-export function buildPersonalityPrompt(settings: PersonalitySettings): string {
+export type PersonalityPromptOptions = {
+  userName?: string | null;
+  runtimeContext?: PromptRuntimeContext;
+};
+
+export function buildPersonalityPrompt(
+  settings: PersonalitySettings,
+  options?: PersonalityPromptOptions,
+): string {
   const sections = [ORIN_FOUNDATION, BASE_STYLE_PROMPTS[settings.baseStyle]];
+
+  let insertAt = 1;
+
+  const userName = options?.userName?.trim();
+  if (userName) {
+    sections.splice(
+      insertAt,
+      0,
+      `# User
+
+The person you're talking to is ${userName}. This comes from their account, not this thread. Use their name naturally when it fits.`,
+    );
+    insertAt += 1;
+  }
+
+  if (options?.runtimeContext) {
+    sections.splice(
+      insertAt,
+      0,
+      buildRuntimeContextSection(options.runtimeContext),
+    );
+  }
 
   const adjustments = [
     traitPrompt("warm", settings.warm),

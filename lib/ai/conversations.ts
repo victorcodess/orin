@@ -7,8 +7,33 @@ import { ORIN_NAME } from "@/lib/orin/defaults";
 import { getSessionId } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { normalizeTimeZone } from "@/lib/prompt-context/runtime";
 
 export type { ConversationRow } from "@/lib/ai/conversation-types";
+
+const CONVERSATION_COLUMNS =
+  "id, user_id, session_id, title, time_zone, is_favorited, created_at, updated_at";
+
+export async function updateConversationTimeZone(
+  conversationId: string,
+  timeZone: unknown,
+): Promise<string | null> {
+  const normalized = normalizeTimeZone(timeZone);
+  if (!normalized) {
+    return null;
+  }
+
+  const { error } = await createAdminClient()
+    .from("conversations")
+    .update({ time_zone: normalized })
+    .eq("id", conversationId);
+
+  if (error) {
+    throw error;
+  }
+
+  return normalized;
+}
 
 async function getAuthUserId(): Promise<string | null> {
   const supabase = await createClient();
@@ -19,6 +44,7 @@ async function getAuthUserId(): Promise<string | null> {
 export async function createConversation(options?: {
   id?: string;
   initialMessage?: string;
+  timeZone?: string | null;
 }): Promise<ConversationRow> {
   const supabase = createAdminClient();
   const userId = await getAuthUserId();
@@ -41,8 +67,9 @@ export async function createConversation(options?: {
       user_id: userId,
       session_id: sessionId,
       title,
+      ...(options?.timeZone ? { time_zone: options.timeZone } : {}),
     })
-    .select("id, user_id, session_id, title, is_favorited, created_at, updated_at")
+    .select(CONVERSATION_COLUMNS)
     .single();
 
   if (error || !data) {
@@ -69,7 +96,7 @@ export async function getConversation(
 
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, user_id, session_id, title, is_favorited, created_at, updated_at")
+    .select(CONVERSATION_COLUMNS)
     .eq("id", conversationId)
     .maybeSingle();
 
@@ -112,7 +139,7 @@ export async function updateConversationTitle(
       updated_at: new Date().toISOString(),
     })
     .eq("id", conversationId)
-    .select("id, user_id, session_id, title, is_favorited, created_at, updated_at")
+    .select(CONVERSATION_COLUMNS)
     .single();
 
   if (error || !data) {
@@ -137,7 +164,7 @@ export async function updateConversationFavorite(
       updated_at: new Date().toISOString(),
     })
     .eq("id", conversationId)
-    .select("id, user_id, session_id, title, is_favorited, created_at, updated_at")
+    .select(CONVERSATION_COLUMNS)
     .single();
 
   if (error || !data) {
@@ -187,7 +214,7 @@ export async function listConversations(limit = 30): Promise<ConversationRow[]> 
   let query = supabase
     .from("conversations")
     .select(
-      "id, user_id, session_id, title, is_favorited, created_at, updated_at, messages!inner(id)",
+      `${CONVERSATION_COLUMNS}, messages!inner(id)`,
     )
     .order("updated_at", { ascending: false })
     .limit(limit);

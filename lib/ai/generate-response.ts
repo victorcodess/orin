@@ -10,6 +10,7 @@ import {
   toUIMessages,
 } from "@/lib/ai/message-utils";
 import { loadHistory, saveMessage } from "@/lib/ai/messages";
+import { fetchDisplayNameByUserId } from "@/lib/auth/google-display-name";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 import { resolveOpenAIKeyForVoiceTurn } from "@/lib/quotas/resolve";
@@ -185,12 +186,14 @@ export async function handleVoiceTranscript({
   conversationId,
   userId,
   sessionId,
+  timeZone,
   transcript,
   signal,
 }: {
   conversationId: string;
   userId?: string | null;
   sessionId?: string | null;
+  timeZone?: string | null;
   transcript: TranscriptEntry[];
   signal: AbortSignal;
 }) {
@@ -202,13 +205,14 @@ export async function handleVoiceTranscript({
 
   // Capture pre-call history *before* persisting this turn so the snapshot never
   // includes live-call turns (which arrive via the transcript instead).
-  const [config, priorHistory, openaiResolved] = await Promise.all([
+  const [config, priorHistory, openaiResolved, userName] = await Promise.all([
     ensureAssistantConfig(conversationId, userId),
     ensurePriorHistory(conversationId),
     resolveOpenAIKeyForVoiceTurn(
       { userId: userId ?? null, sessionId: sessionId ?? null },
       conversationId,
     ),
+    userId ? fetchDisplayNameByUserId(userId) : Promise.resolve(null),
   ]);
 
   const openai = createOpenAI({ apiKey: openaiResolved.key });
@@ -231,7 +235,13 @@ export async function handleVoiceTranscript({
   async function* textStream() {
     const result = streamText({
       model: openai(VOICE_CHAT_MODEL),
-      system: buildPersonalityPrompt(config.personalitySettings),
+      system: buildPersonalityPrompt(config.personalitySettings, {
+        userName,
+        runtimeContext: {
+          timeZone,
+          modality: "voice",
+        },
+      }),
       messages: modelMessages,
       abortSignal: signal,
     });

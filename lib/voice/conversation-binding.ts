@@ -31,17 +31,22 @@ export async function bindVoiceSession({
   conversationId,
   pendingToken,
   voiceSessionId,
+  timeZone,
 }: {
   conversationId: string;
   pendingToken: string;
   voiceSessionId: string;
+  timeZone?: string | null;
 }) {
   await verifyConversationAccess(conversationId);
 
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("conversations")
-    .update({ active_voice_session_id: voiceSessionId })
+    .update({
+      active_voice_session_id: voiceSessionId,
+      ...(timeZone ? { time_zone: timeZone } : {}),
+    })
     .eq("id", conversationId)
     .eq("active_voice_session_id", pendingVoiceSessionId(pendingToken))
     .select("id")
@@ -54,7 +59,10 @@ export async function bindVoiceSession({
   if (!data) {
     const { data: fallback, error: fallbackError } = await supabase
       .from("conversations")
-      .update({ active_voice_session_id: voiceSessionId })
+      .update({
+        active_voice_session_id: voiceSessionId,
+        ...(timeZone ? { time_zone: timeZone } : {}),
+      })
       .eq("id", conversationId)
       .like("active_voice_session_id", `${PENDING_PREFIX}%`)
       .select("id")
@@ -75,7 +83,7 @@ export async function resolveConversationByVoiceSession(voiceSessionId: string) 
 
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, user_id, session_id")
+    .select("id, user_id, session_id, time_zone")
     .eq("active_voice_session_id", voiceSessionId)
     .maybeSingle();
 

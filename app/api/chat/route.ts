@@ -2,10 +2,12 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
+import { resolvedDisplayName } from "@/lib/auth/google-display-name";
 import {
   createConversation,
   getConversation,
   maybeUpdateConversationTitle,
+  updateConversationTimeZone,
   verifyConversationAccess,
 } from "@/lib/ai/conversations";
 import {
@@ -18,6 +20,8 @@ import {
 import { sanitizeUIMessagesForModel } from "@/lib/ai/message-utils";
 import { TEXT_CHAT_MODEL } from "@/lib/ai/model";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
+import { normalizeTimeZone } from "@/lib/prompt-context/runtime";
+import type { ClientPromptContext } from "@/lib/prompt-context/client";
 import { debugError, debugLog } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { getQuotaContext } from "@/lib/quotas/context";
@@ -31,6 +35,7 @@ export const maxDuration = 60;
 type ChatRequestBody = {
   messages: UIMessage[];
   conversationId: string;
+  promptContext?: ClientPromptContext;
 };
 
 export async function POST(req: Request) {
@@ -38,7 +43,8 @@ export async function POST(req: Request) {
 
   try {
     const body = (await req.json()) as ChatRequestBody;
-    const { messages, conversationId } = body;
+    const { messages, conversationId, promptContext } = body;
+    const requestTimeZone = normalizeTimeZone(promptContext?.timeZone);
 
     debugLog("api/chat", "request received", {
       conversationId,
@@ -79,9 +85,15 @@ export async function POST(req: Request) {
       conversation = await createConversation({
         id: conversationId,
         initialMessage: textFromUIMessage(lastUserMessage),
+        timeZone: requestTimeZone,
       });
     } else {
       conversation = await verifyConversationAccess(conversationId);
+
+      if (requestTimeZone) {
+        await updateConversationTimeZone(conversationId, requestTimeZone);
+        conversation.time_zone = requestTimeZone;
+      }
     }
 
     debugLog("api/chat", "access verified", {
@@ -92,7 +104,22 @@ export async function POST(req: Request) {
 
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
-    const config = await getAssistantConfig(authData.user?.id);
+    const authUser = authData.user;
+
+    const [config, profileResult] = await Promise.all([
+      getAssistantConfig(authUser?.id),
+      authUser
+        ? supabase
+            .from("profiles")
+            .select("display_name")
+            .eq("id", authUser.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+
+    const userName = authUser
+      ? resolvedDisplayName(profileResult.data?.display_name, authUser)
+      : null;
 
     debugLog("api/chat", "assistant config loaded", {
       authUserId: authData.user?.id ?? null,
@@ -141,7 +168,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const system = buildPersonalityPrompt(config.personalitySettings);
+    const system = buildPersonalityPrompt(config.personalitySettings, {
+      userName,
+      runtimeContext: {
+        timeZone: conversation.time_zone ?? requestTimeZone,
+        modality: "text",
+      },
+    });
 
     debugLog("api/chat", "starting streamText", {
       modelMessageCount: modelMessages.length,

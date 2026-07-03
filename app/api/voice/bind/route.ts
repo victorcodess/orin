@@ -1,11 +1,14 @@
+import { normalizeTimeZone } from "@/lib/prompt-context/runtime";
 import { bindVoiceSession } from "@/lib/voice/conversation-binding";
 import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
+import type { ClientPromptContext } from "@/lib/prompt-context/client";
 
 type VoiceBindRequest = {
   conversationId?: string;
   pendingToken?: string;
   voiceSessionId?: string;
+  promptContext?: ClientPromptContext;
 };
 
 export async function POST(req: Request) {
@@ -20,7 +23,12 @@ export async function POST(req: Request) {
       );
     }
 
-    await bindVoiceSession({ conversationId, pendingToken, voiceSessionId });
+    await bindVoiceSession({
+      conversationId,
+      pendingToken,
+      voiceSessionId,
+      timeZone: normalizeTimeZone(body.promptContext?.timeZone),
+    });
 
     return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {

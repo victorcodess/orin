@@ -57,6 +57,7 @@ export type Database = {
           id: string
           is_favorited: boolean
           session_id: string | null
+          time_zone: string | null
           title: string | null
           updated_at: string
           user_id: string | null
@@ -67,6 +68,7 @@ export type Database = {
           id?: string
           is_favorited?: boolean
           session_id?: string | null
+          time_zone?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           id?: string
           is_favorited?: boolean
           session_id?: string | null
+          time_zone?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string | null

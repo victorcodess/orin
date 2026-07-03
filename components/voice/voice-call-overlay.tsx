@@ -35,6 +35,7 @@ import {
   type VoiceCallMode,
 } from "@/lib/stores/voice-call-store";
 import { ORIN_NAME } from "@/lib/orin/defaults";
+import { getClientPromptContext } from "@/lib/prompt-context/client";
 import { useVoiceLiveMessagesStore } from "@/lib/stores/voice-live-messages-store";
 import { getVoiceDisconnectToast } from "@/lib/voice/disconnect-toast";
 import { cn } from "@/lib/utils";
@@ -335,6 +336,7 @@ export function VoiceCallOverlay() {
             conversationId: activeConversationId,
             pendingToken: token,
             voiceSessionId,
+            promptContext: getClientPromptContext(),
           }),
         });
 
