@@ -1,9 +1,9 @@
 // OpenAI — companion brain (text + voice LLM)
 /** Text chat — balance quality, cost, and streaming latency. */
-export const TEXT_CHAT_MODEL = "gpt-4o-mini";
+export const TEXT_CHAT_MODEL = "gpt-4.1-mini";
 
 /** Voice call replies — favor time-to-first-token over frontier reasoning. */
-export const VOICE_CHAT_MODEL = "gpt-4o-mini";
+export const VOICE_CHAT_MODEL = "gpt-4.1-mini";
 
 // ElevenLabs — speech-to-text
 /** Composer dictation (Scribe realtime). */
