@@ -1,4 +1,4 @@
-import type { BaseStyleId, TraitLevel } from "@/lib/orin/personality/types";
+import type { PersonalityId } from "@/lib/orin/personality/types";
 
 export type PersonalityOption<T extends string = string> = {
   value: T;
@@ -6,46 +6,38 @@ export type PersonalityOption<T extends string = string> = {
   description: string;
 };
 
-export const BASE_STYLE_OPTIONS: PersonalityOption<BaseStyleId>[] = [
+export const PERSONALITY_OPTIONS: PersonalityOption<PersonalityId>[] = [
   {
-    value: "default",
-    label: "Default",
-    description: "Balanced and natural — Orin's everyday voice",
+    value: "warm",
+    label: "Warm",
+    description: "Caring, emotionally present, easy to open up to",
   },
   {
-    value: "professional",
-    label: "Professional",
-    description: "Polished and precise",
+    value: "curious",
+    label: "Curious",
+    description: "Intellectually engaged, asks good questions, thinks alongside you",
   },
   {
-    value: "friendly",
-    label: "Friendly",
-    description: "Warm and conversational",
+    value: "playful",
+    label: "Playful",
+    description: "Light, creative, and fun without losing substance",
   },
   {
-    value: "candid",
-    label: "Candid",
-    description: "Direct and encouraging",
+    value: "calm",
+    label: "Calm",
+    description: "Steady, unhurried, and grounding",
   },
   {
-    value: "quirky",
-    label: "Quirky",
-    description: "Playful and imaginative",
-  },
-  {
-    value: "efficient",
-    label: "Efficient",
-    description: "Concise and plain",
-  },
-  {
-    value: "cynical",
-    label: "Cynical",
-    description: "Critical, with dry humor",
+    value: "direct",
+    label: "Direct",
+    description: "Clear, honest, and straight to the point",
   },
 ];
 
-export const TRAIT_LEVEL_OPTIONS: PersonalityOption<TraitLevel>[] = [
-  { value: "less", label: "Less", description: "Dial it down" },
-  { value: "default", label: "Default", description: "Follow your base style" },
-  { value: "more", label: "More", description: "Dial it up" },
-];
+export const PERSONALITY_MODEL_ITEMS = PERSONALITY_OPTIONS.map(
+  ({ value, label, description }) => ({
+    value,
+    title: label,
+    description,
+  }),
+);

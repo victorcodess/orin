@@ -29,15 +29,11 @@ import { CURATED_VOICES } from "@/lib/elevenlabs/voices";
 import { useSettingsRouteDirty } from "@/lib/hooks/use-settings-route-dirty";
 import { personalitySettingsEqual } from "@/lib/orin/personality/parse";
 import {
-  BASE_STYLE_OPTIONS,
-  TRAIT_LEVEL_OPTIONS,
+  PERSONALITY_OPTIONS,
   type PersonalityOption,
 } from "@/lib/orin/personality/ui-options";
 import type { PersonalitySettings } from "@/lib/orin/personality/types";
-import {
-  VOICE_SPEED_OPTIONS,
-  type VoiceSpeed,
-} from "@/lib/orin/voice/speed";
+import { VOICE_SPEED_OPTIONS, type VoiceSpeed } from "@/lib/orin/voice/speed";
 import { useAssistantConfigStore } from "@/lib/stores/assistant-config-store";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -88,7 +84,7 @@ function PersonalityDropdown<T extends string>({
               value={option.value}
               className={cn(
                 "rounded-2xl pr-8 pl-3",
-                compact ? "py-2" : "h-auto items-start py-2",
+                compact ? "py-2" : "h-auto items-start py-2"
               )}
             >
               {compact ? (
@@ -151,7 +147,9 @@ export function SettingsPersonalization() {
       !personalitySettingsEqual(
         personalitySettings,
         config.personalitySettings
-      ) || voiceId !== config.voiceId || voiceSpeed !== config.voiceSpeed,
+      ) ||
+      voiceId !== config.voiceId ||
+      voiceSpeed !== config.voiceSpeed,
     [config, personalitySettings, voiceId, voiceSpeed]
   );
 
@@ -166,7 +164,7 @@ export function SettingsPersonalization() {
 
   const pickerVoices = useMemo(
     () => CURATED_VOICES as unknown as ElevenLabs.Voice[],
-    [],
+    []
   );
 
   const markDirty = () => {
@@ -221,50 +219,22 @@ export function SettingsPersonalization() {
     <SettingsPage className="gap-5">
       <SettingsGroup>
         <SettingsSectionIntro
-          title="Base style and tone"
-          description="Sets how Orin responds. This doesn't change what Orin can do."
+          title="Personality"
+          description="Sets how Orin shows up in conversations. Doesn't change what Orin can do."
           className="pb-2"
         />
 
         <SettingsRow
           title="Style"
-          description="Orin's overall personality in text and on calls."
+          description="Orin's voice and approach in text and on calls."
         >
           <PersonalityDropdown
-            value={personalitySettings.baseStyle}
-            options={BASE_STYLE_OPTIONS}
-            onValueChange={(baseStyle) => updateSettings({ baseStyle })}
+            value={personalitySettings.personality}
+            options={PERSONALITY_OPTIONS}
+            onValueChange={(personality) => updateSettings({ personality })}
           />
         </SettingsRow>
 
-        <SettingsSectionIntro
-          title="Characteristics"
-          description="Fine-tune warmth and energy on top of your base style."
-          withSeparator
-          className="pb-2"
-        />
-
-        <SettingsRow
-          title="Warm"
-          description="How caring and emotionally present Orin sounds."
-        >
-          <PersonalityDropdown
-            value={personalitySettings.warm}
-            options={TRAIT_LEVEL_OPTIONS}
-            onValueChange={(warm) => updateSettings({ warm })}
-          />
-        </SettingsRow>
-
-        <SettingsRow
-          title="Enthusiastic"
-          description="How much energy and momentum Orin brings."
-        >
-          <PersonalityDropdown
-            value={personalitySettings.enthusiastic}
-            options={TRAIT_LEVEL_OPTIONS}
-            onValueChange={(enthusiastic) => updateSettings({ enthusiastic })}
-          />
-        </SettingsRow>
         <Separator className="bg-border/40" />
         <div className="px-4 py-4">
           <SettingsField

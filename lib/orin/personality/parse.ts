@@ -1,16 +1,13 @@
 import {
-  BASE_STYLE_IDS,
+  PERSONALITY_IDS,
   DEFAULT_PERSONALITY_SETTINGS,
-  TRAIT_LEVELS,
   type PersonalitySettings,
 } from "@/lib/orin/personality/types";
 
-function isBaseStyle(value: string): value is PersonalitySettings["baseStyle"] {
-  return (BASE_STYLE_IDS as readonly string[]).includes(value);
-}
-
-function isTraitLevel(value: string): value is PersonalitySettings["warm"] {
-  return (TRAIT_LEVELS as readonly string[]).includes(value);
+function isPersonalityId(
+  value: string,
+): value is PersonalitySettings["personality"] {
+  return (PERSONALITY_IDS as readonly string[]).includes(value);
 }
 
 export function parsePersonalitySettings(value: unknown): PersonalitySettings {
@@ -21,18 +18,11 @@ export function parsePersonalitySettings(value: unknown): PersonalitySettings {
   const input = value as Record<string, unknown>;
 
   return {
-    baseStyle:
-      typeof input.baseStyle === "string" && isBaseStyle(input.baseStyle)
-        ? input.baseStyle
-        : DEFAULT_PERSONALITY_SETTINGS.baseStyle,
-    warm:
-      typeof input.warm === "string" && isTraitLevel(input.warm)
-        ? input.warm
-        : DEFAULT_PERSONALITY_SETTINGS.warm,
-    enthusiastic:
-      typeof input.enthusiastic === "string" && isTraitLevel(input.enthusiastic)
-        ? input.enthusiastic
-        : DEFAULT_PERSONALITY_SETTINGS.enthusiastic,
+    personality:
+      typeof input.personality === "string" &&
+      isPersonalityId(input.personality)
+        ? input.personality
+        : DEFAULT_PERSONALITY_SETTINGS.personality,
     customInstructions:
       typeof input.customInstructions === "string"
         ? input.customInstructions.slice(0, 4000)
@@ -45,9 +35,7 @@ export function personalitySettingsEqual(
   b: PersonalitySettings,
 ) {
   return (
-    a.baseStyle === b.baseStyle &&
-    a.warm === b.warm &&
-    a.enthusiastic === b.enthusiastic &&
+    a.personality === b.personality &&
     a.customInstructions.trim() === b.customInstructions.trim()
   );
 }

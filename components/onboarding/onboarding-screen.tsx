@@ -36,8 +36,7 @@ import { CURATED_VOICES } from "@/lib/elevenlabs/voices";
 import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 import { personalitySettingsEqual } from "@/lib/orin/personality/parse";
 import {
-  BASE_STYLE_OPTIONS,
-  TRAIT_LEVEL_OPTIONS,
+  PERSONALITY_OPTIONS,
   type PersonalityOption,
 } from "@/lib/orin/personality/ui-options";
 import type { PersonalitySettings } from "@/lib/orin/personality/types";
@@ -273,33 +272,19 @@ export function OnboardingScreen() {
     <div className="flex w-full flex-col gap-6">
       <OnboardingHeader />
       <SettingsGroup>
-        <div className="grid gap-4 px-4 py-4 sm:grid-cols-2">
+        <div className="px-4 py-4">
           <CompactField
-            title="Style"
-            description="Orin's overall personality in text and on calls."
+            title="Personality"
+            description="Orin's voice and approach in text and on calls."
           >
             <PersonalityDropdown
-              value={personalitySettings.baseStyle}
-              options={BASE_STYLE_OPTIONS}
+              value={personalitySettings.personality}
+              options={PERSONALITY_OPTIONS}
               loading={!controlsReady}
-              onValueChange={(baseStyle) =>
+              onValueChange={(personality) =>
                 updateSettings({
-                  baseStyle: baseStyle as PersonalitySettings["baseStyle"],
+                  personality: personality as PersonalitySettings["personality"],
                 })
-              }
-            />
-          </CompactField>
-
-          <CompactField
-            title="Warm"
-            description="How caring and emotionally present Orin sounds."
-          >
-            <PersonalityDropdown
-              value={personalitySettings.warm}
-              options={TRAIT_LEVEL_OPTIONS}
-              loading={!controlsReady}
-              onValueChange={(warm) =>
-                updateSettings({ warm: warm as PersonalitySettings["warm"] })
               }
             />
           </CompactField>

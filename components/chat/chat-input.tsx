@@ -19,6 +19,7 @@ import {
   SpeechInputRecordButton,
   useSpeechInput,
 } from "@/components/elevenlabs/speech-input";
+import { PersonalitySelector } from "@/components/chat/personality-selector";
 import { toast } from "@/components/nexus-ui/toaster";
 import { Button } from "@/components/ui/button";
 import {
@@ -130,6 +131,7 @@ export function ChatInput({
           )}
         >
           <PromptInputActionGroup>
+            <PersonalitySelector disabled={isSubmitting} />
             <SpeechInput
               className="rounded-full"
               getToken={getScribeToken}
@@ -156,13 +158,13 @@ export function ChatInput({
               <DictationKeyboardShortcuts disabled={isSubmitting} />
               <SpeechInputRecordButton
                 variant="ghost"
-                className="hover:bg-sidebar hover:dark:bg-input size-9"
+                className="hover:bg-input hover:dark:bg-popover size-9"
               />
               <SpeechInputPreview placeholder="Listening…" />
               <SpeechInputCancelButton
                 variant="ghost"
                 disabled={isSubmitting}
-                className="hover:bg-sidebar hover:dark:bg-input"
+                className="hover:bg-input hover:dark:bg-popover"
                 onPointerEnter={() => warmDictation()}
               />
             </SpeechInput>

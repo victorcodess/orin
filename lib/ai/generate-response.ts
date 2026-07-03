@@ -231,7 +231,7 @@ export async function handleVoiceTranscript({
   async function* textStream() {
     const result = streamText({
       model: openai(VOICE_CHAT_MODEL),
-      system: buildPersonalityPrompt(config.personalitySettings),
+      system: buildPersonalityPrompt(config.personalitySettings, "voice"),
       messages: modelMessages,
       abortSignal: signal,
     });
