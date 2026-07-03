@@ -19,18 +19,17 @@ const triggerVariants = cva(
   {
     variants: {
       variant: {
-        filled:
-          "bg-muted hover:bg-border",
+        filled: "bg-muted hover:bg-border",
         outline:
           "border border-input bg-transparent hover:bg-muted data-[state=open]:bg-transparent",
         ghost:
-          "bg-transparent hover:bg-muted data-[state=open]:bg-transparent",
+          "bg-transparent hover:bg-input hover:dark:bg-popover data-[state=open]:bg-transparent data-[state=open]:bg-input",
       },
     },
     defaultVariants: {
       variant: "filled",
     },
-  },
+  }
 );
 
 export type ModelItemData = {
@@ -45,7 +44,7 @@ function matchesModelItemFilter(
     value?: string;
     title?: string | null;
     description?: string | null;
-  },
+  }
 ) {
   const q = filterQuery.trim().toLowerCase();
   if (!q) return true;
@@ -69,7 +68,7 @@ function useModelSelectorContext() {
   const ctx = React.useContext(ModelSelectorContext);
   if (!ctx) {
     throw new Error(
-      "ModelSelector components must be used within ModelSelector",
+      "ModelSelector components must be used within ModelSelector"
     );
   }
   return ctx;
@@ -106,7 +105,7 @@ function ModelSelector({
       onOpenChange?.(open);
       if (!open) setFilterQuery("");
     },
-    [onOpenChange],
+    [onOpenChange]
   );
 
   const ctx = React.useMemo(
@@ -117,7 +116,7 @@ function ModelSelector({
       filterQuery,
       setFilterQuery,
     }),
-    [value, onValueChange, items, filterQuery],
+    [value, onValueChange, items, filterQuery]
   );
 
   return (
@@ -168,7 +167,7 @@ function ModelSelectorTrigger({
         {selected?.icon && <selected.icon className="size-4 shrink-0" />}
         <span
           data-slot="model-selector-trigger-title"
-          className="truncate text-sm"
+          className="text-foreground truncate text-sm"
         >
           {selected?.title ?? value}
         </span>
@@ -177,7 +176,7 @@ function ModelSelectorTrigger({
         <HugeiconsIcon
           icon={ArrowDown01Icon}
           strokeWidth={2.0}
-          className="size-4 shrink-0"
+          className="text-foreground size-4 shrink-0"
         />
       </span>
     </>
@@ -221,8 +220,8 @@ function ModelSelectorContent({
         data-slot="model-selector-content"
         sideOffset={sideOffset}
         className={cn(
-          "z-50 max-h-[min(var(--model-selector-content-max-height,500px),var(--radix-dropdown-menu-content-available-height))] min-w-48 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto overscroll-none rounded-lg border border-accent bg-popover p-1 text-popover-foreground shadow-modal duration-200 ease-out data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:overflow-hidden data-[state=closed]:duration-0 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          className,
+          "border-accent bg-popover text-popover-foreground shadow-modal data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 z-50 max-h-[min(var(--model-selector-content-max-height,500px),var(--radix-dropdown-menu-content-available-height))] min-w-48 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto overscroll-none rounded-3xl border p-1 duration-200 ease-out data-[state=closed]:overflow-hidden data-[state=closed]:duration-0",
+          className
         )}
         {...props}
       />
@@ -245,20 +244,20 @@ const ModelSelectorSearch = React.forwardRef<
     autoComplete = "off",
     ...props
   },
-  ref,
+  ref
 ) {
   const { filterQuery, setFilterQuery } = useModelSelectorContext();
   return (
     <div
       data-slot="model-selector-search-wrapper"
-      className="sticky top-0 z-10 bg-popover py-1"
+      className="bg-popover sticky top-0 z-10 py-1"
       onPointerDown={(e) => {
         e.preventDefault();
       }}
     >
       <HugeiconsIcon
         icon={Search01Icon}
-        className="absolute top-1/2 left-2.75 -mb-0.25 size-4 -translate-y-1/2 text-muted-foreground"
+        className="text-muted-foreground absolute top-1/2 left-2.75 -mb-0.25 size-4 -translate-y-1/2"
         strokeWidth={2}
       />
       <input
@@ -267,8 +266,8 @@ const ModelSelectorSearch = React.forwardRef<
         data-slot="model-selector-search"
         autoComplete={autoComplete}
         className={cn(
-          "inline-flex h-8 w-full items-center gap-2 rounded-sm bg-muted p-1.5 ps-8.5 pe-2 text-[13px] leading-6 font-[350] text-muted-foreground transition-all placeholder:text-muted-foreground hover:bg-border/50 focus-visible:ring-2 focus-visible:outline-0 focus-visible:ring-border dark:focus-visible:ring-ring",
-          className,
+          "bg-muted text-muted-foreground placeholder:text-muted-foreground hover:bg-border/50 focus-visible:ring-border dark:focus-visible:ring-ring inline-flex h-8 w-full items-center gap-2 rounded-sm p-1.5 ps-8.5 pe-2 text-[13px] leading-6 font-[350] transition-all focus-visible:ring-2 focus-visible:outline-0",
+          className
         )}
         onKeyDown={(e) => {
           onKeyDown?.(e);
@@ -318,7 +317,14 @@ function ModelSelectorEmpty({
   if (!q || hasCatalogMatch) return null;
 
   return (
-    <div data-slot="model-selector-empty" className={cn("flex h-27 w-full items-center justify-center px-3 py-2 text-center text-[13px] font-[350] text-muted-foreground", className)} {...props}>
+    <div
+      data-slot="model-selector-empty"
+      className={cn(
+        "text-muted-foreground flex h-27 w-full items-center justify-center px-3 py-2 text-center text-[13px] font-[350]",
+        className
+      )}
+      {...props}
+    >
       {children ?? "No models found"}
     </div>
   );
@@ -395,7 +401,7 @@ function ModelSelectorItemIndicator({
       data-slot="model-selector-item-indicator"
       className={cn(
         "pointer-events-none absolute right-2 flex size-3.5 items-center justify-center",
-        className,
+        className
       )}
       {...props}
     >
@@ -427,8 +433,8 @@ function ModelSelectorItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "group/dropdown-menu-item relative flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-sm font-normal text-primary outline-hidden transition-colors duration-0 select-none focus:bg-accent focus:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive",
-        className,
+        "group/dropdown-menu-item text-primary focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:*:[svg]:text-destructive relative flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-sm font-normal outline-hidden transition-colors duration-0 select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-inset:pl-7 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
       )}
       {...props}
     />
@@ -467,8 +473,8 @@ function ModelSelectorCheckboxItem({
   const defaultContent = (
     <>
       {Icon && (
-        <ModelSelectorItemIcon className="size-8 rounded-md bg-muted">
-          <Icon className="size-4 text-muted-foreground" />
+        <ModelSelectorItemIcon className="bg-muted size-8 rounded-md">
+          <Icon className="text-muted-foreground size-4" />
         </ModelSelectorItemIcon>
       )}
       <div
@@ -493,8 +499,8 @@ function ModelSelectorCheckboxItem({
     <DropdownMenuPrimitive.CheckboxItem
       data-slot="model-selector-checkbox-item"
       className={cn(
-        "relative flex min-h-9 cursor-pointer items-center gap-2.5 rounded-md py-3 pr-3 pl-3 text-sm outline-hidden transition-colors duration-0 select-none hover:bg-accent focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
-        className,
+        "hover:bg-accent focus:bg-accent focus:text-accent-foreground relative flex min-h-9 cursor-pointer items-center gap-2.5 rounded-md py-3 pr-3 pl-3 text-sm outline-hidden transition-colors duration-0 select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        className
       )}
       checked={checked}
       disabled={disabled}
@@ -585,7 +591,7 @@ function ModelSelectorRadioItem({
           </ModelSelectorItemTitle>
         )}
         {description != null && (
-          <ModelSelectorItemDescription className="font-[350] text-muted-foreground">
+          <ModelSelectorItemDescription className="text-muted-foreground font-[350]">
             {description}
           </ModelSelectorItemDescription>
         )}
@@ -599,8 +605,8 @@ function ModelSelectorRadioItem({
       value={value}
       disabled={disabled}
       className={cn(
-        "relative flex min-h-9 cursor-pointer items-center gap-2 rounded-md py-2 pr-9 pl-3 text-sm outline-hidden transition-colors duration-0 select-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
-        className,
+        "focus:bg-accent focus:text-accent-foreground relative flex min-h-9 cursor-pointer items-center gap-2 rounded-3xl py-2 pr-9 pl-3 text-sm outline-hidden transition-colors duration-0 select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        className
       )}
       {...props}
     >
@@ -643,8 +649,8 @@ function ModelSelectorLabel({
       data-slot="model-selector-label"
       data-inset={inset}
       className={cn(
-        "px-3 py-2 text-xs font-[450] text-muted-foreground data-inset:pl-8",
-        className,
+        "text-muted-foreground px-3 py-2 text-xs font-[450] data-inset:pl-8",
+        className
       )}
       {...props}
     />
@@ -661,8 +667,8 @@ function ModelSelectorSeparator({
     <DropdownMenuPrimitive.Separator
       data-slot="model-selector-separator"
       className={cn(
-        "mx-auto my-2 h-px w-[calc(100%-24px)] bg-border transition-opacity duration-150",
-        className,
+        "bg-border mx-auto my-2 h-px w-[calc(100%-24px)] transition-opacity duration-150",
+        className
       )}
       {...props}
     />
@@ -694,8 +700,8 @@ function ModelSelectorSubTrigger({
       data-slot="model-selector-sub-trigger"
       data-inset={inset}
       className={cn(
-        "flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-hidden transition-colors duration-0 select-none focus:bg-accent focus:text-accent-foreground data-inset:pl-8 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-primary [&>svg:last-child]:transition-transform [&>svg:last-child]:duration-200 data-[state=open]:[&>svg:last-child]:rotate-90",
-        className,
+        "focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&_svg:not([class*='text-'])]:text-primary flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-hidden transition-colors duration-0 select-none data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&>svg:last-child]:transition-transform [&>svg:last-child]:duration-200 data-[state=open]:[&>svg:last-child]:rotate-90",
+        className
       )}
       {...props}
     >
@@ -719,8 +725,8 @@ function ModelSelectorSubContent({
     <DropdownMenuPrimitive.SubContent
       data-slot="model-selector-sub-content"
       className={cn(
-        "z-50 min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden overscroll-none rounded-lg border border-accent bg-popover p-1 text-popover-foreground shadow-modal duration-200 ease-out data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:duration-0 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-        className,
+        "border-accent bg-popover text-popover-foreground shadow-modal data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 z-50 min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden overscroll-none rounded-lg border p-1 duration-200 ease-out data-[state=closed]:duration-0",
+        className
       )}
       {...props}
     />
