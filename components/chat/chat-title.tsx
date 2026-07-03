@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowDown01Icon, Loading03Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -15,7 +15,7 @@ import { useConversationTitleEdit } from "@/lib/hooks/use-conversation-title-edi
 import { iconSwapMotion } from "@/components/motion/icon-swap";
 import {
   useConversation,
-  useConversationsStore,
+  useSidebarConversations,
 } from "@/lib/stores/conversations-store";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -75,10 +75,7 @@ function ChatTitleEditor({
 }: ChatTitleProps & { fadeIn: boolean }) {
   const router = useRouter();
   const conversation = useConversation(conversationId);
-  const isLoading = useConversationsStore((state) => state.isLoading);
-  const isDeleted = useConversationsStore((state) =>
-    state.deletedConversationIds.has(conversationId)
-  );
+  const { isLoading } = useSidebarConversations();
   const chatTitle = conversation?.title ?? null;
   const isFavorited = conversation?.is_favorited ?? false;
   const isTitleLoaded = !isLoading || conversation !== undefined;
@@ -101,12 +98,6 @@ function ChatTitleEditor({
     isEditing: isEditingTitle,
     onFinishEdit: () => setIsEditingTitle(false),
   });
-
-  useEffect(() => {
-    if (!isLoading && !conversation && !isDeleted) {
-      void useConversationsStore.getState().refresh({ silent: true });
-    }
-  }, [conversation, conversationId, isDeleted, isLoading]);
 
   const focusTitleInput = useCallback(() => {
     const input = document.getElementById(

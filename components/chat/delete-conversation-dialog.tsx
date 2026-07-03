@@ -15,12 +15,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/nexus-ui/toaster";
-import { useConversationsStore } from "@/lib/stores/conversations-store";
-import { useMessagesStore } from "@/lib/stores/messages-store";
+import { removeConversationData } from "@/lib/stores/messages-store";
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import {
   broadcastConversationDelete,
   conversationDisplayTitle,
   deleteConversationById,
+  undoConversationDelete,
 } from "@/lib/conversation-title";
 
 type DeleteConversationDialogProps = {
@@ -40,17 +42,23 @@ export function DeleteConversationDialog({
 }: DeleteConversationDialogProps) {
   const displayTitle = conversationDisplayTitle(chatTitle);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    // Cancel any in-flight refetches so they don't overwrite the optimistic removal.
+    await getQueryClient().cancelQueries({ queryKey: queryKeys.conversations() });
+
+    // Optimistically remove from both the sidebar list and the message cache.
     broadcastConversationDelete(conversationId);
-    useMessagesStore.getState().remove(conversationId);
+    removeConversationData(conversationId);
     onOpenChange(false);
     onDeleted?.();
 
-    void deleteConversationById(conversationId).catch(() => {
-      useConversationsStore.getState().undoConversationDelete(conversationId);
-      void useConversationsStore.getState().refresh();
+    try {
+      await deleteConversationById(conversationId);
+    } catch {
+      // Restore the list from the server on failure.
+      undoConversationDelete();
       toast.error("Couldn't delete chat");
-    });
+    }
   };
 
   return (
@@ -73,7 +81,7 @@ export function DeleteConversationDialog({
             variant="destructive"
             onClick={(event) => {
               event.preventDefault();
-              handleDelete();
+              void handleDelete();
             }}
           >
             Delete
