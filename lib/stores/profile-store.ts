@@ -1,9 +1,10 @@
 "use client";
 
-import { create } from "zustand";
+import { useQuery } from "@tanstack/react-query";
 
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import type { UserPreferences } from "@/lib/orin/user-preferences";
-import { syncAuthDisplayName } from "@/lib/user-display-name";
 
 export type ProfileSettings = {
   displayName: string;
@@ -11,28 +12,13 @@ export type ProfileSettings = {
   onboardingCompleted: boolean;
 } & UserPreferences;
 
-type ProfilePatch = {
+export type ProfilePatch = {
   displayName?: string;
   theme?: string;
   language?: string;
   messageBubbleLayout?: string;
   onboardingCompleted?: boolean;
 };
-
-type ProfileState = {
-  userId: string | null;
-  profile: ProfileSettings | null;
-  isLoading: boolean;
-  error: string | null;
-  load: (userId: string) => Promise<void>;
-  patch: (
-    payload: ProfilePatch,
-    revertSnapshot?: ProfileSettings | null,
-  ) => Promise<ProfileSettings | null>;
-  reset: () => void;
-};
-
-let inflight: Promise<void> | null = null;
 
 function applyPatch(
   profile: ProfileSettings,
@@ -59,74 +45,51 @@ function applyPatch(
   };
 }
 
-export const useProfileStore = create<ProfileState>((set, get) => ({
-  userId: null,
-  profile: null,
-  isLoading: false,
-  error: null,
+async function fetchProfile(): Promise<ProfileSettings> {
+  const response = await fetch("/api/profile", { cache: "no-store" });
+  if (!response.ok) throw new Error("Failed to load profile");
+  const data = (await response.json()) as { profile: ProfileSettings | null };
+  if (!data.profile) throw new Error("Profile not found");
+  return data.profile;
+}
 
-  reset: () => {
-    inflight = null;
-    set({ userId: null, profile: null, isLoading: false, error: null });
-  },
+/** Reactive profile query. Only runs for authenticated users. */
+export function useProfileQuery(
+  userId: string | null | undefined,
+): ReturnType<typeof useQuery<ProfileSettings>> {
+  return useQuery({
+    queryKey: queryKeys.profile(userId ?? ""),
+    queryFn: fetchProfile,
+    enabled: typeof userId === "string",
+    staleTime: 60_000,
+  });
+}
 
-  load: async (userId) => {
-    const state = get();
-    if (state.userId === userId && state.profile) {
-      return;
-    }
+/**
+ * Patch the user profile with optimistic update.
+ * Safe to call outside of React components.
+ *
+ * @param payload - Fields to update.
+ * @param userId - Current user ID (needed for the cache key).
+ * @param revertSnapshot - Profile to restore on failure. Defaults to current cached value.
+ * @returns The updated profile on success, null on failure.
+ */
+export async function patchProfile(
+  payload: ProfilePatch,
+  userId: string,
+  revertSnapshot?: ProfileSettings | null,
+): Promise<ProfileSettings | null> {
+  const queryClient = getQueryClient();
+  const key = queryKeys.profile(userId);
+  const previous =
+    revertSnapshot ?? queryClient.getQueryData<ProfileSettings>(key);
 
-    if (state.userId === userId && inflight) {
-      return inflight;
-    }
+  // Optimistic update.
+  if (previous) {
+    queryClient.setQueryData<ProfileSettings>(key, applyPatch(previous, payload));
+  }
 
-    set({ userId, isLoading: true, error: null });
-
-    inflight = (async () => {
-      try {
-        const response = await fetch("/api/profile", { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error("Failed to load profile");
-        }
-
-        const data = (await response.json()) as {
-          profile: ProfileSettings | null;
-        };
-
-        if (!data.profile) {
-          throw new Error("Profile not found");
-        }
-
-        if (get().userId === userId) {
-          set({ profile: data.profile, isLoading: false });
-          syncAuthDisplayName(data.profile.displayName);
-        }
-      } catch (error) {
-        if (get().userId === userId) {
-          set({
-            isLoading: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : "Failed to load profile",
-          });
-        }
-      } finally {
-        inflight = null;
-      }
-    })();
-
-    return inflight;
-  },
-
-  patch: async (payload, revertSnapshot) => {
-    const previous = revertSnapshot ?? get().profile;
-    const current = get().profile;
-
-    if (current) {
-      set({ profile: applyPatch(current, payload) });
-    }
-
+  try {
     const response = await fetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -134,15 +97,15 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     });
 
     if (!response.ok) {
-      if (previous) {
-        set({ profile: previous });
-      }
+      if (previous) queryClient.setQueryData<ProfileSettings>(key, previous);
       return null;
     }
 
     const data = (await response.json()) as { profile: ProfileSettings };
-    set({ profile: data.profile });
-    syncAuthDisplayName(data.profile.displayName);
+    queryClient.setQueryData<ProfileSettings>(key, data.profile);
     return data.profile;
-  },
-}));
+  } catch {
+    if (previous) queryClient.setQueryData<ProfileSettings>(key, previous);
+    return null;
+  }
+}

@@ -1,6 +1,9 @@
 import type { ConversationRow } from "@/lib/ai/conversation-types";
 import { toast } from "@/components/nexus-ui/toaster";
-import { useConversationsStore } from "@/lib/stores/conversations-store";
+import {
+  getConversationFromCache,
+  setConversationFavoriteOptimistic,
+} from "@/lib/stores/conversations-store";
 
 type FavoriteSyncState = {
   version: number;
@@ -13,7 +16,7 @@ export function broadcastConversationFavoriteChange(
   conversationId: string,
   isFavorited: boolean,
 ) {
-  useConversationsStore.getState().setFavorite(conversationId, isFavorited);
+  setConversationFavoriteOptimistic(conversationId, isFavorited);
 }
 
 export async function patchConversationFavorite(
@@ -26,19 +29,13 @@ export async function patchConversationFavorite(
     body: JSON.stringify({ is_favorited: isFavorited }),
   });
 
-  if (!response.ok) {
-    throw new Error("Failed to update favorite");
-  }
-
+  if (!response.ok) throw new Error("Failed to update favorite");
   return (await response.json()) as ConversationRow;
 }
 
 export function toggleConversationFavorite(conversationId: string): void {
-  const cached = useConversationsStore
-    .getState()
-    .getConversation(conversationId);
+  const cached = getConversationFromCache(conversationId);
   const currentIsFavorited = cached?.is_favorited ?? false;
-
   void syncConversationFavorite(conversationId, !currentIsFavorited);
 }
 
@@ -54,30 +51,18 @@ async function syncConversationFavorite(
   broadcastConversationFavoriteChange(conversationId, isFavorited);
 
   try {
-    const updated = await patchConversationFavorite(
-      conversationId,
-      isFavorited,
-    );
+    const updated = await patchConversationFavorite(conversationId, isFavorited);
     const latest = favoriteSyncState.get(conversationId);
-
-    if (!latest || latest.version !== version) {
-      return;
-    }
+    if (!latest || latest.version !== version) return;
 
     favoriteSyncState.set(conversationId, {
       version,
       lastConfirmed: updated.is_favorited,
     });
-    broadcastConversationFavoriteChange(
-      conversationId,
-      updated.is_favorited,
-    );
+    broadcastConversationFavoriteChange(conversationId, updated.is_favorited);
   } catch {
     const latest = favoriteSyncState.get(conversationId);
-
-    if (!latest || latest.version !== version) {
-      return;
-    }
+    if (!latest || latest.version !== version) return;
 
     broadcastConversationFavoriteChange(conversationId, latest.lastConfirmed);
     toast.error("Couldn't update favorite");

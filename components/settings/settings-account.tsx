@@ -42,9 +42,11 @@ import { Input } from "@/components/ui/input";
 import { navigateAfterLogout } from "@/lib/auth/return-url";
 import { useSettingsRouteDirty } from "@/lib/hooks/use-settings-route-dirty";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { useConversationsStore } from "@/lib/stores/conversations-store";
-import { useMessagesStore } from "@/lib/stores/messages-store";
-import { useProfileStore } from "@/lib/stores/profile-store";
+import {
+  invalidateConversations,
+} from "@/lib/stores/conversations-store";
+import { clearAllConversationData } from "@/lib/stores/messages-store";
+import { useProfileQuery } from "@/lib/stores/profile-store";
 import { useDisplayNameEdit } from "@/lib/user-display-name";
 import { cn } from "@/lib/utils";
 
@@ -250,8 +252,7 @@ export function SettingsAccount() {
   const userId = useAuthStore((state) => state.userId);
   const user = useAuthStore((state) => state.user);
   const signOut = useAuthStore((state) => state.signOut);
-  const profile = useProfileStore((state) => state.profile);
-  const isLoading = useProfileStore((state) => state.isLoading);
+  const { data: profile, isPending: isLoading } = useProfileQuery(userId);
 
   const [isExporting, setIsExporting] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -351,8 +352,8 @@ export function SettingsAccount() {
         throw new Error("Couldn't delete chats");
       }
 
-      await useConversationsStore.getState().refresh({ silent: true });
-      useMessagesStore.setState({ cache: {}, inflight: {} });
+      clearAllConversationData();
+      invalidateConversations();
       setDeleteChatsOpen(false);
       toast.success("All chats deleted", { position: "bottom-center" });
       router.push("/new");
@@ -373,7 +374,6 @@ export function SettingsAccount() {
         throw new Error("Couldn't delete account");
       }
 
-      useProfileStore.getState().reset();
       useAuthStore.setState({
         user: null,
         userId: null,

@@ -44,7 +44,11 @@ import {
   VOICE_SPEED_OPTIONS,
   type VoiceSpeed,
 } from "@/lib/orin/voice/speed";
-import { useAssistantConfigStore } from "@/lib/stores/assistant-config-store";
+import {
+  useAssistantConfig,
+  useAssistantConfigQuery,
+  saveAssistantConfig,
+} from "@/lib/stores/assistant-config-store";
 import {
   hydrateOnboardingSession,
   useAuthStore,
@@ -179,9 +183,8 @@ export function OnboardingScreen() {
   const userId = useAuthStore((state) => state.userId);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const onboardingCompleted = useAuthStore((state) => state.onboardingCompleted);
-  const config = useAssistantConfigStore((state) => state.config);
-  const configLoading = useAssistantConfigStore((state) => state.isLoading);
-  const save = useAssistantConfigStore((state) => state.save);
+  const config = useAssistantConfig();
+  const { isPending: configLoading } = useAssistantConfigQuery();
   const [isPending, startTransition] = useTransition();
   const [personalitySettings, setPersonalitySettings] =
     useState<PersonalitySettings>(DEFAULT_ASSISTANT.personalitySettings);
@@ -200,7 +203,6 @@ export function OnboardingScreen() {
   );
 
   useEffect(() => {
-    void useAssistantConfigStore.getState().init();
     void import("@/components/elevenlabs/voice-picker").then((module) => {
       setVoicePicker(() => module.VoicePicker);
     });
@@ -239,11 +241,11 @@ export function OnboardingScreen() {
 
   const handleContinue = () => {
     startTransition(async () => {
-      const saved = await save({
+      const saved = await saveAssistantConfig({
         personalitySettings,
         voiceId,
         voiceSpeed,
-      });
+      }).catch(() => false);
 
       if (!saved) {
         toast.error("Could not save your preferences");

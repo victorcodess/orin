@@ -1,217 +1,123 @@
 "use client";
 
-import { create } from "zustand";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   type SidebarConversation,
   toSidebarConversation,
 } from "@/lib/conversations/sidebar-conversation";
 import { debugLog } from "@/lib/debug";
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
-type ConversationsState = {
-  userId: string | null | undefined;
-  conversations: SidebarConversation[];
-  deletedConversationIds: Set<string>;
-  isLoading: boolean;
-  init: () => () => void;
-  syncForUser: (userId: string | null) => Promise<void>;
-  refresh: (options?: { silent?: boolean }) => Promise<void>;
-  prependConversation: (conversation: SidebarConversation) => void;
-  renameConversation: (conversationId: string, title: string | null) => void;
-  setFavorite: (conversationId: string, isFavorited: boolean) => void;
-  removeConversation: (conversationId: string) => void;
-  undoConversationDelete: (conversationId: string) => void;
-  getConversation: (conversationId: string) => SidebarConversation | undefined;
-};
-
-function withoutDeletedConversations(
-  conversations: SidebarConversation[],
-  deletedConversationIds: Set<string>
-) {
-  if (deletedConversationIds.size === 0) {
-    return conversations;
-  }
-
-  return conversations.filter(
-    (conversation) => !deletedConversationIds.has(conversation.id)
-  );
-}
-
-async function fetchConversations() {
-  const response = await fetch("/api/conversations", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to load conversations");
-  }
-
+async function fetchConversations(): Promise<SidebarConversation[]> {
+  const response = await fetch("/api/conversations", { cache: "no-store" });
+  if (!response.ok) throw new Error("Failed to load conversations");
   const rows = (await response.json()) as Parameters<
     typeof toSidebarConversation
   >[0][];
-
-  return rows.map(toSidebarConversation);
+  const conversations = rows.map(toSidebarConversation);
+  debugLog("sidebar", "conversations", conversations);
+  return conversations;
 }
 
-export const useConversationsStore = create<ConversationsState>((set, get) => ({
-  userId: undefined,
-  conversations: [],
-  deletedConversationIds: new Set(),
-  isLoading: true,
+// ---------------------------------------------------------------------------
+// Cache helpers — safe to call outside of React hooks via getQueryClient().
+// ---------------------------------------------------------------------------
 
-  init: () => {
-    const unsubscribeAuth = useAuthStore.subscribe((state, previousState) => {
-      if (state.userId === previousState.userId) {
-        return;
-      }
+/** Prepend a conversation to the top of the cached list (e.g. new chat). */
+export function prependConversation(conversation: SidebarConversation) {
+  getQueryClient().setQueryData<SidebarConversation[]>(
+    queryKeys.conversations(),
+    (old) => {
+      if (!old) return [conversation];
+      if (old.some((c) => c.id === conversation.id)) return old;
+      return [conversation, ...old];
+    },
+  );
+}
 
-      if (state.userId === undefined) {
-        return;
-      }
-
-      void get().syncForUser(state.userId);
-    });
-
-    const { userId } = useAuthStore.getState();
-    if (userId !== undefined) {
-      void get().syncForUser(userId);
-    }
-
-    return unsubscribeAuth;
-  },
-
-  syncForUser: async (userId) => {
-    if (userId === get().userId) {
-      return;
-    }
-
-    set({ userId, conversations: [], deletedConversationIds: new Set(), isLoading: true });
-
-    try {
-      const conversations = await fetchConversations();
-      debugLog("sidebar", "conversations", conversations);
-
-      if (get().userId === userId) {
-        set({
-          conversations: withoutDeletedConversations(
-            conversations,
-            get().deletedConversationIds
-          ),
-          isLoading: false,
-        });
-      }
-    } catch {
-      if (get().userId === userId) {
-        set({ isLoading: false });
-      }
-    }
-  },
-
-  refresh: async (options) => {
-    const { userId } = get();
-    if (userId === undefined) {
-      return;
-    }
-
-    if (!options?.silent) {
-      set({ isLoading: true });
-    }
-
-    try {
-      const conversations = await fetchConversations();
-      set({
-        conversations: withoutDeletedConversations(
-          conversations,
-          get().deletedConversationIds
-        ),
-        isLoading: false,
-      });
-    } catch {
-      if (!options?.silent) {
-        set({ isLoading: false });
-      }
-    }
-  },
-
-  prependConversation: (conversation) => {
-    set((state) => {
-      if (state.deletedConversationIds.has(conversation.id)) {
-        return state;
-      }
-
-      return {
-        conversations: [
-          conversation,
-          ...state.conversations.filter((item) => item.id !== conversation.id),
-        ],
-      };
-    });
-  },
-
-  renameConversation: (conversationId, title) => {
-    set((state) => ({
-      conversations: state.conversations.map((conversation) =>
-        conversation.id === conversationId
-          ? {
-              ...conversation,
-              title,
-              updated_at: new Date().toISOString(),
-            }
-          : conversation
+/** Optimistically rename a conversation in the cached list. */
+export function renameConversationOptimistic(
+  id: string,
+  title: string | null,
+) {
+  getQueryClient().setQueryData<SidebarConversation[]>(
+    queryKeys.conversations(),
+    (old) =>
+      old?.map((c) =>
+        c.id === id ? { ...c, title, updated_at: new Date().toISOString() } : c,
       ),
-    }));
-  },
+  );
+}
 
-  setFavorite: (conversationId, isFavorited) => {
-    set((state) => ({
-      conversations: state.conversations.map((conversation) =>
-        conversation.id === conversationId
-          ? {
-              ...conversation,
-              is_favorited: isFavorited,
-              updated_at: new Date().toISOString(),
-            }
-          : conversation
+/** Optimistically toggle a conversation's favorite state. */
+export function setConversationFavoriteOptimistic(
+  id: string,
+  isFavorited: boolean,
+) {
+  getQueryClient().setQueryData<SidebarConversation[]>(
+    queryKeys.conversations(),
+    (old) =>
+      old?.map((c) =>
+        c.id === id
+          ? { ...c, is_favorited: isFavorited, updated_at: new Date().toISOString() }
+          : c,
       ),
-    }));
-  },
+  );
+}
 
-  removeConversation: (conversationId) => {
-    set((state) => ({
-      deletedConversationIds: new Set(state.deletedConversationIds).add(
-        conversationId
-      ),
-      conversations: state.conversations.filter(
-        (conversation) => conversation.id !== conversationId
-      ),
-    }));
-  },
+/** Optimistically remove a conversation from the cached list. */
+export function removeConversationOptimistic(id: string) {
+  getQueryClient().setQueryData<SidebarConversation[]>(
+    queryKeys.conversations(),
+    (old) => old?.filter((c) => c.id !== id),
+  );
+}
 
-  undoConversationDelete: (conversationId) => {
-    set((state) => {
-      const deletedConversationIds = new Set(state.deletedConversationIds);
-      deletedConversationIds.delete(conversationId);
-      return { deletedConversationIds };
-    });
-  },
+/** Sync a fresh server-side conversation list (replaces the cache). */
+export function invalidateConversations() {
+  void getQueryClient().invalidateQueries({
+    queryKey: queryKeys.conversations(),
+  });
+}
 
-  getConversation: (conversationId) => {
-    return get().conversations.find(
-      (conversation) => conversation.id === conversationId
-    );
-  },
-}));
+/** Sync lookup — reads directly from the TQ cache without a network request. */
+export function getConversationFromCache(
+  id: string,
+): SidebarConversation | undefined {
+  const conversations = getQueryClient().getQueryData<SidebarConversation[]>(
+    queryKeys.conversations(),
+  );
+  return conversations?.find((c) => c.id === id);
+}
 
+// ---------------------------------------------------------------------------
+// React hooks
+// ---------------------------------------------------------------------------
+
+function useConversationsQuery() {
+  const userId = useAuthStore((state) => state.userId);
+  return useQuery({
+    queryKey: queryKeys.conversations(),
+    queryFn: fetchConversations,
+    enabled: typeof userId === "string",
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+}
+
+/** Drop-in replacement for the old Zustand-based hook. */
 export function useSidebarConversations() {
-  const conversations = useConversationsStore((state) => state.conversations);
-  const isLoading = useConversationsStore((state) => state.isLoading);
-
+  const { data: conversations = [], isLoading } = useConversationsQuery();
   return { conversations, isLoading };
 }
 
-export function useConversation(conversationId: string) {
-  return useConversationsStore((state) =>
-    state.conversations.find((conversation) => conversation.id === conversationId)
-  );
+/** Returns the sidebar entry for a single conversation, or undefined. */
+export function useConversation(
+  conversationId: string,
+): SidebarConversation | undefined {
+  const { data: conversations } = useConversationsQuery();
+  return conversations?.find((c) => c.id === conversationId);
 }

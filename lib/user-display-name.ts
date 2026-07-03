@@ -4,51 +4,30 @@ import { useCallback, useRef, useState } from "react";
 
 import { toast } from "@/components/nexus-ui/toaster";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import {
-  useProfileStore,
-  type ProfileSettings,
-} from "@/lib/stores/profile-store";
+import { patchProfile } from "@/lib/stores/profile-store";
 
 /** Keep NavUser (`auth.user.name`) in sync with the resolved profile display name. */
 export function syncAuthDisplayName(displayName: string) {
   const user = useAuthStore.getState().user;
-
-  if (!user || user.name === displayName) {
-    return;
-  }
-
-  useAuthStore.setState({
-    user: { ...user, name: displayName },
-  });
-}
-
-function applyDisplayNameOptimistic(displayName: string) {
-  syncAuthDisplayName(displayName);
-
-  const profile = useProfileStore.getState().profile;
-
-  if (profile && profile.displayName !== displayName) {
-    useProfileStore.setState({
-      profile: { ...profile, displayName },
-    });
-  }
+  if (!user || user.name === displayName) return;
+  useAuthStore.setState({ user: { ...user, name: displayName } });
 }
 
 async function persistDisplayName(
   displayName: string,
   previousName: string,
-  revertProfile: ProfileSettings | null,
+  userId: string,
 ) {
-  const updated = await useProfileStore
-    .getState()
-    .patch({ displayName }, revertProfile);
+  syncAuthDisplayName(displayName);
+  const updated = await patchProfile({ displayName }, userId);
 
   if (updated) {
+    syncAuthDisplayName(updated.displayName);
     toast.success("Display name saved", { position: "bottom-center" });
     return;
   }
 
-  applyDisplayNameOptimistic(previousName);
+  syncAuthDisplayName(previousName);
   toast.error("Couldn't save display name");
 }
 
@@ -91,20 +70,21 @@ export function useDisplayNameEdit({
     }
 
     const trimmed = nameDraft.trim();
-
     if (!trimmed || trimmed === displayName.trim()) {
-      if (isEditing) {
-        cancelEdit();
-      }
+      if (isEditing) cancelEdit();
       return;
     }
 
-    const revertProfile = useProfileStore.getState().profile;
-    applyDisplayNameOptimistic(trimmed);
+    const userId = useAuthStore.getState().userId;
+    if (!userId) {
+      cancelEdit();
+      return;
+    }
+
     setIsSaving(true);
     onFinishEdit();
     try {
-      await persistDisplayName(trimmed, displayName, revertProfile);
+      await persistDisplayName(trimmed, displayName, userId);
     } finally {
       setIsSaving(false);
     }
@@ -124,7 +104,6 @@ export function useDisplayNameEdit({
         cancelEdit();
         event.currentTarget.blur();
       }
-
       if (event.key === "Enter") {
         event.preventDefault();
         event.currentTarget.blur();

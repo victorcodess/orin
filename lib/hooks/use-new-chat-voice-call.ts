@@ -5,7 +5,10 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { NEW_CHAT_EVENT } from "@/components/chat/new-chat-view";
 import { titleFromUserMessage } from "@/lib/conversation-title";
-import { useConversationsStore } from "@/lib/stores/conversations-store";
+import {
+  prependConversation,
+  renameConversationOptimistic,
+} from "@/lib/stores/conversations-store";
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 import { useVoiceLiveMessagesStore } from "@/lib/stores/voice-live-messages-store";
 
@@ -51,9 +54,7 @@ export function useNewChatVoiceCall() {
     if (routedRef.current) {
       if (firstUserMessage && !titledRef.current) {
         titledRef.current = true;
-        useConversationsStore
-          .getState()
-          .renameConversation(
+        renameConversationOptimistic(
             conversationId,
             titleFromUserMessage(firstUserMessage.text),
           );
@@ -70,7 +71,7 @@ export function useNewChatVoiceCall() {
     routedRef.current = true;
     const now = new Date().toISOString();
 
-    useConversationsStore.getState().prependConversation({
+    prependConversation({
       id: conversationId,
       title: firstUserMessage
         ? titleFromUserMessage(firstUserMessage.text)

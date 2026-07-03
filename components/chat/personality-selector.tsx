@@ -16,7 +16,7 @@ import { PERSONALITY_MODEL_ITEMS } from "@/lib/orin/personality/ui-options";
 import type { PersonalityId } from "@/lib/orin/personality/types";
 import {
   useAssistantConfig,
-  useAssistantConfigStore,
+  saveAssistantConfig,
 } from "@/lib/stores/assistant-config-store";
 import { cn } from "@/lib/utils";
 
@@ -37,19 +37,14 @@ export function PersonalitySelector({
   className,
 }: PersonalitySelectorProps) {
   const config = useAssistantConfig();
-  const applyConfig = useAssistantConfigStore((state) => state.applyConfig);
-  const save = useAssistantConfigStore((state) => state.save);
   const saveGenerationRef = useRef(0);
   const personality = config.personalitySettings.personality;
 
   const handleValueChange = useCallback(
     async (nextPersonality: string) => {
       const personalityId = nextPersonality as PersonalityId;
-      if (personalityId === personality) {
-        return;
-      }
+      if (personalityId === personality) return;
 
-      const previousConfig = config;
       const nextConfig = {
         ...config,
         personalitySettings: {
@@ -59,31 +54,21 @@ export function PersonalitySelector({
       };
       const saveGeneration = ++saveGenerationRef.current;
 
-      applyConfig(nextConfig);
-
-      const ok = await save(nextConfig);
-      if (saveGeneration !== saveGenerationRef.current) {
-        return;
-      }
-
-      if (ok) {
+      try {
+        // saveAssistantConfig applies an optimistic update and rolls back on error.
+        await saveAssistantConfig(nextConfig);
+        if (saveGeneration !== saveGenerationRef.current) return;
         toast.success(`Switched to ${personalityLabel(personalityId)}`, {
           position: "bottom-center",
         });
-        return;
+      } catch (err) {
+        if (saveGeneration !== saveGenerationRef.current) return;
+        toast.error(
+          err instanceof Error ? err.message : "Couldn't update personality",
+        );
       }
-
-      const current = useAssistantConfigStore.getState().config;
-      if (current.personalitySettings.personality === personalityId) {
-        applyConfig(previousConfig);
-      }
-
-      toast.error(
-        useAssistantConfigStore.getState().error ??
-          "Couldn't update personality"
-      );
     },
-    [applyConfig, config, personality, save]
+    [config, personality],
   );
 
   return (
@@ -91,14 +76,13 @@ export function PersonalitySelector({
       value={personality}
       onValueChange={(value) => void handleValueChange(value)}
       items={PERSONALITY_MODEL_ITEMS}
-      // open
     >
       <ModelSelectorTrigger
         variant="ghost"
         disabled={disabled}
         className={cn(
           "-mr-1.5 h-9 max-w-32 px-2.5 text-sm font-medium",
-          className
+          className,
         )}
       />
       <ModelSelectorContent align="end" className="w-34 min-w-0">
@@ -113,7 +97,6 @@ export function PersonalitySelector({
                 key={item.value}
                 value={item.value}
                 title={item.title}
-                // description={item.description}
               />
             ))}
           </ModelSelectorRadioGroup>

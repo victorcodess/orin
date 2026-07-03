@@ -24,7 +24,7 @@ import {
 } from "@/lib/quotas/credential-status";
 import { useSettingsRouteDirty } from "@/lib/hooks/use-settings-route-dirty";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { useUsageStore } from "@/lib/stores/usage-store";
+import { useUsageQuery, invalidateUsage } from "@/lib/stores/usage-store";
 import type { QuotaUsageSummary } from "@/lib/quotas/types";
 import { cn } from "@/lib/utils";
 
@@ -289,9 +289,7 @@ function ApiKeysSection({
 
 export function SettingsUsage() {
   const userId = useAuthStore((state) => state.userId);
-  const usage = useUsageStore((state) => state.usage);
-  const isLoading = useUsageStore((state) => state.isLoading);
-  const refreshUsage = useUsageStore((state) => state.refresh);
+  const { data: usage, isPending: isLoading } = useUsageQuery(userId);
   const [openaiKey, setOpenaiKey] = useState("");
   const [elevenlabsKey, setElevenlabsKey] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -350,7 +348,7 @@ export function SettingsUsage() {
       setOpenaiKey("");
       setElevenlabsKey("");
       toast.success("API keys verified and saved");
-      await refreshUsage();
+      invalidateUsage();
     });
   };
 
@@ -366,7 +364,7 @@ export function SettingsUsage() {
       }
 
       toast.success("API key removed");
-      await refreshUsage();
+      invalidateUsage();
     });
   };
 

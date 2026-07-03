@@ -1,184 +1,135 @@
 "use client";
 
-import { create } from "zustand";
+import { useQuery } from "@tanstack/react-query";
 
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import {
   DEFAULT_ASSISTANT,
   type AssistantConfig,
 } from "@/lib/orin/defaults";
-import { useMessagesStore } from "@/lib/stores/messages-store";
 
-type AssistantConfigState = {
+type AssistantConfigResponse = {
   config: AssistantConfig;
-  isLoading: boolean;
-  isSaving: boolean;
   isDefault: boolean;
   persisted: boolean;
-  error: string | null;
-  init: () => Promise<void>;
-  refresh: () => Promise<void>;
-  applyConfig: (
-    config: AssistantConfig,
-    meta?: { isDefault?: boolean; persisted?: boolean },
-  ) => void;
-  save: (payload: AssistantConfig) => Promise<boolean>;
-  reset: () => Promise<boolean>;
 };
 
-function syncMessagesStoreAssistant(config: AssistantConfig) {
-  const cache = useMessagesStore.getState().cache;
-  const nextCache = { ...cache };
-
-  for (const [id, entry] of Object.entries(cache)) {
-    nextCache[id] = { ...entry, assistant: config };
-  }
-
-  useMessagesStore.setState({ cache: nextCache });
-}
-
-async function fetchAssistantConfig() {
+export async function fetchAssistantConfig(): Promise<AssistantConfigResponse> {
   const response = await fetch("/api/assistant-config", { cache: "no-store" });
-
-  if (!response.ok) {
-    throw new Error("Failed to load assistant config");
-  }
-
-  return (await response.json()) as {
-    config: AssistantConfig;
-    isDefault: boolean;
-    persisted: boolean;
-  };
+  if (!response.ok) throw new Error("Failed to load assistant config");
+  return (await response.json()) as AssistantConfigResponse;
 }
 
-export const useAssistantConfigStore = create<AssistantConfigState>((set, get) => ({
-  config: DEFAULT_ASSISTANT,
-  isLoading: true,
-  isSaving: false,
-  isDefault: true,
-  persisted: false,
-  error: null,
+/** Reactive assistant config query — always enabled (works for anon users too). */
+export function useAssistantConfigQuery(): ReturnType<
+  typeof useQuery<AssistantConfigResponse>
+> {
+  return useQuery({
+    queryKey: queryKeys.assistantConfig(),
+    queryFn: fetchAssistantConfig,
+    staleTime: 60_000,
+    // Provide a safe default so the UI never hangs on a missing config.
+    placeholderData: {
+      config: DEFAULT_ASSISTANT,
+      isDefault: true,
+      persisted: false,
+    },
+  });
+}
 
-  init: async () => {
-    set({ isLoading: true, error: null });
+/** Sugar hook — returns just the config value, falling back to the default. */
+export function useAssistantConfig(): AssistantConfig {
+  const { data } = useAssistantConfigQuery();
+  return data?.config ?? DEFAULT_ASSISTANT;
+}
 
-    try {
-      const data = await fetchAssistantConfig();
-      set({
-        config: data.config,
-        isDefault: data.isDefault,
-        persisted: data.persisted,
-        isLoading: false,
-      });
-      syncMessagesStoreAssistant(data.config);
-    } catch {
-      set({
-        config: DEFAULT_ASSISTANT,
-        isDefault: true,
-        persisted: false,
-        isLoading: false,
-        error: "Could not load assistant settings",
-      });
-    }
-  },
+/**
+ * Save a new assistant config.
+ * Optimistically updates the TQ cache, rolls back on failure.
+ * Returns true on success, false on error.
+ */
+export async function saveAssistantConfig(
+  payload: AssistantConfig,
+): Promise<boolean> {
+  const queryClient = getQueryClient();
+  const key = queryKeys.assistantConfig();
+  const previous = queryClient.getQueryData<AssistantConfigResponse>(key);
 
-  refresh: async () => {
-    try {
-      const data = await fetchAssistantConfig();
-      get().applyConfig(data.config, {
-        isDefault: data.isDefault,
-        persisted: data.persisted,
-      });
-      set({ error: null });
-    } catch {
-      // Keep showing current config on background refresh failure.
-    }
-  },
+  // Optimistic update.
+  queryClient.setQueryData<AssistantConfigResponse>(key, (old) => ({
+    config: payload,
+    isDefault: false,
+    persisted: old?.persisted ?? false,
+  }));
 
-  applyConfig: (config, meta = {}) => {
-    set({
-      config,
-      ...(meta.isDefault !== undefined ? { isDefault: meta.isDefault } : {}),
-      ...(meta.persisted !== undefined ? { persisted: meta.persisted } : {}),
+  try {
+    const response = await fetch("/api/assistant-config", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-    syncMessagesStoreAssistant(config);
-  },
 
-  save: async (payload) => {
-    set({ isSaving: true, error: null });
-
-    try {
-      const response = await fetch("/api/assistant-config", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        throw new Error(body?.error ?? "Failed to save assistant settings");
-      }
-
-      const data = (await response.json()) as {
-        config: AssistantConfig;
-        persisted: boolean;
-      };
-
-      set({
-        config: data.config,
-        isDefault: false,
-        persisted: data.persisted,
-        isSaving: false,
-      });
-      syncMessagesStoreAssistant(data.config);
-      return true;
-    } catch (error) {
-      set({
-        isSaving: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to save assistant settings",
-      });
-      return false;
+    if (!response.ok) {
+      const body = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      if (previous) queryClient.setQueryData(key, previous);
+      throw new Error(body?.error ?? "Failed to save assistant settings");
     }
-  },
 
-  reset: async () => {
-    set({ isSaving: true, error: null });
-
-    try {
-      const response = await fetch("/api/assistant-config", {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to reset assistant settings");
-      }
-
-      const data = (await response.json()) as { config: AssistantConfig };
-
-      set({
-        config: data.config,
-        isDefault: true,
-        isSaving: false,
-      });
-      syncMessagesStoreAssistant(data.config);
-      return true;
-    } catch (error) {
-      set({
-        isSaving: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to reset assistant settings",
-      });
-      return false;
-    }
-  },
-}));
-
-export function useAssistantConfig() {
-  return useAssistantConfigStore((state) => state.config);
+    const data = (await response.json()) as {
+      config: AssistantConfig;
+      persisted: boolean;
+    };
+    queryClient.setQueryData<AssistantConfigResponse>(key, {
+      config: data.config,
+      isDefault: false,
+      persisted: data.persisted,
+    });
+    return true;
+  } catch (error) {
+    if (previous) queryClient.setQueryData(key, previous);
+    throw error;
+  }
 }
+
+/**
+ * Reset assistant config to the platform default.
+ * Returns true on success, false on error.
+ */
+export async function resetAssistantConfig(): Promise<boolean> {
+  const queryClient = getQueryClient();
+  const key = queryKeys.assistantConfig();
+  const previous = queryClient.getQueryData<AssistantConfigResponse>(key);
+
+  // Optimistic update.
+  queryClient.setQueryData<AssistantConfigResponse>(key, {
+    config: DEFAULT_ASSISTANT,
+    isDefault: true,
+    persisted: false,
+  });
+
+  try {
+    const response = await fetch("/api/assistant-config", {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      if (previous) queryClient.setQueryData(key, previous);
+      throw new Error("Failed to reset assistant settings");
+    }
+
+    const data = (await response.json()) as { config: AssistantConfig };
+    queryClient.setQueryData<AssistantConfigResponse>(key, {
+      config: data.config,
+      isDefault: true,
+      persisted: false,
+    });
+    return true;
+  } catch (error) {
+    if (previous) queryClient.setQueryData(key, previous);
+    throw error;
+  }
+}
+

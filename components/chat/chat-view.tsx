@@ -25,8 +25,12 @@ import {
   getComposerInput,
   useComposerStore,
 } from "@/lib/stores/composer-store";
-import { useConversationsStore } from "@/lib/stores/conversations-store";
-import { useMessagesStore } from "@/lib/stores/messages-store";
+import { invalidateConversations, removeConversationOptimistic } from "@/lib/stores/conversations-store";
+import {
+  fetchConversationData,
+  setConversationData,
+  removeConversationData,
+} from "@/lib/stores/messages-store";
 import { toast } from "@/components/nexus-ui/toaster";
 import {
   Thread,
@@ -213,19 +217,20 @@ export function ChatView({
       clearError();
 
       if (isNewChat.current) {
-        useConversationsStore.getState().removeConversation(conversationId);
-        useMessagesStore.getState().remove(conversationId);
+        removeConversationOptimistic(conversationId);
+        removeConversationData(conversationId);
         router.push("/new");
       }
     },
     onFinish: () => {
       isNewChat.current = false;
-      void useConversationsStore.getState().refresh({ silent: true });
+      // Invalidate the sidebar so the new title / new conversation appears.
+      invalidateConversations();
       const visible = messagesRef.current.filter(
         (message) => message.role !== "system"
       );
       if (visible.length > 0) {
-        useMessagesStore.getState().set(conversationId, {
+        setConversationData(conversationId, {
           assistant,
           messages: visible,
           messageSources: messageSourcesRef.current,
@@ -275,28 +280,15 @@ export function ChatView({
 
     void (async () => {
       try {
-        const response = await fetch(`/api/conversations/${conversationId}`);
-        if (!response.ok || cancelled) {
-          return;
-        }
-
-        const data = (await response.json()) as {
-          messages?: UIMessage[];
-          messageSources?: Record<string, MessageRow["source"]>;
-        };
-
-        if (cancelled || !data.messages) {
+        const data = await fetchConversationData(conversationId);
+        if (cancelled || !data?.messages) {
           return;
         }
 
         setNoFadeMessageId(data.messages.at(-1)?.id ?? null);
         setMessages(data.messages);
         setMessageSources(data.messageSources ?? {});
-        useMessagesStore.getState().set(conversationId, {
-          assistant,
-          messages: data.messages,
-          messageSources: data.messageSources ?? {},
-        });
+        setConversationData(conversationId, data);
       } catch (error) {
         console.error("[orin:chat-view] failed to sync voice messages", error);
       } finally {
@@ -369,13 +361,10 @@ export function ChatView({
       const visible = messagesRef.current.filter(
         (message) => message.role !== "system"
       );
-      if (visible.length === 0) {
-        return;
-      }
+      if (visible.length === 0) return;
 
-      const store = useMessagesStore.getState();
-      store.set(conversationKey, {
-        assistant: store.get(conversationKey)?.assistant ?? assistant,
+      setConversationData(conversationKey, {
+        assistant,
         messages: visible,
         messageSources: messageSourcesRef.current,
       });

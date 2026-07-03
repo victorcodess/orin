@@ -6,7 +6,7 @@ import { useCallback } from "react";
 import { toast } from "@/components/nexus-ui/toaster";
 import type { ThemePreference } from "@/lib/orin/user-preferences";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { useProfileStore } from "@/lib/stores/profile-store";
+import { patchProfile } from "@/lib/stores/profile-store";
 
 export function useThemePreference() {
   const { theme, resolvedTheme, setTheme } = useTheme();
@@ -16,18 +16,13 @@ export function useThemePreference() {
       setTheme(value);
 
       const userId = useAuthStore.getState().userId;
-      if (!userId) {
-        return;
-      }
+      if (!userId) return;
 
-      void useProfileStore
-        .getState()
-        .patch({ theme: value })
-        .then((updated) => {
-          if (!updated) {
-            toast.error("Couldn't save theme");
-          }
-        });
+      void patchProfile({ theme: value }, userId).then((updated) => {
+        if (!updated) {
+          toast.error("Couldn't save theme");
+        }
+      });
     },
     [setTheme],
   );

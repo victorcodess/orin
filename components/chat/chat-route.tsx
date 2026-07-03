@@ -1,12 +1,16 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 import { ChatLoading } from "@/components/chat/chat-loading";
 import { ChatView } from "@/components/chat/chat-view";
 import { useAssistantConfig } from "@/lib/stores/assistant-config-store";
-import { useMessagesStore } from "@/lib/stores/messages-store";
+import {
+  useConversationQuery,
+} from "@/lib/stores/messages-store";
+import { queryKeys } from "@/lib/query-keys";
 
 type ChatRouteProps = {
   conversationId: string;
@@ -15,31 +19,33 @@ type ChatRouteProps = {
 
 export function ChatRoute({ conversationId, isNew }: ChatRouteProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const assistantConfig = useAssistantConfig();
-  const cached = useMessagesStore((state) => state.cache[conversationId]);
-  const fetchConversation = useMessagesStore((state) => state.fetch);
-  const entryCached = useRef(false);
+
+  // Detect whether the data was already in cache before this render so we
+  // know whether to fade the conversation in or show it instantly.
   const prevConversationId = useRef<string | null>(null);
+  const entryCached = useRef(false);
 
   if (prevConversationId.current !== conversationId) {
     prevConversationId.current = conversationId;
     entryCached.current =
-      useMessagesStore.getState().cache[conversationId] !== undefined;
+      queryClient.getQueryData(queryKeys.conversation(conversationId)) !==
+      undefined;
   }
 
   const fadeIn = !isNew && !entryCached.current;
 
-  useEffect(() => {
-    if (isNew) {
-      return;
-    }
+  const { data: conversationData } = useConversationQuery(conversationId, {
+    enabled: !isNew,
+  });
 
-    void fetchConversation(conversationId).then((data) => {
-      if (!data) {
-        router.replace("/new");
-      }
-    });
-  }, [conversationId, fetchConversation, isNew, router]);
+  // Redirect if the conversation no longer exists (404 from the API).
+  useEffect(() => {
+    if (conversationData === null) {
+      router.replace("/new");
+    }
+  }, [conversationData, router]);
 
   if (isNew) {
     return (
@@ -54,7 +60,8 @@ export function ChatRoute({ conversationId, isNew }: ChatRouteProps) {
     );
   }
 
-  if (!cached) {
+  // Show loading skeleton until the conversation data arrives.
+  if (!conversationData) {
     return <ChatLoading />;
   }
 
@@ -63,9 +70,9 @@ export function ChatRoute({ conversationId, isNew }: ChatRouteProps) {
       key={conversationId}
       fadeIn={fadeIn}
       conversationId={conversationId}
-      assistant={cached.assistant}
-      initialMessages={cached.messages}
-      initialMessageSources={cached.messageSources ?? {}}
+      assistant={assistantConfig}
+      initialMessages={conversationData.messages}
+      initialMessageSources={conversationData.messageSources ?? {}}
     />
   );
 }

@@ -13,7 +13,7 @@ import { buildLoginHrefFromHere } from "@/lib/auth/return-url";
 import { openSettings } from "@/lib/settings-routes";
 import type { QuotaUsageSummary } from "@/lib/quotas/types";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { useUsageStore } from "@/lib/stores/usage-store";
+import { useUsageQuery } from "@/lib/stores/usage-store";
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 
 type VoiceCallButtonProps = {
@@ -61,7 +61,7 @@ export function VoiceCallButton({
   disabled = false,
 }: VoiceCallButtonProps) {
   const userId = useAuthStore((state) => state.userId);
-  const usage = useUsageStore((state) => state.usage);
+  const { data: usage = null } = useUsageQuery(userId);
   const status = useVoiceCallStore((state) => state.status);
   const activeConversationId = useVoiceCallStore(
     (state) => state.conversationId,

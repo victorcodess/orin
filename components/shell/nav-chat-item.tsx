@@ -12,7 +12,7 @@ import type { SidebarConversation } from "@/lib/conversations/sidebar-conversati
 import { conversationDisplayTitle } from "@/lib/conversation-title";
 import { toggleConversationFavorite } from "@/lib/conversation-favorite";
 import { useConversationTitleEdit } from "@/lib/hooks/use-conversation-title-edit";
-import { useMessagesStore } from "@/lib/stores/messages-store";
+import { prefetchConversation } from "@/lib/stores/messages-store";
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { SidebarMenuAction, SidebarMenuButton } from "@/components/ui/sidebar";
@@ -106,8 +106,8 @@ export function NavChatItem({
         <Link
           href={href}
           onClick={onNavigate}
-          onMouseEnter={() => useMessagesStore.getState().prefetch(conversation.id)}
-          onFocus={() => useMessagesStore.getState().prefetch(conversation.id)}
+          onMouseEnter={() => prefetchConversation(conversation.id)}
+          onFocus={() => prefetchConversation(conversation.id)}
         >
           <span className="truncate">
             {conversationDisplayTitle(conversation.title)}

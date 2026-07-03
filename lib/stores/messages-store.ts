@@ -1,8 +1,10 @@
 "use client";
 
 import type { UIMessage } from "ai";
-import { create } from "zustand";
+import { useQuery } from "@tanstack/react-query";
 
+import { getQueryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 import type { MessageRow } from "@/lib/ai/message-utils";
 
@@ -12,96 +14,68 @@ export type ConversationCache = {
   messageSources: Record<string, MessageRow["source"]>;
 };
 
-type MessagesState = {
-  cache: Record<string, ConversationCache>;
-  inflight: Partial<Record<string, Promise<ConversationCache | null>>>;
-  get: (id: string) => ConversationCache | undefined;
-  set: (id: string, data: ConversationCache) => void;
-  setMessages: (id: string, messages: UIMessage[]) => void;
-  remove: (id: string) => void;
-  fetch: (id: string) => Promise<ConversationCache | null>;
-  prefetch: (id: string) => void;
-};
+// ---------------------------------------------------------------------------
+// Query function
+// ---------------------------------------------------------------------------
 
-export const useMessagesStore = create<MessagesState>((set, get) => ({
-  cache: {},
-  inflight: {},
+export async function fetchConversationData(
+  id: string,
+): Promise<ConversationCache | null> {
+  const response = await fetch(`/api/conversations/${id}`);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error("Failed to load conversation");
+  return (await response.json()) as ConversationCache;
+}
 
-  get: (id) => get().cache[id],
+// ---------------------------------------------------------------------------
+// Cache helpers — backed by the TQ QueryClient so all React subscribers
+// re-render automatically when data changes.
+// ---------------------------------------------------------------------------
 
-  set: (id, data) =>
-    set((state) => ({ cache: { ...state.cache, [id]: data } })),
+/** Write a full conversation entry into the TQ cache. */
+export function setConversationData(id: string, data: ConversationCache) {
+  getQueryClient().setQueryData<ConversationCache>(
+    queryKeys.conversation(id),
+    data,
+  );
+}
 
-  setMessages: (id, messages) =>
-    set((state) => {
-      const entry = state.cache[id];
-      if (!entry) {
-        return state;
-      }
+/** Remove a conversation from the TQ cache entirely. */
+export function removeConversationData(id: string) {
+  getQueryClient().removeQueries({ queryKey: queryKeys.conversation(id) });
+}
 
-      return {
-        cache: { ...state.cache, [id]: { ...entry, messages } },
-      };
-    }),
+/**
+ * Prefetch a conversation on sidebar hover/focus.
+ * No-ops if the data is already fresh in cache.
+ */
+export function prefetchConversation(id: string) {
+  void getQueryClient().prefetchQuery({
+    queryKey: queryKeys.conversation(id),
+    queryFn: () => fetchConversationData(id),
+    // Conversations only go stale when explicitly invalidated — never auto-refetch.
+    staleTime: Infinity,
+  });
+}
 
-  remove: (id) =>
-    set((state) => {
-      const cache = { ...state.cache };
-      const inflight = { ...state.inflight };
-      delete cache[id];
-      delete inflight[id];
-      return { cache, inflight };
-    }),
+/** Remove ALL cached conversation threads (e.g. after deleting all chats). */
+export function clearAllConversationData() {
+  getQueryClient().removeQueries({ queryKey: ["conversation"] });
+}
 
-  fetch: (id) => {
-    const pending = get().inflight[id];
-    if (pending) {
-      return pending;
-    }
-
-    const promise = fetch(`/api/conversations/${id}`)
-      .then(async (response) => {
-        if (response.status === 404) {
-          return null;
-        }
-
-        if (!response.ok) {
-          throw new Error("Failed to load conversation");
-        }
-
-        return (await response.json()) as ConversationCache;
-      })
-      .then((data) => {
-        if (data) {
-          get().set(id, data);
-        }
-
-        set((state) => {
-          const inflight = { ...state.inflight };
-          delete inflight[id];
-          return { inflight };
-        });
-
-        return data;
-      })
-      .catch((error) => {
-        set((state) => {
-          const inflight = { ...state.inflight };
-          delete inflight[id];
-          return { inflight };
-        });
-        throw error;
-      });
-
-    set((state) => ({ inflight: { ...state.inflight, [id]: promise } }));
-    return promise;
-  },
-
-  prefetch: (id) => {
-    if (get().cache[id] || get().inflight[id]) {
-      return;
-    }
-
-    void get().fetch(id);
-  },
-}));
+/**
+ * Reactive conversation query for a single thread.
+ * staleTime is Infinity — threads only update via explicit cache writes.
+ */
+export function useConversationQuery(
+  conversationId: string,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: queryKeys.conversation(conversationId),
+    queryFn: () => fetchConversationData(conversationId),
+    enabled: options?.enabled ?? true,
+    staleTime: Infinity,
+    retry: false,
+  });
+}

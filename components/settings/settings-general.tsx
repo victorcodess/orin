@@ -33,7 +33,7 @@ import {
   type MessageBubbleLayout,
   useMessageStyleStore,
 } from "@/lib/stores/message-style-store";
-import { useProfileStore } from "@/lib/stores/profile-store";
+import { useProfileQuery, patchProfile } from "@/lib/stores/profile-store";
 
 const THEME_OPTIONS = [
   { value: "system", label: "System", icon: ComputerIcon },
@@ -53,9 +53,7 @@ const LAYOUT_OPTIONS = [
 export function SettingsGeneral() {
   const hydrated = useHydrated();
   const userId = useAuthStore((state) => state.userId);
-  const profile = useProfileStore((state) => state.profile);
-  const isLoading = useProfileStore((state) => state.isLoading);
-  const patch = useProfileStore((state) => state.patch);
+  const { data: profile, isPending: isLoading } = useProfileQuery(userId);
   const { theme, setThemePreference } = useThemePreference();
   const layout = useMessageStyleStore((state) => state.layout);
   const setLayout = useMessageStyleStore((state) => state.setLayout);
@@ -63,20 +61,21 @@ export function SettingsGeneral() {
   const handleLayoutChange = (value: MessageBubbleLayout) => {
     setLayout(value);
     if (userId) {
-      void patch({ messageBubbleLayout: value }).then((updated) => {
-        if (updated) {
-          toast.success("Chat layout saved", { position: "bottom-center" });
-          return;
-        }
-
-        toast.error("Couldn't save chat layout");
-      });
+      void patchProfile({ messageBubbleLayout: value }, userId).then(
+        (updated) => {
+          if (updated) {
+            toast.success("Chat layout saved", { position: "bottom-center" });
+            return;
+          }
+          toast.error("Couldn't save chat layout");
+        },
+      );
     }
   };
 
   const handleLanguageChange = (value: string) => {
     if (userId) {
-      void patch({ language: value }).then((updated) => {
+      void patchProfile({ language: value }, userId).then((updated) => {
         if (!updated) {
           toast.error("Couldn't save language");
         }

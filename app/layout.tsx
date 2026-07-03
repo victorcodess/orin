@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { AppToaster } from "@/components/shell/app-toaster";
+import { QueryProvider } from "@/components/shell/query-provider";
 import { ThemeKeyboardShortcut } from "@/components/shell/theme-keyboard-shortcut";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -67,11 +68,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TooltipProvider>
-            {children}
-            <ThemeKeyboardShortcut />
-            <AppToaster />
-          </TooltipProvider>
+          <QueryProvider>
+            <TooltipProvider>
+              {children}
+              <ThemeKeyboardShortcut />
+              <AppToaster />
+            </TooltipProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
       <Analytics />

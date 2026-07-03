@@ -3,9 +3,7 @@
 import { create } from "zustand";
 
 import { signOut as signOutAction } from "@/app/auth/actions";
-import { useAssistantConfigStore } from "@/lib/stores/assistant-config-store";
-import { useProfileStore } from "@/lib/stores/profile-store";
-import { useUsageStore } from "@/lib/stores/usage-store";
+import { getQueryClient } from "@/lib/query-client";
 
 export type SidebarUser = {
   name: string;
@@ -34,34 +32,21 @@ let syncInFlight: Promise<void> | null = null;
 
 async function fetchSession(): Promise<SessionPayload> {
   const response = await fetch("/api/auth/session", { cache: "no-store" });
-
-  if (!response.ok) {
-    throw new Error("Failed to load session");
-  }
-
+  if (!response.ok) throw new Error("Failed to load session");
   return (await response.json()) as SessionPayload;
 }
 
+/**
+ * Called whenever the resolved userId changes.
+ * Clears the entire TQ cache so all queries re-fetch for the new identity.
+ */
 function handleUserIdChange(nextUserId: string | null | undefined) {
   const previousUserId = useAuthStore.getState().userId;
+  if (nextUserId === previousUserId) return;
 
-  if (nextUserId === previousUserId) {
-    return;
-  }
-
-  const isFirstResolve = previousUserId === undefined;
-
-  if (!isFirstResolve) {
-    useProfileStore.getState().reset();
-    useUsageStore.getState().reset();
-    void useAssistantConfigStore.getState().refresh();
-  }
-
-  if (nextUserId) {
-    void useProfileStore.getState().load(nextUserId);
-  }
-
-  void useUsageStore.getState().load(nextUserId ?? "anon");
+  // Clear all server-state caches on any auth change.
+  // Queries that are mounted will automatically refetch.
+  getQueryClient().clear();
 }
 
 function applySession(
@@ -72,25 +57,12 @@ function applySession(
     handleUserIdChange(userId);
   }
 
-  const profile = useProfileStore.getState().profile;
-  const mergedUser =
-    user && profile ? { ...user, name: profile.displayName } : user;
-
-  setAuthState({
-    user: mergedUser,
+  useAuthStore.setState({
+    user,
     userId,
     onboardingCompleted,
     isLoggedIn: Boolean(user),
   });
-}
-
-function setAuthState(state: {
-  user: SidebarUser | null | undefined;
-  userId: string | null | undefined;
-  onboardingCompleted: boolean | null | undefined;
-  isLoggedIn: boolean;
-}) {
-  useAuthStore.setState(state);
 }
 
 async function resolveSessionForSync(): Promise<SessionPayload> {
@@ -106,13 +78,13 @@ async function resolveSessionForSync(): Promise<SessionPayload> {
   return session;
 }
 
-/** Seed session from the onboarding bridge without triggering profile/usage loads. */
+/** Seed session from the onboarding bridge without triggering a cache clear. */
 export function hydrateOnboardingSession(session: SessionPayload) {
   initialSessionFetchStarted = true;
   applySession(session, { skipUserIdChange: true });
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>(() => ({
   user: undefined,
   userId: undefined,
   onboardingCompleted: undefined,
@@ -130,7 +102,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           .catch(() => {
             if (useAuthStore.getState().userId === undefined) {
               handleUserIdChange(null);
-              set({
+              useAuthStore.setState({
                 user: null,
                 userId: null,
                 onboardingCompleted: null,
@@ -146,16 +118,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     };
 
     window.addEventListener("focus", onFocus);
-
-    return () => {
-      window.removeEventListener("focus", onFocus);
-    };
+    return () => window.removeEventListener("focus", onFocus);
   },
 
   syncSession: async () => {
-    if (syncInFlight) {
-      return syncInFlight;
-    }
+    if (syncInFlight) return syncInFlight;
 
     syncInFlight = (async () => {
       try {
@@ -174,7 +141,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   signOut: async () => {
     await signOutAction();
     handleUserIdChange(null);
-    set({
+    useAuthStore.setState({
       user: null,
       userId: null,
       onboardingCompleted: null,

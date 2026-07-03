@@ -12,7 +12,7 @@ import { titleFromUserMessage } from "@/lib/conversation-title";
 import { prefetchDictationToken } from "@/lib/elevenlabs/scribe-token-client";
 import { setPendingFirstMessage } from "@/lib/pending-first-message";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { useConversationsStore } from "@/lib/stores/conversations-store";
+import { prependConversation } from "@/lib/stores/conversations-store";
 import { cn } from "@/lib/utils";
 
 const EASE = [0.25, 0.1, 0.25, 1] as const;
@@ -76,7 +76,7 @@ export function NewChatView() {
       const conversationId = crypto.randomUUID();
       const now = new Date().toISOString();
 
-      useConversationsStore.getState().prependConversation({
+      prependConversation({
         id: conversationId,
         title: titleFromUserMessage(trimmed),
         is_favorited: false,

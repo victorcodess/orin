@@ -3,7 +3,7 @@
 import type { ElevenLabs } from "@elevenlabs/elevenlabs-js";
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import {
   SettingsActions,
@@ -34,7 +34,12 @@ import {
 } from "@/lib/orin/personality/ui-options";
 import type { PersonalitySettings } from "@/lib/orin/personality/types";
 import { VOICE_SPEED_OPTIONS, type VoiceSpeed } from "@/lib/orin/voice/speed";
-import { useAssistantConfigStore } from "@/lib/stores/assistant-config-store";
+import {
+  useAssistantConfigQuery,
+  saveAssistantConfig,
+  resetAssistantConfig,
+} from "@/lib/stores/assistant-config-store";
+import { DEFAULT_ASSISTANT } from "@/lib/orin/defaults";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 
@@ -110,55 +115,59 @@ function PersonalityDropdown<T extends string>({
 }
 
 export function SettingsPersonalization() {
-  const config = useAssistantConfigStore((state) => state.config);
-  const isLoading = useAssistantConfigStore((state) => state.isLoading);
-  const isSaving = useAssistantConfigStore((state) => state.isSaving);
-  const isDefault = useAssistantConfigStore((state) => state.isDefault);
-  const error = useAssistantConfigStore((state) => state.error);
-  const save = useAssistantConfigStore((state) => state.save);
-  const reset = useAssistantConfigStore((state) => state.reset);
+  const {
+    data: configData,
+    isPending: isLoading,
+    error: queryError,
+  } = useAssistantConfigQuery();
+  const config = configData?.config;
+  const isDefault = configData?.isDefault ?? true;
+  const [isSaving, startSaveTransition] = useTransition();
 
   const [personalitySettings, setPersonalitySettings] =
-    useState<PersonalitySettings>(config.personalitySettings);
-  const [voiceId, setVoiceId] = useState(config.voiceId);
-  const [voiceSpeed, setVoiceSpeed] = useState<VoiceSpeed>(config.voiceSpeed);
+    useState<PersonalitySettings>(
+      config?.personalitySettings ?? DEFAULT_ASSISTANT.personalitySettings,
+    );
+  const [voiceId, setVoiceId] = useState(config?.voiceId ?? DEFAULT_ASSISTANT.voiceId);
+  const [voiceSpeed, setVoiceSpeed] = useState<VoiceSpeed>(
+    config?.voiceSpeed ?? DEFAULT_ASSISTANT.voiceSpeed,
+  );
   const [isDirty, setIsDirty] = useState(false);
   const loadErrorToasted = useRef(false);
 
   useEffect(() => {
-    if (isDirty) {
-      return;
-    }
-
+    if (isDirty || !config) return;
     setPersonalitySettings(config.personalitySettings);
     setVoiceId(config.voiceId);
     setVoiceSpeed(config.voiceSpeed);
-  }, [config.personalitySettings, config.voiceId, config.voiceSpeed, isDirty]);
+  }, [config, isDirty]);
 
   useEffect(() => {
-    if (!isLoading && error && !loadErrorToasted.current) {
+    if (!isLoading && queryError && !loadErrorToasted.current) {
       loadErrorToasted.current = true;
-      toast.error(error);
+      toast.error("Could not load assistant settings");
     }
-  }, [isLoading, error]);
+  }, [isLoading, queryError]);
 
   const hasEdits = useMemo(
     () =>
+      !config ||
       !personalitySettingsEqual(
         personalitySettings,
-        config.personalitySettings
+        config.personalitySettings,
       ) ||
       voiceId !== config.voiceId ||
       voiceSpeed !== config.voiceSpeed,
-    [config, personalitySettings, voiceId, voiceSpeed]
+    [config, personalitySettings, voiceId, voiceSpeed],
   );
 
   const discardEdits = useCallback(() => {
+    if (!config) return;
     setPersonalitySettings(config.personalitySettings);
     setVoiceId(config.voiceId);
     setVoiceSpeed(config.voiceSpeed);
     setIsDirty(false);
-  }, [config.personalitySettings, config.voiceId, config.voiceSpeed]);
+  }, [config]);
 
   useSettingsRouteDirty("personalization", hasEdits, discardEdits);
 
@@ -176,39 +185,39 @@ export function SettingsPersonalization() {
     setPersonalitySettings((current) => ({ ...current, ...patch }));
   };
 
-  const handleSave = async () => {
-    const ok = await save({
-      personalitySettings: {
-        ...personalitySettings,
-        customInstructions: personalitySettings.customInstructions.trim(),
-      },
-      voiceId,
-      voiceSpeed,
+  const handleSave = () => {
+    startSaveTransition(async () => {
+      try {
+        await saveAssistantConfig({
+          personalitySettings: {
+            ...personalitySettings,
+            customInstructions: personalitySettings.customInstructions.trim(),
+          },
+          voiceId,
+          voiceSpeed,
+        });
+        setIsDirty(false);
+        toast.success("Settings saved", { position: "bottom-center" });
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Couldn't save settings",
+        );
+      }
     });
-
-    if (ok) {
-      setIsDirty(false);
-      toast.success("Settings saved", { position: "bottom-center" });
-      return;
-    }
-
-    toast.error(
-      useAssistantConfigStore.getState().error ?? "Couldn't save settings"
-    );
   };
 
-  const handleReset = async () => {
-    const ok = await reset();
-
-    if (ok) {
-      setIsDirty(false);
-      toast.success("Reset to default", { position: "bottom-center" });
-      return;
-    }
-
-    toast.error(
-      useAssistantConfigStore.getState().error ?? "Couldn't reset settings"
-    );
+  const handleReset = () => {
+    startSaveTransition(async () => {
+      try {
+        await resetAssistantConfig();
+        setIsDirty(false);
+        toast.success("Reset to default", { position: "bottom-center" });
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Couldn't reset settings",
+        );
+      }
+    });
   };
 
   if (isLoading) {
@@ -293,7 +302,7 @@ export function SettingsPersonalization() {
       <SettingsActions>
         <Button
           type="button"
-          onClick={() => void handleSave()}
+          onClick={handleSave}
           disabled={!hasEdits || isSaving}
         >
           {isSaving ? "Saving..." : "Save changes"}
@@ -311,7 +320,7 @@ export function SettingsPersonalization() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => void handleReset()}
+            onClick={handleReset}
             disabled={isDefault || isSaving}
           >
             Reset to default
