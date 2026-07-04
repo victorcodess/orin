@@ -31,7 +31,7 @@ export function HomeContent() {
 
         <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2 w-full">
           <Button asChild size="lg" className="w-full sm:w-auto">
-            <Link href="/new">Meet Orin</Link>
+            <Link href="/new">Say hello</Link>
           </Button>
           <Suspense fallback={<HomeHeroSecondarySkeleton />}>
             <HomeHeroSecondaryWithAuth />

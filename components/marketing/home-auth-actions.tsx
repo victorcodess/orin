@@ -118,7 +118,7 @@ export function HomeNavActions({
           Log out
         </LogOutButton>
         <Button asChild size="sm" variant="default">
-          <Link href="/new">Meet Orin</Link>
+          <Link href="/new">Say hello</Link>
         </Button>
       </div>
     );
