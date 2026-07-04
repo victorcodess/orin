@@ -52,19 +52,29 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
             <SidebarTrigger placement="sidebar" />
           </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarHeader>
-
-      <SidebarContent className="">
         <Suspense fallback={null}>
           <NavMain />
         </Suspense>
-        <Suspense fallback={null}>
-          <NavFavorites />
-        </Suspense>
-        <Suspense fallback={null}>
-          <NavChats />
-        </Suspense>
-      </SidebarContent>
+      </SidebarHeader>
+
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          aria-hidden
+          className="from-sidebar/0 to-sidebar pointer-events-none absolute inset-x-0 top-0 z-20 h-5 bg-linear-to-t to-95%"
+        />
+        <SidebarContent>
+          <Suspense fallback={null}>
+            <NavFavorites />
+          </Suspense>
+          <Suspense fallback={null}>
+            <NavChats />
+          </Suspense>
+        </SidebarContent>
+        <div
+          aria-hidden
+          className="from-sidebar/0 to-sidebar pointer-events-none absolute inset-x-0 bottom-0 z-20 h-9 bg-linear-to-b to-85%"
+        />
+      </div>
       <SidebarFooter>
         <NavUser />
       </SidebarFooter>
