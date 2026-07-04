@@ -38,12 +38,12 @@ export function HomeFooter() {
         </span>
         <span className="hidden sm:block">•</span>
         <span>
-          Built by{" "}
+          Built by
           <Link
             href="https://victorwilliams.me"
             target="_blank"
             rel="noreferrer"
-            className="text-foreground hover:text-primary underline-offset-2 transition-colors hover:underline"
+            className="text-foreground hover:text-primary underline-offset-2 transition-colors hover:underline ml-1"
           >
             Victor Williams
           </Link>
