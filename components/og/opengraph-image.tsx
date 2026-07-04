@@ -53,6 +53,8 @@ export function OpenGraphImage({
               height: "100%",
               objectFit: "cover",
               borderRadius: RADIUS,
+              opacity: 0.8,
+              transform: "rotate(-180deg)",
             }}
           />
         ) : null}
@@ -66,6 +68,9 @@ export function OpenGraphImage({
             justifyContent: "center",
             gap: 36,
             position: "relative",
+            width: "100%",
+            height: "100%",
+            padding: 48,
           }}
         >
           <div
@@ -109,6 +114,17 @@ export function OpenGraphImage({
             }}
           >
             {description}
+          </div>
+          <div
+            style={{
+              fontFamily: "Geist",
+              fontSize: 18,
+              color: "#a0948a",
+              position: "absolute",
+              bottom: 40,
+            }}
+          >
+            orin.chat
           </div>
         </div>
       </div>
