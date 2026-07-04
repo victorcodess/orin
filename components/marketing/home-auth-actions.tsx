@@ -108,7 +108,20 @@ export function HomeNavActions({
   const isLoggedIn = useHomeAuthState(initialIsLoggedIn);
 
   if (isLoggedIn) {
-    return <LogOutButton size="sm">Log out</LogOutButton>;
+    return (
+      <div className="flex items-center gap-1.5">
+        <LogOutButton
+          size="sm"
+          variant="secondary"
+          className="bg-secondary-foreground/10 text-secondary-foreground hover:bg-secondary-foreground/5"
+        >
+          Log out
+        </LogOutButton>
+        <Button asChild size="sm" variant="default">
+          <Link href="/new">Meet Orin</Link>
+        </Button>
+      </div>
+    );
   }
 
   return (
