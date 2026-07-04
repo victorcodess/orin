@@ -18,7 +18,8 @@ const ThemeSwitcher = ({className}: {className?: string}) => {
 
   const isDark = resolvedTheme === "dark";
 
-  const iconClassName = "text-muted-foreground/90 rounded-full";
+  const iconClassName =
+    "text-muted-foreground/90 rounded-full group-hover:text-foreground";
 
   return (
     <Button
@@ -26,7 +27,7 @@ const ThemeSwitcher = ({className}: {className?: string}) => {
       size="icon"
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={toggleLightDark}
-      className={cn(className, "hover:bg-accent hover:dark:bg-muted")}
+      className={cn(className, "group hover:bg-accent hover:dark:bg-muted")}
     >
       {!isDark ? (
         <HugeiconsIcon icon={Moon02Icon} strokeWidth={2} className={cn(iconClassName, "size-4.5")} />
