@@ -66,7 +66,7 @@ async function main() {
       }
     } catch (error) {
       fail(
-        `Public tunnel not reachable (${publicWsUrl}). Start ngrok/cloudflared and update .env.local + update-engine.mts. ${error instanceof Error ? error.message : ""}`,
+        `Public tunnel not reachable (${publicWsUrl}). Start ngrok/cloudflared and update .env.local + npm run update:engine. ${error instanceof Error ? error.message : ""}`,
       );
     }
   }
@@ -78,7 +78,7 @@ async function main() {
 
     if (configuredWsUrl !== publicWsUrl) {
       fail(
-        `Speech Engine wsUrl mismatch.\n  ElevenLabs: ${configuredWsUrl}\n  .env.local: ${publicWsUrl}\n  Run: npx tsx update-engine.mts`,
+        `Speech Engine wsUrl mismatch.\n  ElevenLabs: ${configuredWsUrl}\n  .env.local: ${publicWsUrl}\n  Run: npm run update:engine`,
       );
     } else {
       ok("Speech Engine wsUrl matches .env.local");
@@ -87,7 +87,7 @@ async function main() {
     const headers = engine.config?.speechEngine?.requestHeaders ?? {};
     if (publicWsUrl?.includes("ngrok") && !headers["ngrok-skip-browser-warning"]) {
       fail(
-        "ngrok tunnel detected but Speech Engine has no ngrok-skip-browser-warning header. Run: npx tsx update-engine.mts",
+        "ngrok tunnel detected but Speech Engine has no ngrok-skip-browser-warning header. Run: npm run update:engine",
       );
     } else if (publicWsUrl?.includes("ngrok")) {
       ok("Speech Engine has ngrok bypass headers");
@@ -98,7 +98,7 @@ async function main() {
     "\nDuring a call, the sidecar should log:\n  [SpeechEngine] upgrade request: GET /ws\n  [SpeechEngine] upgrading connection to WebSocket\n  [orin:voice] session init ...\n",
   );
   console.log(
-    "If those lines never appear, ElevenLabs cannot reach your tunnel. Run `npm run dev:tunnel`, then `npx tsx update-engine.mts`.",
+    "If those lines never appear, ElevenLabs cannot reach your tunnel. Run `npm run dev:tunnel`, then `npm run update:engine`.",
   );
 }
 

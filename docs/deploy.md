@@ -61,7 +61,7 @@ After the sidecar is reachable at a public `wss://` URL:
 
 ```bash
 # In .env.local (or production env) set VOICE_SERVER_PUBLIC_URL=wss://<host>/ws
-npx tsx update-engine.mts
+npm run update:engine
 ```
 
 This updates the Speech Engine's `wsUrl` to match your deployment.
@@ -77,7 +77,7 @@ npm run verify:voice
 1. Start the app: `npm run dev` (Next.js + sidecar on port 3001)
 2. Expose the sidecar: `npm run dev:tunnel` (ngrok on port 3001)
 3. Set `VOICE_SERVER_PUBLIC_URL=wss://<ngrok-host>/ws` in `.env.local`
-4. Run `npx tsx update-engine.mts`
+4. Run `npm run update:engine`
 5. Run `npm run verify:voice`
 
 Text chat and read-aloud work without the tunnel. Voice calls require steps 2–4.
@@ -90,11 +90,11 @@ Text chat and read-aloud work without the tunnel. Voice calls require steps 2–
 - [ ] Platform API keys set (or users rely on BYOK after quota)
 - [ ] Sidecar deployed and healthy
 - [ ] `VOICE_SERVER_PUBLIC_URL` matches sidecar public URL
-- [ ] `update-engine.mts` run for this environment's Speech Engine
+- [ ] `npm run update:engine` run for this environment's Speech Engine
 - [ ] `npm run verify:voice` passes
 
 ## Further reading
 
-- [CONTEXT.md](../CONTEXT.md) — architecture overview
+- [CONTEXT.md](CONTEXT.md) — architecture overview
 - [docs/adr/002-voice-sidecar.md](adr/002-voice-sidecar.md) — why the sidecar exists
 - [docs/adr/004-platform-quota-and-byok.md](adr/004-platform-quota-and-byok.md) — metering model

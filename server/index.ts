@@ -45,7 +45,7 @@ async function main() {
     // local dev flow needs the tunnel reminder.
     if (process.env.NODE_ENV !== "production") {
       console.log(
-        "[orin:voice] tunnel required: run `ngrok http 3001` or `npm run dev:tunnel`, then `npx tsx update-engine.mts`",
+        "[orin:voice] tunnel required: run `ngrok http 3001` or `npm run dev:tunnel`, then `npm run update:engine`",
       );
     }
   });

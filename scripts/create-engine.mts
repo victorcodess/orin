@@ -9,7 +9,7 @@ import {
   buildSpeechEngineTtsConfig,
   buildSpeechEngineTurnConfig,
   buildSpeechEngineWsConfig,
-} from "./lib/voice/speech-engine-config";
+} from "../lib/voice/speech-engine-config";
 
 config({ path: resolve(process.cwd(), ".env.local") });
 

@@ -6,6 +6,8 @@
     "dev:voice": "node --require ./server/stubs/register-server-only.cjs --import tsx server/index.ts",
     "dev:tunnel": "ngrok http 3001",
     "verify:voice": "tsx scripts/verify-voice-setup.mts",
+    "create:engine": "tsx scripts/create-engine.mts",
+    "update:engine": "tsx scripts/update-engine.mts",
     "build": "next build",
     "start": "next start",
     "start:voice": "node --require ./server/stubs/register-server-only.cjs --import tsx server/index.ts",

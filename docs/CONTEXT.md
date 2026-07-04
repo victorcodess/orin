@@ -57,7 +57,7 @@ Anonymous reads and writes for conversations go through server routes using the 
 
 ## Deployment
 
-See [docs/deploy.md](docs/deploy.md) for a step-by-step checklist. Summary:
+See [deploy.md](deploy.md) for a step-by-step checklist. Summary:
 
 - **Next.js app → Vercel.** Serves the UI and the `/api/voice/*` routes.
 - **Voice sidecar (`server/`) → an always-on host** (Railway, Fly, Render, a VM…). It is a long-lived inbound WebSocket server that ElevenLabs dials into, which Vercel's serverless functions cannot host. Build with `docker build -f server/Dockerfile -t orin-voice .` and run `npm run start:voice`.
@@ -66,7 +66,7 @@ The two coordinate only through Supabase (`conversations.active_voice_session_id
 
 Sidecar env: `ELEVENLABS_API_KEY`, `ELEVENLABS_SPEECH_ENGINE_ID`, `OPENAI_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `API_KEY_ENCRYPTION_SECRET`, and `VOICE_SERVER_PUBLIC_URL` (the `wss://<host>/ws` it's reachable at).
 
-A Speech Engine resource points at a single `wsUrl`, so use a **separate engine per environment**. After deploying the sidecar, set `VOICE_SERVER_PUBLIC_URL` and run `npx tsx update-engine.mts` to point that environment's engine at it.
+A Speech Engine resource points at a single `wsUrl`, so use a **separate engine per environment**. After deploying the sidecar, set `VOICE_SERVER_PUBLIC_URL` and run `npm run update:engine` to point that environment's engine at it.
 
 ## Database types
 
@@ -88,7 +88,7 @@ Output: `types/database.ts`. Supabase clients in `lib/supabase/` are typed with 
 
 ## Phases
 
-See [docs/adr/](docs/adr/) for architecture decisions. Build order:
+See [adr/](adr/) for architecture decisions. Build order:
 
 | Phase | Scope | Status |
 |-------|-------|--------|
@@ -99,4 +99,4 @@ See [docs/adr/](docs/adr/) for architecture decisions. Build order:
 | 4 | Auth (Google primary), onboarding, quotas, BYOK, settings keys/usage | Done |
 | 5 | Consequential tests (quotas, crypto, redirects, shared lib logic) | Done |
 
-Billing and Stripe were removed from scope — see [ADR 004](docs/adr/004-platform-quota-and-byok.md).
+Billing and Stripe were removed from scope — see [ADR 004](adr/004-platform-quota-and-byok.md).
