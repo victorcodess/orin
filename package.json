@@ -10,6 +10,8 @@
     "start": "next start",
     "start:voice": "node --require ./server/stubs/register-server-only.cjs --import tsx server/index.ts",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "gen:types": "supabase gen types typescript --linked > types/database.ts",
     "doctor": "npx react-doctor@latest"
   },
@@ -79,6 +81,7 @@
     "prettier-plugin-tailwindcss": "^0.8.0",
     "supabase": "^2.105.0",
     "tailwindcss": "^4.3.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.9"
   }
 }
