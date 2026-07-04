@@ -17,11 +17,25 @@ const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "http://localhost:3000";
 
+const siteTitle = "Orin";
+const siteDescription =
+  "A voice-enabled AI companion you can text and call. Warm, thoughtful, and yours to customize.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Orin",
-  description:
-    "A voice-enabled AI companion you can text and call. Warm, thoughtful, and yours to customize.",
+  title: siteTitle,
+  description: siteDescription,
+  openGraph: {
+    title: siteTitle,
+    description: siteDescription,
+    type: "website",
+    siteName: siteTitle,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteTitle,
+    description: siteDescription,
+  },
 };
 
 const geistSans = Geist({

@@ -62,6 +62,8 @@ export async function updateSession(request: NextRequest) {
 
   const isPublicPath =
     MARKETING_PUBLIC_PATHS.has(pathname) ||
+    pathname === "/opengraph-image" ||
+    pathname === "/twitter-image" ||
     pathname === "/new" ||
     pathname === "/c" ||
     pathname.startsWith("/c/") ||
