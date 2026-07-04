@@ -8,11 +8,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 
 import { DICTATION_STT_MODEL } from "@/lib/ai/model";
 import { cn } from "@/lib/utils";
-import {
-  beginDictationSession,
-  dictationLog,
-  type DictationSession,
-} from "@/lib/elevenlabs/dictation-debug";
 import { warmMicrophoneAccess } from "@/lib/elevenlabs/warm-microphone";
 import {
   useScribe,
@@ -278,7 +273,7 @@ export interface SpeechInputProps {
    * Function that returns a token for authenticating with the speech service.
    * This should be an async function that fetches a token from your backend.
    */
-  getToken: (session?: DictationSession) => Promise<string>;
+  getToken: () => Promise<string>;
 
   /**
    * Called whenever the transcript changes (partial or committed)
@@ -426,7 +421,6 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       committedTranscripts: [] as string[],
     });
     const startRequestIdRef = React.useRef(0);
-    const sessionRef = React.useRef<DictationSession | null>(null);
     const [isTokenPending, setIsTokenPending] = React.useState(false);
 
     const scribe = useScribe({
@@ -448,9 +442,6 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       onCommittedTranscript: (data) => {
         transcriptsRef.current.committedTranscripts.push(data.text);
         transcriptsRef.current.partialTranscript = "";
-        dictationLog(sessionRef.current, "committed transcript", {
-          text: data.text.slice(0, 80),
-        });
         onChange?.(buildData(transcriptsRef.current));
       },
       onError,
@@ -467,8 +458,6 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
     const start = React.useCallback(async () => {
       const requestId = startRequestIdRef.current + 1;
       startRequestIdRef.current = requestId;
-      const session = beginDictationSession();
-      sessionRef.current = session;
 
       transcriptsRef.current = {
         partialTranscript: "",
@@ -477,33 +466,23 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       scribeRef.current.clearTranscripts();
       setIsTokenPending(true);
       onStart?.(buildData(transcriptsRef.current));
-      dictationLog(session, "start requested");
 
       try {
         const [token] = await Promise.all([
-          getToken(session).then((value) => {
-            dictationLog(session, "token ready");
-            return value;
-          }),
-          warmMicrophoneAccess(microphone, session),
+          getToken(),
+          warmMicrophoneAccess(microphone),
         ]);
         if (startRequestIdRef.current !== requestId) {
-          dictationLog(session, "aborted after token (superseded)");
           return;
         }
-
-        dictationLog(session, "connecting to scribe");
         await scribeRef.current.connect({
           token,
         });
         if (startRequestIdRef.current !== requestId) {
-          dictationLog(session, "aborted after connect (superseded)");
           scribeRef.current.disconnect({ skipCommit: true });
           return;
         }
-        dictationLog(session, "connected, waiting for audio");
       } catch (error) {
-        dictationLog(session, "start failed", error);
         onError?.(error instanceof Error ? error : new Error(String(error)));
       } finally {
         if (startRequestIdRef.current === requestId) {
@@ -513,10 +492,8 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
     }, [getToken, microphone, onStart, onError]);
 
     const cancel = React.useCallback(() => {
-      dictationLog(sessionRef.current, "cancel");
       startRequestIdRef.current += 1;
       setIsTokenPending(false);
-      sessionRef.current = null;
       const data = buildData(transcriptsRef.current);
       scribeRef.current.disconnect({ skipCommit: true });
       scribeRef.current.clearTranscripts();
@@ -532,11 +509,8 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
         cancel();
         return;
       }
-
-      dictationLog(sessionRef.current, "stop");
       startRequestIdRef.current += 1;
       setIsTokenPending(false);
-      sessionRef.current = null;
 
       const data = buildData({
         partialTranscript: scribeRef.current.partialTranscript,
@@ -589,7 +563,6 @@ const SpeechInput = React.forwardRef<HTMLDivElement, SpeechInputProps>(
       return () => {
         startRequestIdRef.current += 1;
         setIsTokenPending(false);
-        sessionRef.current = null;
         scribeRef.current.disconnect();
       };
     }, []);

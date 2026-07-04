@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { RealtimeEvents, Scribe } from "@elevenlabs/client"
-import { dictationStep } from "@/lib/elevenlabs/dictation-debug"
 import type {
   AudioFormat,
   AudioOptions,
@@ -178,9 +177,6 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
   const connectionIdCounterRef = useRef(0)
   const activeConnectionIdRef = useRef<number | null>(null)
   const disconnectingRef = useRef(false)
-  const connectStartedAtRef = useRef<number | null>(null)
-  const firstPartialLoggedRef = useRef(false)
-
   const [status, setStatus] = useState<ScribeStatus>("disconnected")
   const [partialTranscript, setPartialTranscript] = useState<string>("")
   const [committedTranscripts, setCommittedTranscripts] = useState<
@@ -200,8 +196,6 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       disconnectingRef.current = true
       activeConnectionIdRef.current = null
       connectionRef.current = null
-      dictationStep("disconnect called")
-
       try {
         gracefulCloseScribeConnection(connection, options)
       } catch (err) {
@@ -233,14 +227,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
       const connectionId = connectionIdCounterRef.current + 1
       connectionIdCounterRef.current = connectionId
-      firstPartialLoggedRef.current = false
-
       try {
         setStatus("connecting")
         setError(null)
-        connectStartedAtRef.current = performance.now()
-        dictationStep("scribe connect started")
-
         // Merge default options with runtime options
         const token = runtimeOptions.token || defaultToken
         const modelId = runtimeOptions.modelId || defaultModelId
@@ -268,11 +257,6 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
         if (microphone) {
           // Microphone mode
-          dictationStep(
-            "opening scribe microphone connection",
-            connectStartedAtRef.current ?? undefined,
-            { modelId, commitStrategy: runtimeOptions.commitStrategy || defaultCommitStrategy }
-          )
           connection = Scribe.connect({
             token,
             modelId,
@@ -336,10 +320,6 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
         connection.on(
           RealtimeEvents.SESSION_STARTED,
           runIfCurrent(() => {
-            dictationStep(
-              "session started (websocket ready)",
-              connectStartedAtRef.current ?? undefined
-            )
             setStatus("connected")
             onSessionStarted?.()
           })
@@ -349,14 +329,6 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           RealtimeEvents.PARTIAL_TRANSCRIPT,
           runIfCurrent((data: unknown) => {
             const message = data as PartialTranscriptMessage
-            if (!firstPartialLoggedRef.current) {
-              firstPartialLoggedRef.current = true
-              dictationStep(
-                "first partial transcript",
-                connectStartedAtRef.current ?? undefined,
-                { text: message.text.slice(0, 80) }
-              )
-            }
             setPartialTranscript(message.text)
             setStatus("transcribing")
             onPartialTranscript?.(message)
@@ -534,10 +506,6 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
         connection.on(
           RealtimeEvents.OPEN,
           runIfCurrent(() => {
-            dictationStep(
-              "websocket open",
-              connectStartedAtRef.current ?? undefined
-            )
             onConnect?.()
           })
         )
@@ -545,10 +513,6 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
         connection.on(
           RealtimeEvents.CLOSE,
           runIfCurrent(() => {
-            dictationStep(
-              "websocket closed",
-              connectStartedAtRef.current ?? undefined
-            )
             activeConnectionIdRef.current = null
             connectionRef.current = null
             setStatus("disconnected")
@@ -556,10 +520,6 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           })
         )
 
-        dictationStep(
-          "scribe.connect() returned (listeners attached)",
-          connectStartedAtRef.current ?? undefined
-        )
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to connect"

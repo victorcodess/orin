@@ -1,6 +1,3 @@
-import { dictationLog } from "@/lib/elevenlabs/dictation-debug";
-import type { DictationSession } from "@/lib/elevenlabs/dictation-debug";
-
 type MicrophoneConstraints = {
   echoCancellation?: boolean;
   noiseSuppression?: boolean;
@@ -14,15 +11,12 @@ export function warmMicrophoneAccess(
     echoCancellation: true,
     noiseSuppression: true,
   },
-  session: DictationSession | null = null
 ) {
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
     return Promise.resolve();
   }
 
   if (!warmPromise) {
-    dictationLog(session, "microphone warm-up started");
-
     warmPromise = navigator.mediaDevices
       .getUserMedia({
         audio: {
@@ -35,11 +29,8 @@ export function warmMicrophoneAccess(
         for (const track of stream.getTracks()) {
           track.stop();
         }
-        dictationLog(session, "microphone warm-up complete");
       })
-      .catch((error) => {
-        dictationLog(session, "microphone warm-up failed", error);
-      })
+      .catch(() => {})
       .finally(() => {
         warmPromise = null;
       });

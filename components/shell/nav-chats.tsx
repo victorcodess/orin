@@ -3,13 +3,11 @@
 import { usePathname } from "next/navigation";
 import { Message01Icon } from "@hugeicons/core-free-icons";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { NavChatItem } from "@/components/shell/nav-chat-item";
 import { useIsLoggedIn } from "@/lib/stores/auth-store";
 import { useSidebarConversations } from "@/lib/stores/conversations-store";
-import { conversationDisplayTitle } from "@/lib/conversation-title";
-import { debugLog } from "@/lib/debug";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SidebarGroup,
@@ -56,17 +54,6 @@ export function NavChats() {
       setOpenMobile(false);
     }
   };
-
-  useEffect(() => {
-    debugLog(
-      "sidebar",
-      "rendering conversations",
-      recentConversations.map((conversation) => ({
-        id: conversation.id,
-        title: conversationDisplayTitle(conversation.title),
-      })),
-    );
-  }, [recentConversations]);
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
