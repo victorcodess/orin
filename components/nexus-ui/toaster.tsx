@@ -120,32 +120,32 @@ const toast = {
           position ?? (variant ? variantPositionMap[variant] : "bottom-right"),
         dismissible,
         closeButton,
-      },
+      }
     );
   },
   default: (
     title: React.ReactNode,
-    options?: Omit<ToastContent, "title" | "variant">,
+    options?: Omit<ToastContent, "title" | "variant">
   ) => toast.custom({ title, variant: "default", ...options }),
   success: (
     title: React.ReactNode,
-    options?: Omit<ToastContent, "title" | "variant">,
+    options?: Omit<ToastContent, "title" | "variant">
   ) => toast.custom({ title, variant: "success", ...options }),
   info: (
     title: React.ReactNode,
-    options?: Omit<ToastContent, "title" | "variant">,
+    options?: Omit<ToastContent, "title" | "variant">
   ) => toast.custom({ title, variant: "info", ...options }),
   warning: (
     title: React.ReactNode,
-    options?: Omit<ToastContent, "title" | "variant">,
+    options?: Omit<ToastContent, "title" | "variant">
   ) => toast.custom({ title, variant: "warning", ...options }),
   error: (
     title: React.ReactNode,
-    options?: Omit<ToastContent, "title" | "variant">,
+    options?: Omit<ToastContent, "title" | "variant">
   ) => toast.custom({ title, variant: "error", ...options }),
   loading: (
     title: React.ReactNode,
-    options?: Omit<ToastContent, "title" | "variant">,
+    options?: Omit<ToastContent, "title" | "variant">
   ) => toast.custom({ title, variant: "loading", ...options }),
   dismiss: sonnerToast.dismiss,
 };
@@ -167,7 +167,7 @@ function ToastCard({
   return (
     <div
       className={cn(
-        "relative flex w-full items-start justify-between gap-2 rounded-xl px-4 py-3 shadow-[0_8px_10px_rgb(0,0,0,0.02)] transition-colors lg:w-90 xl:w-120",
+        "relative flex w-full items-start justify-between gap-2 rounded-3xl px-4 py-3 shadow-[0_8px_10px_rgb(0,0,0,0.02)] transition-colors lg:w-90 xl:w-120",
         "border border-(--toast-color)/5 bg-(--toast-bg) text-(--toast-color)",
         "dark:bg-(--toast-bg)",
         "[--toast-bg:var(--popover)] [--toast-color:var(--popover-foreground)]",
@@ -175,7 +175,7 @@ function ToastCard({
         "data-[variant=success]:[--toast-bg:#F0FDF4] data-[variant=success]:[--toast-color:#16A34A] data-[variant=success]:dark:[--toast-bg:#17221C] data-[variant=success]:dark:[--toast-color:#15803D]",
         "data-[variant=info]:[--toast-bg:#EFF6FF] data-[variant=info]:[--toast-color:#2563EB] data-[variant=info]:dark:[--toast-bg:#181D28] data-[variant=info]:dark:[--toast-color:#1D4ED8]",
         "data-[variant=warning]:[--toast-bg:#FEFCE8] data-[variant=warning]:[--toast-color:#CA8A04] data-[variant=warning]:dark:[--toast-bg:#252015] data-[variant=warning]:dark:[--toast-color:#CA8A04]",
-        "data-[variant=error]:[--toast-bg:#FEF2F2] data-[variant=error]:[--toast-color:#DC2626] data-[variant=error]:dark:[--toast-bg:#271818] data-[variant=error]:dark:[--toast-color:#B91C1C]",
+        "data-[variant=error]:[--toast-bg:#FEF2F2] data-[variant=error]:[--toast-color:#DC2626] data-[variant=error]:dark:[--toast-bg:#271818] data-[variant=error]:dark:[--toast-color:#B91C1C]"
       )}
       data-variant={variant}
     >
@@ -191,32 +191,14 @@ function ToastCard({
         </span>
         {description ? (
           <div
-            className="mt-0 text-sm leading-5.5 font-[350] text-(--toast-color) data-[variant=default]:text-muted-foreground"
+            className="data-[variant=default]:text-muted-foreground mt-0 text-sm leading-5.5 font-[350] text-(--toast-color)"
             data-variant={variant}
           >
             {description}
           </div>
         ) : null}
 
-        <div className="flex items-center gap-1.5">
-          {action ? (
-            <Button
-              type="button"
-              variant="default"
-              size="sm"
-              className={cn(
-                "mt-2 inline-flex w-fit cursor-pointer items-center justify-center rounded-full text-[13px] font-[450] transition-colors",
-                "bg-(--toast-color) text-(--toast-bg) hover:bg-(--toast-color)/90 hover:text-(--toast-bg)",
-              )}
-              onClick={() => {
-                action.onClick?.();
-                if (canDismiss) sonnerToast.dismiss(id);
-              }}
-            >
-              {action.label}
-            </Button>
-          ) : null}
-
+        <div className="flex items-center justify-end gap-1.5">
           {cancel ? (
             <Button
               type="button"
@@ -224,7 +206,7 @@ function ToastCard({
               size="sm"
               className={cn(
                 "mt-2 inline-flex w-fit cursor-pointer items-center justify-center rounded-full text-[13px] font-[450] transition-colors",
-                "border border-(--toast-color)/10 text-(--toast-color) hover:bg-(--toast-color)/5 dark:hover:bg-(--toast-color)/10",
+                "border border-(--toast-color)/10 text-(--toast-color) hover:bg-(--toast-color)/5 dark:hover:bg-(--toast-color)/10"
               )}
               onClick={() => {
                 cancel.onClick?.();
@@ -232,6 +214,24 @@ function ToastCard({
               }}
             >
               {cancel.label}
+            </Button>
+          ) : null}
+
+          {action ? (
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              className={cn(
+                "mt-2 inline-flex w-fit cursor-pointer items-center justify-center rounded-full text-[13px] font-[450] transition-colors",
+                "bg-(--toast-color) text-(--toast-bg) hover:bg-(--toast-color)/90 hover:text-(--toast-bg)"
+              )}
+              onClick={() => {
+                action.onClick?.();
+                if (canDismiss) sonnerToast.dismiss(id);
+              }}
+            >
+              {action.label}
             </Button>
           ) : null}
         </div>
@@ -245,7 +245,7 @@ function ToastCard({
           aria-label="Close notification"
           className={cn(
             "inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-(--toast-color)/70 transition-colors",
-            "hover:bg-(--toast-color)/10 hover:text-(--toast-color) focus-visible:ring-2 focus-visible:ring-(--toast-color)/35 dark:hover:bg-(--toast-color)/10 dark:hover:text-(--toast-color)",
+            "hover:bg-(--toast-color)/10 hover:text-(--toast-color) focus-visible:ring-2 focus-visible:ring-(--toast-color)/35 dark:hover:bg-(--toast-color)/10 dark:hover:text-(--toast-color)"
           )}
           onClick={() => sonnerToast.dismiss(id)}
         >
