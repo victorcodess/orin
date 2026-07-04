@@ -1,5 +1,5 @@
 {
-  "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "concurrently -n web,voice -c blue,magenta \"next dev\" \"npm run dev:voice\"",
     "dev:web": "next dev",
