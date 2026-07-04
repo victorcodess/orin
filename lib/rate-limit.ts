@@ -13,7 +13,7 @@ function getClientIp(headers: Headers): string {
   return headers.get("x-real-ip") ?? "unknown";
 }
 
-function getApiLimit(pathname: string, method: string): LimitRule | null {
+function getApiLimit(pathname: string, method: string): LimitRule {
   if (method === "GET" || method === "HEAD") {
     return { name: "read", limit: 180, windowMs: MINUTE };
   }
