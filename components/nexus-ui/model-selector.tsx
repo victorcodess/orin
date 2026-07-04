@@ -23,7 +23,7 @@ const triggerVariants = cva(
         outline:
           "border border-input bg-transparent hover:bg-muted data-[state=open]:bg-transparent",
         ghost:
-          "bg-transparent hover:bg-input hover:dark:bg-popover data-[state=open]:bg-transparent data-[state=open]:bg-input",
+          "bg-transparent hover:bg-input hover:dark:bg-popover data-[state=open]:bg-transparent data-[state=open]:bg-input/50 dark:data-[state=open]:bg-input",
       },
     },
     defaultVariants: {
