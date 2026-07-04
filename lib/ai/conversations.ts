@@ -2,7 +2,6 @@ import "server-only";
 
 import type { ConversationRow } from "@/lib/ai/conversation-types";
 import { titleFromUserMessage } from "@/lib/conversation-title";
-import { debugLog } from "@/lib/debug";
 import { ORIN_NAME } from "@/lib/orin/defaults";
 import { getSessionId } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -28,8 +27,6 @@ export async function createConversation(options?: {
     throw new Error("Missing anon session cookie");
   }
 
-  debugLog("conversations", "creating conversation", { userId, sessionId });
-
   const title = options?.initialMessage
     ? titleFromUserMessage(options.initialMessage)
     : `Chat with ${ORIN_NAME}`;
@@ -52,12 +49,8 @@ export async function createConversation(options?: {
         return existing;
       }
     }
-
-    debugLog("conversations", "create failed", { error });
     throw error ?? new Error("Failed to create conversation");
   }
-
-  debugLog("conversations", "created", { id: data.id });
 
   return data as ConversationRow;
 }
@@ -204,11 +197,8 @@ export async function listConversations(limit = 30): Promise<ConversationRow[]> 
   const { data, error } = await query;
 
   if (error) {
-    debugLog("conversations", "list failed", { error });
     throw error;
   }
-
-  debugLog("sidebar", "supabase conversations", data ?? []);
 
   return (data ?? []).map(({ messages: _messages, ...conversation }) => conversation) as ConversationRow[];
 }
@@ -249,13 +239,6 @@ export async function verifyConversationAccess(
   }
 
   const sessionId = await getSessionId();
-
-  debugLog("conversations", "verify access (anon)", {
-    conversationId,
-    cookieSessionId: sessionId ?? null,
-    conversationSessionId: conversation.session_id,
-    match: sessionId === conversation.session_id,
-  });
 
   if (sessionId && conversation.session_id === sessionId) {
     return conversation;

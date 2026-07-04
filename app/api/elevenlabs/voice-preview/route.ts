@@ -1,4 +1,3 @@
-import { debugError } from "@/lib/debug";
 import { synthesizeSpeech, ttsErrorResponse } from "@/lib/elevenlabs/synthesize-speech";
 import {
   isCuratedVoiceId,
@@ -70,7 +69,6 @@ export async function GET(req: Request) {
       },
     });
   } catch (error) {
-    debugError("api/elevenlabs/voice-preview", "GET failed", error);
     return ttsErrorResponse(error);
   }
 }

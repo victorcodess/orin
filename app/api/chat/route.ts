@@ -18,7 +18,6 @@ import {
 import { sanitizeUIMessagesForModel } from "@/lib/ai/message-utils";
 import { TEXT_CHAT_MODEL } from "@/lib/ai/model";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
-import { debugError, debugLog } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { getQuotaContext } from "@/lib/quotas/context";
 import { isQuotaBlockedError, quotaBlockedResponse } from "@/lib/quotas/errors";
@@ -34,20 +33,11 @@ type ChatRequestBody = {
 };
 
 export async function POST(req: Request) {
-  const startedAt = Date.now();
-
   try {
     const body = (await req.json()) as ChatRequestBody;
     const { messages, conversationId } = body;
 
-    debugLog("api/chat", "request received", {
-      conversationId,
-      messageCount: messages?.length,
-      roles: messages?.map((m) => m.role),
-    });
-
     if (!conversationId || !messages?.length) {
-      debugLog("api/chat", "validation failed", { conversationId, messages });
       return Response.json(
         { error: "conversationId and messages are required" },
         { status: 400 },
@@ -84,26 +74,12 @@ export async function POST(req: Request) {
       conversation = await verifyConversationAccess(conversationId);
     }
 
-    debugLog("api/chat", "access verified", {
-      conversationId: conversation.id,
-      userId: conversation.user_id,
-      sessionId: conversation.session_id,
-    });
-
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
     const config = await getAssistantConfig(authData.user?.id);
 
-    debugLog("api/chat", "assistant config loaded", {
-      authUserId: authData.user?.id ?? null,
-    });
-
     if (lastUserMessage) {
       const userText = textFromUIMessage(lastUserMessage);
-      debugLog("api/chat", "saving user message", {
-        messageId: lastUserMessage.id,
-        preview: userText.slice(0, 80),
-      });
 
       const updatedExistingMessage = await updateUserMessageAndDeleteAfter({
         id: lastUserMessage.id,
@@ -143,27 +119,12 @@ export async function POST(req: Request) {
 
     const system = buildPersonalityPrompt(config.personalitySettings);
 
-    debugLog("api/chat", "starting streamText", {
-      modelMessageCount: modelMessages.length,
-      systemPromptChars: system.length,
-      keySource: openaiResolved.source,
-      elapsedMs: Date.now() - startedAt,
-    });
-
     const result = streamText({
       model: openai(TEXT_CHAT_MODEL),
       system,
       messages: modelMessages,
-      onError: ({ error }) => {
-        debugError("api/chat", "streamText failed", error);
-      },
       onFinish: ({ text }) => {
         void (async () => {
-          debugLog("api/chat", "stream finished", {
-            textLength: text.length,
-            elapsedMs: Date.now() - startedAt,
-          });
-
           if (!text.trim()) {
             return;
           }
@@ -181,15 +142,12 @@ export async function POST(req: Request) {
             content: text,
             source: "text",
           });
-
-          debugLog("api/chat", "assistant message saved");
         })();
       },
     });
 
     return result.toUIMessageStreamResponse();
   } catch (error) {
-    debugError("api/chat", "request failed", error);
 
     if (isQuotaBlockedError(error)) {
       return quotaBlockedResponse(error);

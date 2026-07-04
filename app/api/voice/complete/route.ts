@@ -1,5 +1,4 @@
 import { verifyConversationAccess } from "@/lib/ai/conversations";
-import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { getQuotaContext } from "@/lib/quotas/context";
 import { billVoiceMinutes } from "@/lib/quotas/limits";
@@ -56,7 +55,6 @@ export async function POST(req: Request) {
 
     return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    debugError("api/voice/complete", "request failed", error);
 
     const message = getErrorMessage(error);
     const status =

@@ -6,7 +6,6 @@ import {
   type SidebarConversation,
   toSidebarConversation,
 } from "@/lib/conversations/sidebar-conversation";
-import { debugLog } from "@/lib/debug";
 import { getQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -18,7 +17,6 @@ async function fetchConversations(): Promise<SidebarConversation[]> {
     typeof toSidebarConversation
   >[0][];
   const conversations = rows.map(toSidebarConversation);
-  debugLog("sidebar", "conversations", conversations);
   return conversations;
 }
 

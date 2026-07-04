@@ -8,7 +8,6 @@ import { normalizeVoiceId } from "@/lib/elevenlabs/voices";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
 import { personalitySettingsEqual, parsePersonalitySettings } from "@/lib/orin/personality/parse";
 import { parseVoiceSpeed, type VoiceSpeed } from "@/lib/orin/voice/speed";
-import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { syncSpeechEngineTts } from "@/lib/voice/speech-engine-config";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -68,7 +67,6 @@ export async function GET() {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    debugError("api/assistant-config", "GET failed", error);
     return Response.json(
       { error: getErrorMessage(error) },
       { status: 500 },
@@ -121,7 +119,6 @@ export async function PATCH(req: Request) {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    debugError("api/assistant-config", "PATCH failed", error);
     return Response.json(
       { error: getErrorMessage(error) },
       { status: 500 },
@@ -151,7 +148,6 @@ export async function DELETE() {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    debugError("api/assistant-config", "DELETE failed", error);
     return Response.json(
       { error: getErrorMessage(error) },
       { status: 500 },

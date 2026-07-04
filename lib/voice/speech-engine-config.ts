@@ -5,7 +5,6 @@ import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 import { VOICE_CALL_TTS_MODEL } from "@/lib/ai/model";
 
-import { debugError, debugLog } from "@/lib/debug";
 import { DEFAULT_ASSISTANT, type AssistantConfig } from "@/lib/orin/defaults";
 import { voiceSpeedToNumber } from "@/lib/orin/voice/speed";
 import type { VoiceSpeed } from "@/lib/orin/voice/speed";
@@ -116,12 +115,6 @@ export async function syncSpeechEngineTts(
     }
 
     await elevenlabs.speechEngine.update(engineId, { tts: nextTts });
-
-    debugLog("voice/speech-engine", "synced tts", {
-      voiceId: nextTts.voiceId,
-      speed: nextTts.speed,
-    });
-  } catch (error) {
-    debugError("voice/speech-engine", "sync tts failed", error);
+  } catch {
   }
 }

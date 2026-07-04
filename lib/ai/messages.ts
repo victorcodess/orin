@@ -1,6 +1,5 @@
 import "server-only";
 
-import { debugLog } from "@/lib/debug";
 import { isValidUuid } from "@/lib/errors";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -25,14 +24,8 @@ export async function loadHistory(
     .order("created_at", { ascending: true });
 
   if (error) {
-    debugLog("messages", "loadHistory failed", { conversationId, error });
     throw error;
   }
-
-  debugLog("messages", "loadHistory", {
-    conversationId,
-    count: data?.length ?? 0,
-  });
 
   return (data ?? []) as MessageRow[];
 }
@@ -117,10 +110,6 @@ export async function saveMessageIfNew({
     .maybeSingle();
 
   if (latest?.content === content) {
-    debugLog("messages", "skipped duplicate message", {
-      conversationId,
-      clientId: id,
-    });
     return;
   }
 

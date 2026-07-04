@@ -4,7 +4,6 @@ import {
   createConversation,
   listConversations,
 } from "@/lib/ai/conversations";
-import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { getQuotaContext } from "@/lib/quotas/context";
 import { isQuotaBlockedError, quotaBlockedResponse } from "@/lib/quotas/errors";
@@ -19,7 +18,6 @@ export async function GET() {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
-    debugError("api/conversations", "list failed", error);
     return NextResponse.json(
       { error: getErrorMessage(error) },
       { status: 500 },
@@ -64,7 +62,6 @@ export async function POST(req: Request) {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
-    debugError("api/conversations", "create failed", error);
 
     if (isQuotaBlockedError(error)) {
       return quotaBlockedResponse(error);

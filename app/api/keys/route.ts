@@ -1,4 +1,3 @@
-import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { getMaskedUserKeys, saveUserKeys } from "@/lib/quotas/keys";
 import {
@@ -30,7 +29,6 @@ export async function GET() {
 
     return Response.json({ keys }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    debugError("api/keys", "GET failed", error);
     return Response.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
@@ -90,7 +88,6 @@ export async function PATCH(req: Request) {
 
     return Response.json({ keys }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    debugError("api/keys", "PATCH failed", error);
     return Response.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
@@ -122,7 +119,6 @@ export async function DELETE(req: Request) {
 
     return Response.json({ keys }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    debugError("api/keys", "DELETE failed", error);
     return Response.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }

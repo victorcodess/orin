@@ -1,4 +1,3 @@
-import { debugLog, debugError } from "@/lib/debug";
 import {
   prepareReadAloudText,
   synthesizeSpeech,
@@ -23,8 +22,6 @@ type TextToSpeechRequestBody = {
 };
 
 export async function POST(req: Request) {
-  const startedAt = Date.now();
-
   try {
     const body = (await req.json().catch(() => null)) as TextToSpeechRequestBody | null;
     const rawText = body?.text?.trim();
@@ -61,10 +58,6 @@ export async function POST(req: Request) {
       });
 
       if (cachedAudio) {
-        debugLog("api/tts", "cache hit", {
-          ownerId,
-          elapsedMs: Date.now() - startedAt,
-        });
 
         return new Response(cachedAudio, {
           headers: {
@@ -74,8 +67,7 @@ export async function POST(req: Request) {
           },
         });
       }
-    } catch (error) {
-      debugLog("api/tts", "cache lookup failed, continuing without cache", error);
+    } catch {
     }
 
     let audio: ArrayBuffer;
@@ -87,7 +79,6 @@ export async function POST(req: Request) {
         speed,
       });
     } catch (error) {
-      debugError("api/tts", "synthesis failed", error);
       return ttsErrorResponse(error);
     }
 
@@ -106,12 +97,7 @@ export async function POST(req: Request) {
           voiceSpeed,
           audio,
         });
-        debugLog("api/tts", "cache stored", {
-          ownerId,
-          elapsedMs: Date.now() - startedAt,
-        });
-      } catch (error) {
-        debugLog("api/tts", "cache store failed", error);
+      } catch {
       }
     }
 
@@ -123,7 +109,6 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    debugError("api/tts", "request failed", error);
 
     if (isQuotaBlockedError(error)) {
       return quotaBlockedResponse(error);

@@ -1,4 +1,3 @@
-import { debugError } from "@/lib/debug";
 import { READ_ALOUD_TTS_MODEL } from "@/lib/ai/model";
 
 /** v3 models cap around 5k chars per request. */
@@ -141,12 +140,6 @@ async function synthesizeSpeechChunk(
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    debugError("elevenlabs/synthesize-speech", "TTS failed", {
-      status: response.status,
-      modelId,
-      textLength: text.length,
-      detail: detail.slice(0, 300),
-    });
     throw ttsErrorFromResponse(response.status, detail);
   }
 

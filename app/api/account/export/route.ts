@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { exportUserAccountData } from "@/lib/ai/account-data";
 import { requireAuthedUser } from "@/lib/auth/require-authed-user";
-import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 
 export async function GET() {
@@ -28,7 +27,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    debugError("api/account/export", "GET failed", error);
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }

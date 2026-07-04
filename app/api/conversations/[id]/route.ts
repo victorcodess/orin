@@ -6,7 +6,6 @@ import {
   updateConversationTitle,
 } from "@/lib/ai/conversations";
 import { loadConversationData } from "@/lib/ai/load-conversation";
-import { debugError } from "@/lib/debug";
 import { getErrorMessage, isValidUuid } from "@/lib/errors";
 
 type RouteContext = {
@@ -36,8 +35,6 @@ export async function GET(_req: Request, context: RouteContext) {
     if (message === "Forbidden") {
       return NextResponse.json({ error: message }, { status: 403 });
     }
-
-    debugError("api/conversations/[id]", "load failed", error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -66,8 +63,6 @@ export async function DELETE(_req: Request, context: RouteContext) {
     if (message === "Forbidden") {
       return NextResponse.json({ error: message }, { status: 403 });
     }
-
-    debugError("api/conversations/[id]", "delete failed", error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -115,8 +110,6 @@ export async function PATCH(req: Request, context: RouteContext) {
     if (message === "Forbidden") {
       return NextResponse.json({ error: message }, { status: 403 });
     }
-
-    debugError("api/conversations/[id]", "update failed", error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

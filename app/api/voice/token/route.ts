@@ -2,7 +2,6 @@ import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import { verifyConversationAccess } from "@/lib/ai/conversations";
-import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import { getQuotaContext } from "@/lib/quotas/context";
 import { isQuotaBlockedError, quotaBlockedResponse } from "@/lib/quotas/errors";
@@ -146,7 +145,6 @@ export async function POST(req: Request) {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    debugError("api/voice/token", "request failed", error);
 
     if (isQuotaBlockedError(error)) {
       return quotaBlockedResponse(error);

@@ -1,5 +1,4 @@
 import { bindVoiceSession } from "@/lib/voice/conversation-binding";
-import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 
 type VoiceBindRequest = {
@@ -24,7 +23,6 @@ export async function POST(req: Request) {
 
     return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    debugError("api/voice/bind", "request failed", error);
 
     const message = getErrorMessage(error);
     const status =

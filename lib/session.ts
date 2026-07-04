@@ -1,8 +1,6 @@
 import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
 
-import { debugLog } from "@/lib/debug";
-
 export const ORIN_SESSION_COOKIE = "orin_session";
 
 const SESSION_COOKIE_OPTIONS = {
@@ -24,12 +22,10 @@ export async function ensureSessionCookie(): Promise<string> {
   const existing = cookieStore.get(ORIN_SESSION_COOKIE)?.value;
 
   if (existing) {
-    debugLog("session", "reusing existing session", { sessionId: existing });
     return existing;
   }
 
   const id = uuidv4();
-  debugLog("session", "created new session", { sessionId: id });
   cookieStore.set(ORIN_SESSION_COOKIE, id, SESSION_COOKIE_OPTIONS);
 
   return id;

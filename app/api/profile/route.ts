@@ -1,6 +1,5 @@
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import { resolvedDisplayName } from "@/lib/auth/google-display-name";
-import { debugError } from "@/lib/debug";
 import { getErrorMessage } from "@/lib/errors";
 import {
   DEFAULT_USER_PREFERENCES,
@@ -77,7 +76,6 @@ export async function GET() {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    debugError("api/profile", "GET failed", error);
     return Response.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
@@ -174,7 +172,6 @@ export async function PATCH(req: Request) {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    debugError("api/profile", "PATCH failed", error);
     return Response.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
