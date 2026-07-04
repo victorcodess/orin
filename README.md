@@ -1,3 +1,5 @@
+<img width="1200" height="630" alt="image" src="https://github.com/user-attachments/assets/c92eb752-e3b5-4f93-9af1-2bd1f05bb991" />
+
 # Orin
 
 Orin is a voice-enabled AI companion built for **conversation**. Type when you want to think quietly, or start a voice call when speaking out loud feels better. Either way, you talk to the same Orin, in the same thread, with the same memory of what you have already said.
