@@ -44,6 +44,7 @@ next-env.d.ts
 
 .agents
 .cursor
+skills-lock.json
 
 # Supabase local CLI state
 supabase/.temp
