@@ -1,7 +1,24 @@
 import { updateSession } from "@/lib/supabase/proxy";
-import { type NextRequest } from "next/server";
+import { checkApiRateLimit } from "@/lib/rate-limit";
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
+  const limited = checkApiRateLimit({
+    pathname: request.nextUrl.pathname,
+    method: request.method,
+    headers: request.headers,
+  });
+
+  if (!limited.ok) {
+      return NextResponse.json(
+        { error: "Too many requests. Try again shortly." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limited.retryAfterSec) },
+        },
+      );
+  }
+
   return await updateSession(request);
 }
 
