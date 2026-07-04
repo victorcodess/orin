@@ -128,7 +128,7 @@ You should see **11 passed** test files, **56 passed** tests. No API keys or Sup
 
 ## CI (GitHub Actions)
 
-On every pull request and push to `main`, the **Tests** workflow runs `npm test`. If a test fails, the check goes red and the PR should not merge until it is fixed.
+On every pull request and push to `main`, the **CI** workflow runs `npm test` and `npm run build`. If a test fails, the check goes red and the PR should not merge until it is fixed.
 
 That stops quota or crypto regressions from slipping in when you (or a contributor) change `lib/` without running tests locally.
 

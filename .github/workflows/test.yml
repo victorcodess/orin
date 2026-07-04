@@ -1,4 +1,4 @@
-name: Tests
+name: CI
 
 on:
   pull_request:
@@ -10,11 +10,22 @@ permissions:
   contents: read
 
 concurrency:
-  group: tests-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-publishable-key
+  NEXT_PUBLIC_SITE_URL: http://localhost:3000
+  SUPABASE_SERVICE_ROLE_KEY: ci-service-role-key
+  API_KEY_ENCRYPTION_SECRET: ci-build-secret-32-characters-min
+  OPENAI_API_KEY: sk-ci-placeholder
+  ELEVENLABS_API_KEY: ci-elevenlabs-key
+  ELEVENLABS_SPEECH_ENGINE_ID: ci-engine-id
+  VOICE_SERVER_PUBLIC_URL: wss://example.com/ws
+
 jobs:
-  vitest:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -26,3 +37,16 @@ jobs:
 
       - run: npm ci
       - run: npm test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
