@@ -4,7 +4,7 @@ Orin is a voice-enabled AI companion you can text and call. Orin acts like a fri
 
 ## Current status
 
-**Phase 4 complete.** Quotas, BYOK, Google auth, and onboarding are shipped. **Phase 5 (consequential tests) is next** — the app has no tests today.
+**Phase 5 complete.** Quotas, BYOK, Google auth, onboarding, and consequential unit tests are shipped (56 tests in `lib/`).
 
 Shipped so far:
 
@@ -14,9 +14,10 @@ Shipped so far:
 - Read aloud for assistant messages
 - Voice calls: header call button, inline/fullscreen overlay, `/api/voice/token`, voice sidecar
 - Conversation persistence (anon `orin_session` cookie or authed `user_id`)
-- Settings panel: personalization (tone, voice), general, account, usage placeholder
+- Settings panel: personalization (tone, voice), general, account, usage + BYOK keys
 - Favorites, title editing, message regenerate/edit
 - Generated Supabase types in `types/database.ts`
+- Unit tests for quotas, crypto, auth redirects, message sanitization (see `docs/testing.md`)
 
 ## Core concepts
 
@@ -56,7 +57,7 @@ Anonymous reads and writes for conversations go through server routes using the 
 
 ## Deployment
 
-Two processes, deployed separately:
+See [docs/deploy.md](docs/deploy.md) for a step-by-step checklist. Summary:
 
 - **Next.js app → Vercel.** Serves the UI and the `/api/voice/*` routes.
 - **Voice sidecar (`server/`) → an always-on host** (Railway, Fly, Render, a VM…). It is a long-lived inbound WebSocket server that ElevenLabs dials into, which Vercel's serverless functions cannot host. Build with `docker build -f server/Dockerfile -t orin-voice .` and run `npm run start:voice`.
@@ -96,6 +97,6 @@ See [docs/adr/](docs/adr/) for architecture decisions. Build order:
 | 2 | Voice calls + live transcript in chat | Done |
 | 3 | Customization (name, personality, voice) | Done |
 | 4 | Auth (Google primary), onboarding, quotas, BYOK, settings keys/usage | Done |
-| 5 | Consequential tests (quotas, crypto, redirects, shared lib logic) | Planned |
+| 5 | Consequential tests (quotas, crypto, redirects, shared lib logic) | Done |
 
 Billing and Stripe were removed from scope — see [ADR 004](docs/adr/004-platform-quota-and-byok.md).

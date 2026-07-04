@@ -1,24 +1,31 @@
 # Orin
 
-Orin is an AI companion you can talk to — text chat with a warm voice, one unified conversation thread, and auth-backed sessions.
+Orin is a voice-enabled AI companion built for **conversation**. Type when you want to think quietly, or start a voice call when speaking out loud feels better. Either way, you talk to the same Orin, in the same thread, with the same memory of what you have already said.
 
-Built with Next.js, Supabase, OpenAI, and ElevenLabs.
+Live at [orin.chat](https://orin.chat). Open source under the [MIT License](LICENSE).
 
-## How it works
+## What you get
 
-- **One brain, two surfaces** — text chat and voice calls share the same AI logic (`lib/ai`) and the same `messages` thread.
-- **Platform allowance + BYOK** — no billing or Stripe. Anonymous and signed-in users get a free operation allowance on platform API keys; after that, signed-in users add their own OpenAI / ElevenLabs keys in Settings.
-- **Voice sidecar** — ElevenLabs Speech Engine runs on a small Node WebSocket service (`server/`) while the Next.js app handles UI and API routes.
+- **One assistant, one brain, two surfaces** — text chat and voice calls share the same AI logic, personality config, and `messages` thread
+- **Try without signing in** — anonymous users get a small demo allowance in the browser
+- **Sign in with Google** — save history, sync across devices, unlock voice calls and read-aloud
+- **Make Orin yours** — tone, warmth, voice, and speaking speed in Settings; onboarding walks you through it after first sign-in
+- **Platform allowance + BYOK** — no Stripe or billing. Free tier runs on the deployer's API keys; signed-in users can add their own OpenAI and ElevenLabs keys when quota runs out (encrypted at rest)
 
-See [CONTEXT.md](CONTEXT.md) and [docs/adr/](docs/adr/) for architecture details.
+Voice runs on a separate Node sidecar because real-time audio needs a persistent WebSocket — a poor fit for serverless. The sidecar calls the same shared AI layer as `/api/chat`, so Orin never gets two personalities depending on how you talk to it.
 
 ## Stack
 
-- **Next.js** (App Router) — UI and API routes
-- **Supabase** — auth, Postgres, RLS
-- **OpenAI** — text chat via AI SDK
-- **ElevenLabs** — voice and speech engine
-- **shadcn/ui** + **Nexus UI** — component layers
+| Layer | Technology |
+| --- | --- |
+| Web app & API | Next.js (App Router), Vercel AI SDK |
+| UI | shadcn/ui, Nexus UI |
+| Auth & data | Supabase (Google OAuth, Postgres, RLS) |
+| Text chat | OpenAI via AI SDK |
+| Voice | ElevenLabs Speech Engine + WebRTC |
+| Sidecar | Node WebSocket server (`server/`) |
+
+See [CONTEXT.md](CONTEXT.md), [docs/adr/](docs/adr/), and [docs/deploy.md](docs/deploy.md) for architecture and deployment details.
 
 ## Getting started
 
@@ -27,6 +34,7 @@ See [CONTEXT.md](CONTEXT.md) and [docs/adr/](docs/adr/) for architecture details
 - Node.js 20+
 - A [Supabase](https://supabase.com) project
 - OpenAI and ElevenLabs API keys
+- Google OAuth credentials (for sign-in)
 
 ### Setup
 
@@ -37,13 +45,13 @@ npm install
 cp .env.example .env.local
 ```
 
-Fill in `.env.local` — see `.env.example` for required variables (Supabase, OpenAI, ElevenLabs, encryption secret, voice server URL).
+Fill in `.env.local` — see [.env.example](.env.example) for all variables.
 
 Apply the database schema:
 
 ```bash
 npx supabase db push
-# or run supabase/migrations/20250606000000_initial_schema.sql in the SQL editor
+# or run migrations from supabase/migrations/ in the Supabase SQL editor
 ```
 
 Start the dev server:
@@ -54,12 +62,37 @@ npm run dev
 
 Open [localhost:3000](http://localhost:3000). New chat lives at `/new`.
 
+### Google OAuth (Supabase)
+
+Sign-in requires Google as the auth provider:
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create OAuth 2.0 credentials (Web application).
+2. Add authorized redirect URI: `https://<your-supabase-project-ref>.supabase.co/auth/v1/callback`
+3. In Supabase → **Authentication → Providers → Google**, paste Client ID and Client Secret.
+4. In Supabase → **Authentication → URL configuration**, set Site URL to `http://localhost:3000` (or your production URL) and add redirect URL: `http://localhost:3000/auth/callback`
+
+Match `NEXT_PUBLIC_SITE_URL` in `.env.local` to your Site URL.
+
+### Voice setup (local)
+
+Text chat works out of the box. Voice calls need the sidecar reachable by ElevenLabs:
+
+1. `npm run dev` — starts Next.js and the sidecar on port 3001
+2. In another terminal: `npm run dev:tunnel` — exposes port 3001 via ngrok
+3. Set `VOICE_SERVER_PUBLIC_URL=wss://<ngrok-host>/ws` in `.env.local`
+4. Run `npx tsx update-engine.mts` to point your Speech Engine at the tunnel
+5. Verify: `npm run verify:voice`
+
+Use a **separate ElevenLabs Speech Engine per environment**. Full production steps: [docs/deploy.md](docs/deploy.md).
+
 ## Scripts
 
 | Command | Description |
 | --- | --- |
 | `npm run dev` | Next.js + voice sidecar |
 | `npm run dev:web` | Next.js only |
+| `npm run dev:tunnel` | ngrok tunnel for voice sidecar (port 3001) |
+| `npm run verify:voice` | Check sidecar + Speech Engine configuration |
 | `npm run build` | Production build |
 | `npm run start` | Run production server |
 | `npm run lint` | Run ESLint |
@@ -68,11 +101,13 @@ Open [localhost:3000](http://localhost:3000). New chat lives at `/new`.
 
 ## Testing
 
-Co-located unit tests under `lib/**/*.test.ts` cover quotas, BYOK crypto, auth redirects, and message sanitization. See [docs/testing.md](docs/testing.md) for strategy, scope, and when to add tests.
+56 unit tests under `lib/**/*.test.ts` cover quotas, BYOK crypto, auth redirects, and message sanitization. See [docs/testing.md](docs/testing.md) for strategy and scope.
 
 ```bash
 npm test
 ```
+
+CI runs tests and a production build on every PR and push to `main`.
 
 ## Metering and API keys
 
@@ -94,14 +129,20 @@ Platform keys live in server env vars. User keys are encrypted at rest with `API
 
 ```text
 app/                  Routes, layouts, and API handlers
-components/           UI components grouped by auth, chat, shell, settings, ui, and nexus-ui
-lib/                  AI, quotas, crypto, Supabase, and shared logic
+components/           UI (auth, chat, shell, settings, voice, nexus-ui)
+lib/                  AI, quotas, crypto, Supabase, shared logic
 server/               ElevenLabs Speech Engine sidecar
 supabase/             Local Supabase config and database migrations
-docs/adr/             Architecture decision records
+docs/                 ADRs, testing guide, deployment guide
 ```
+
+## Contributing
+
+Bug reports, ideas, and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). For security issues, see [SECURITY.md](SECURITY.md).
 
 ## Links
 
-- [Twitter](https://x.com/orin__chat)
+- [orin.chat](https://orin.chat) — live app
+- [About](https://orin.chat/about) — product overview
 - [GitHub](https://github.com/victorcodess/orin)
+- [@orin__chat](https://x.com/orin__chat)
