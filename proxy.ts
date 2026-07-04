@@ -1,5 +1,5 @@
 import { updateSession } from "@/lib/supabase/proxy";
-import { checkApiRateLimit } from "@/lib/rate-limit";
+import { checkApiRateLimit } from "@/lib/security/rate-limit";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {

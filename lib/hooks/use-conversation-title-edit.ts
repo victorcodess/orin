@@ -8,7 +8,7 @@ import {
   conversationDisplayTitle,
   normalizeConversationTitleInput,
   patchConversationTitle,
-} from "@/lib/conversation-title";
+} from "@/lib/conversations/title";
 
 type UseConversationTitleEditOptions = {
   conversationId: string;

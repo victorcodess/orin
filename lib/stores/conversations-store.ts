@@ -6,8 +6,8 @@ import {
   type SidebarConversation,
   toSidebarConversation,
 } from "@/lib/conversations/sidebar-conversation";
-import { getQueryClient } from "@/lib/query-client";
-import { queryKeys } from "@/lib/query-keys";
+import { getQueryClient } from "@/lib/query/client";
+import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
 async function fetchConversations(): Promise<SidebarConversation[]> {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { safeRedirectUrl } from "@/lib/safe-redirect";
+import { safeRedirectUrl } from "@/lib/auth/safe-redirect";
 
 describe("safeRedirectUrl", () => {
   it("returns fallback for empty values", () => {

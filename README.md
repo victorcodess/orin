@@ -27,7 +27,7 @@ Voice runs on a separate Node sidecar because real-time audio needs a persistent
 | Voice | ElevenLabs Speech Engine + WebRTC |
 | Sidecar | Node WebSocket server (`server/`) |
 
-See [CONTEXT.md](CONTEXT.md), [docs/adr/](docs/adr/), and [docs/deploy.md](docs/deploy.md) for architecture and deployment details.
+See [docs/CONTEXT.md](docs/CONTEXT.md), [docs/adr/](docs/adr/), and [docs/deploy.md](docs/deploy.md) for architecture and deployment details.
 
 ## Getting started
 
@@ -82,7 +82,7 @@ Text chat works out of the box. Voice calls need the sidecar reachable by Eleven
 1. `npm run dev` — starts Next.js and the sidecar on port 3001
 2. In another terminal: `npm run dev:tunnel` — exposes port 3001 via ngrok
 3. Set `VOICE_SERVER_PUBLIC_URL=wss://<ngrok-host>/ws` in `.env.local`
-4. Run `npx tsx update-engine.mts` to point your Speech Engine at the tunnel
+4. Run `npm run update:engine` to point your Speech Engine at the tunnel
 5. Verify: `npm run verify:voice`
 
 Use a **separate ElevenLabs Speech Engine per environment**. Full production steps: [docs/deploy.md](docs/deploy.md).
@@ -132,7 +132,7 @@ Platform keys live in server env vars. User keys are encrypted at rest with `API
 ```text
 app/                  Routes, layouts, and API handlers
 components/           UI (auth, chat, shell, settings, voice, nexus-ui)
-lib/                  AI, quotas, crypto, Supabase, shared logic
+lib/                  ai, auth, conversations, quotas, query, security, settings, ui, …
 server/               ElevenLabs Speech Engine sidecar
 supabase/             Local Supabase config and database migrations
 docs/                 ADRs, testing guide, deployment guide

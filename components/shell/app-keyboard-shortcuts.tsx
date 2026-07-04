@@ -13,9 +13,9 @@ import {
   KEYBOARD_SHORTCUTS_OPEN_EVENT,
   matchesShortcut,
   useKeyboardShortcutsStore,
-} from "@/lib/keyboard-shortcuts";
-import { isSearchChatsDialogOpen } from "@/lib/search-chats";
-import { closeSettings, openSettings } from "@/lib/settings-routes";
+} from "@/lib/ui/keyboard-shortcuts";
+import { isSearchChatsDialogOpen } from "@/lib/conversations/search";
+import { closeSettings, openSettings } from "@/lib/settings/routes";
 import { useMessageStyleStore } from "@/lib/stores/message-style-store";
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 

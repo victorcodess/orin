@@ -13,7 +13,7 @@ import {
   useScribe,
   type AudioFormat,
   type CommitStrategy,
-} from "@/hooks/use-scribe";
+} from "@/lib/hooks/use-scribe";
 import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import {
@@ -25,7 +25,7 @@ import {
   enterLabel,
   primaryModifierLabel,
   shiftLabel,
-} from "@/lib/keyboard-shortcuts";
+} from "@/lib/ui/keyboard-shortcuts";
 
 const buttonVariants = cva("!px-0", {
   variants: {

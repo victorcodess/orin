@@ -7,7 +7,7 @@ import {
 } from "@/lib/auth/post-auth";
 import { getOriginFromRequest } from "@/lib/auth/site-url";
 import { createClient } from "@/lib/supabase/server";
-import { safeRedirectUrl } from "@/lib/safe-redirect";
+import { safeRedirectUrl } from "@/lib/auth/safe-redirect";
 
 export async function GET(request: Request) {
   const origin = getOriginFromRequest(request);

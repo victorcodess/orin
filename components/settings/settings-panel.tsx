@@ -21,7 +21,7 @@ import {
   SETTINGS_ROUTES,
   useSettingsStore,
   type SettingsRoute,
-} from "@/lib/settings-routes";
+} from "@/lib/settings/routes";
 import { SettingsUnsavedDialog } from "@/components/settings/settings-unsaved-dialog";
 import { cn } from "@/lib/utils";
 

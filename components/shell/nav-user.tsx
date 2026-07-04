@@ -28,8 +28,8 @@ import { navigateAfterLogout } from "@/lib/auth/return-url";
 import { useAuthStore, type SidebarUser } from "@/lib/stores/auth-store";
 import {
   openKeyboardShortcutsDialog,
-} from "@/lib/keyboard-shortcuts";
-import { openSettings } from "@/lib/settings-routes";
+} from "@/lib/ui/keyboard-shortcuts";
+import { openSettings } from "@/lib/settings/routes";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
 import { useThemePreference } from "@/lib/hooks/use-theme-preference";
 import { useKeyboardShortcutLabels } from "@/lib/hooks/use-keyboard-shortcut-labels";

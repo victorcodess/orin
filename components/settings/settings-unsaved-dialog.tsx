@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { confirmSettingsDiscardNavigation } from "@/lib/settings-routes";
+import { confirmSettingsDiscardNavigation } from "@/lib/settings/routes";
 import { useSettingsDirtyStore } from "@/lib/stores/settings-dirty-store";
 
 export function SettingsUnsavedDialog() {

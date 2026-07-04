@@ -2,8 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { getQueryClient } from "@/lib/query-client";
-import { queryKeys } from "@/lib/query-keys";
+import { getQueryClient } from "@/lib/query/client";
+import { queryKeys } from "@/lib/query/keys";
 import type { UserPreferences } from "@/lib/orin/user-preferences";
 
 export type ProfileSettings = {

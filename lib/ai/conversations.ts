@@ -1,9 +1,9 @@
 import "server-only";
 
 import type { ConversationRow } from "@/lib/ai/conversation-types";
-import { titleFromUserMessage } from "@/lib/conversation-title";
+import { titleFromUserMessage } from "@/lib/conversations/title";
 import { ORIN_NAME } from "@/lib/orin/defaults";
-import { getSessionId } from "@/lib/session";
+import { getSessionId } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 

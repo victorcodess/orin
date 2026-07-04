@@ -10,7 +10,7 @@ import { ChatOptionsMenuContent } from "@/components/chat/chat-options-menu";
 import { DeleteConversationDialog } from "@/components/chat/delete-conversation-dialog";
 import { toast } from "@/components/nexus-ui/toaster";
 import { copyChatToClipboard } from "@/lib/chat/chat-copy-registry";
-import { toggleConversationFavorite } from "@/lib/conversation-favorite";
+import { toggleConversationFavorite } from "@/lib/conversations/favorite";
 import { useConversationTitleEdit } from "@/lib/hooks/use-conversation-title-edit";
 import { iconSwapMotion } from "@/components/motion/icon-swap";
 import {

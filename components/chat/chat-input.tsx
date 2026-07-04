@@ -38,7 +38,7 @@ import {
 } from "@/components/voice/voice-call-keyboard-shortcuts";
 import { VoiceActivityIndicator } from "@/components/voice/voice-activity-indicator";
 import { VoicePill } from "@/components/voice/voice-pill";
-import { CommitStrategy } from "@/hooks/use-scribe";
+import { CommitStrategy } from "@/lib/hooks/use-scribe";
 import {
   getScribeToken,
   prefetchDictationToken,
@@ -49,7 +49,7 @@ import {
   hasPrimaryModifier,
   isKeyboardShortcutsDialogOpen,
   matchesShortcut,
-} from "@/lib/keyboard-shortcuts";
+} from "@/lib/ui/keyboard-shortcuts";
 import { ORIN_NAME } from "@/lib/orin/defaults";
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 import { cn } from "@/lib/utils";

@@ -5,7 +5,7 @@ import {
   getAssistantConfigFromCookie,
 } from "@/lib/ai/assistant-config";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
-import { getSessionId } from "@/lib/session";
+import { getSessionId } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function mergeAnonSessionToUser(

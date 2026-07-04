@@ -6,7 +6,7 @@ import { useThemePreference } from "@/lib/hooks/use-theme-preference";
 import {
   isKeyboardShortcutsDialogOpen,
   matchesShortcut,
-} from "@/lib/keyboard-shortcuts";
+} from "@/lib/ui/keyboard-shortcuts";
 
 export function ThemeKeyboardShortcut() {
   const { toggleLightDark } = useThemePreference();

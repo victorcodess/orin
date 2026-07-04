@@ -8,7 +8,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { getQuotaContext } from "@/lib/quotas/context";
 import { isQuotaBlockedError, quotaBlockedResponse } from "@/lib/quotas/errors";
 import { assertQuotaAllowed, resolveOpenAIKey } from "@/lib/quotas/resolve";
-import { ensureSessionCookie } from "@/lib/session";
+import { ensureSessionCookie } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {

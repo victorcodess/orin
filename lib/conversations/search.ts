@@ -1,7 +1,7 @@
 import Fuse from "fuse.js";
 import { create } from "zustand";
 
-import { conversationDisplayTitle } from "@/lib/conversation-title";
+import { conversationDisplayTitle } from "@/lib/conversations/title";
 import type { SidebarConversation } from "@/lib/conversations/sidebar-conversation";
 
 export type SearchableConversation = SidebarConversation & {

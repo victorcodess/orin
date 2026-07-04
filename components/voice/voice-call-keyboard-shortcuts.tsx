@@ -17,7 +17,7 @@ import {
   matchesShortcut,
   primaryModifierLabel,
   shiftLabel,
-} from "@/lib/keyboard-shortcuts";
+} from "@/lib/ui/keyboard-shortcuts";
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 
 const voiceCallStartKeys = () => [shiftLabel(), primaryModifierLabel(), "C"];

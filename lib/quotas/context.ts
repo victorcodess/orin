@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import { getSessionId } from "@/lib/session";
+import { getSessionId } from "@/lib/auth/session";
 import type { QuotaContext } from "@/lib/quotas/types";
 
 export async function getQuotaContext(): Promise<QuotaContext> {

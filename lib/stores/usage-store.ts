@@ -2,8 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { getQueryClient } from "@/lib/query-client";
-import { queryKeys } from "@/lib/query-keys";
+import { getQueryClient } from "@/lib/query/client";
+import { queryKeys } from "@/lib/query/keys";
 import type { QuotaUsageSummary } from "@/lib/quotas/types";
 
 async function fetchUsage(): Promise<QuotaUsageSummary> {

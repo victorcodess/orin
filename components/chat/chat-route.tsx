@@ -10,7 +10,7 @@ import { useAssistantConfig } from "@/lib/stores/assistant-config-store";
 import {
   useConversationQuery,
 } from "@/lib/stores/messages-store";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/lib/query/keys";
 
 type ChatRouteProps = {
   conversationId: string;

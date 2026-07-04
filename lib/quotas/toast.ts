@@ -2,7 +2,7 @@
 
 import { buildLoginHrefFromHere } from "@/lib/auth/return-url";
 import { toast } from "@/components/nexus-ui/toaster";
-import { openSettings } from "@/lib/settings-routes";
+import { openSettings } from "@/lib/settings/routes";
 import type { FetchError } from "@/lib/quotas/client-errors";
 
 export function toastQuotaError(error: FetchError | Error) {

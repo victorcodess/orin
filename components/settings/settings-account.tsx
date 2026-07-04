@@ -47,7 +47,7 @@ import {
 } from "@/lib/stores/conversations-store";
 import { clearAllConversationData } from "@/lib/stores/messages-store";
 import { useProfileQuery } from "@/lib/stores/profile-store";
-import { useDisplayNameEdit } from "@/lib/user-display-name";
+import { useDisplayNameEdit } from "@/lib/auth/user-display-name";
 import { cn } from "@/lib/utils";
 
 const LOGIN_BENEFITS = [

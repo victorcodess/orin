@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-import { isMacPlatform } from "@/lib/keyboard-shortcuts";
+import { isMacPlatform } from "@/lib/ui/keyboard-shortcuts";
 
 function getModifierLabel() {
   return isMacPlatform() ? "⌘" : "Ctrl";

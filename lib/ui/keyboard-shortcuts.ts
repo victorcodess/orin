@@ -18,7 +18,7 @@ export function isKeyboardShortcutsDialogOpen() {
   return useKeyboardShortcutsStore.getState().open;
 }
 
-export { isSettingsPanelOpen } from "@/lib/settings-routes";
+export { isSettingsPanelOpen } from "@/lib/settings/routes";
 
 type ShortcutMatchOptions = {
   shift?: boolean;

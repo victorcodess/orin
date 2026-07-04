@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { NEW_CHAT_EVENT } from "@/components/chat/new-chat-view";
-import { titleFromUserMessage } from "@/lib/conversation-title";
+import { titleFromUserMessage } from "@/lib/conversations/title";
 import {
   prependConversation,
   renameConversationOptimistic,

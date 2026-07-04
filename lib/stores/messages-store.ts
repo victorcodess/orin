@@ -3,8 +3,8 @@
 import type { UIMessage } from "ai";
 import { useQuery } from "@tanstack/react-query";
 
-import { getQueryClient } from "@/lib/query-client";
-import { queryKeys } from "@/lib/query-keys";
+import { getQueryClient } from "@/lib/query/client";
+import { queryKeys } from "@/lib/query/keys";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 import type { MessageRow } from "@/lib/ai/message-utils";
 

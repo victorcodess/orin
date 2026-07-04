@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { checkApiRateLimit, resetRateLimits } from "@/lib/rate-limit";
+import { checkApiRateLimit, resetRateLimits } from "@/lib/security/rate-limit";
 
 describe("checkApiRateLimit", () => {
   afterEach(() => {

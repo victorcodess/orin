@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 
-import { useSettingsStore } from "@/lib/settings-routes";
+import { useSettingsStore } from "@/lib/settings/routes";
 import { useSettingsDirtyStore } from "@/lib/stores/settings-dirty-store";
-import type { SettingsRoute } from "@/lib/settings-routes";
+import type { SettingsRoute } from "@/lib/settings/routes";
 
 export function useSettingsRouteDirty(
   route: SettingsRoute,

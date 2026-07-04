@@ -7,7 +7,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { motion } from "motion/react";
 import { Slot } from "radix-ui";
 
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/lib/hooks/use-mobile";
 import { useHydrated } from "@/lib/hooks/use-hydrated";
 import { useKeyboardShortcutLabels } from "@/lib/hooks/use-keyboard-shortcut-labels";
 import { cn } from "@/lib/utils";

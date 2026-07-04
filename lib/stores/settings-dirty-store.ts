@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 
-import type { SettingsPendingNavigation } from "@/lib/settings-routes";
+import type { SettingsPendingNavigation } from "@/lib/settings/routes";
 
 type SettingsDirtyState = {
   dirty: boolean;

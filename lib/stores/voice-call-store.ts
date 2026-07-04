@@ -5,7 +5,7 @@ import { create } from "zustand";
 import {
   broadcastConversationDelete,
   deleteConversationById,
-} from "@/lib/conversation-title";
+} from "@/lib/conversations/title";
 
 export type VoiceCallMode = "inline" | "fullscreen";
 export type VoiceCallStatus =

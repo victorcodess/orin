@@ -4,16 +4,16 @@ import { useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 
 import { prefetchDictationToken } from "@/lib/elevenlabs/scribe-token-client";
-import { useSettingsStore } from "@/lib/settings-routes";
+import { useSettingsStore } from "@/lib/settings/routes";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import {
   initMessageStyleStore,
   useMessageStyleStore,
 } from "@/lib/stores/message-style-store";
 import { useProfileQuery } from "@/lib/stores/profile-store";
-import { syncAuthDisplayName } from "@/lib/user-display-name";
-import { getQueryClient } from "@/lib/query-client";
-import { queryKeys } from "@/lib/query-keys";
+import { syncAuthDisplayName } from "@/lib/auth/user-display-name";
+import { getQueryClient } from "@/lib/query/client";
+import { queryKeys } from "@/lib/query/keys";
 import { fetchAssistantConfig } from "@/lib/stores/assistant-config-store";
 
 function ProfilePreferencesSync() {

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 
-import { mergeRefs } from "@/lib/merge-refs";
+import { mergeRefs } from "@/lib/ui/merge-refs";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import {

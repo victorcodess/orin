@@ -3,7 +3,7 @@
 import { create } from "zustand";
 
 import { signOut as signOutAction } from "@/app/auth/actions";
-import { getQueryClient } from "@/lib/query-client";
+import { getQueryClient } from "@/lib/query/client";
 
 export type SidebarUser = {
   name: string;

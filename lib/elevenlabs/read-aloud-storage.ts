@@ -2,7 +2,7 @@ import { createHash } from "crypto";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { ensureSessionCookie, getSessionId } from "@/lib/session";
+import { ensureSessionCookie, getSessionId } from "@/lib/auth/session";
 
 import { READ_ALOUD_TTS_MODEL } from "@/lib/ai/model";
 import type { VoiceSpeed } from "@/lib/orin/voice/speed";

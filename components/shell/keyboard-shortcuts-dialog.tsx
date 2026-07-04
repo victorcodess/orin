@@ -8,7 +8,7 @@ import {
   escapeLabel,
   primaryModifierLabel,
   shiftLabel,
-} from "@/lib/keyboard-shortcuts";
+} from "@/lib/ui/keyboard-shortcuts";
 import { cn } from "@/lib/utils";
 
 type KeyboardShortcutsDialogProps = {

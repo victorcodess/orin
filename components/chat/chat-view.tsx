@@ -37,7 +37,7 @@ import {
   ThreadContent,
   ThreadScrollToBottom,
 } from "@/components/nexus-ui/thread";
-import { isKeyboardShortcutsDialogOpen } from "@/lib/keyboard-shortcuts";
+import { isKeyboardShortcutsDialogOpen } from "@/lib/ui/keyboard-shortcuts";
 import { chatFetch } from "@/lib/ai/chat-fetch";
 import { getChatErrorMessage } from "@/lib/errors";
 import { isFetchError } from "@/lib/quotas/client-errors";
@@ -50,7 +50,7 @@ import {
 } from "@/lib/ai/message-utils";
 import type { MessageRow } from "@/lib/ai/message-utils";
 import { useReadAloud } from "@/lib/hooks/use-read-aloud";
-import { takePendingFirstMessage } from "@/lib/pending-first-message";
+import { takePendingFirstMessage } from "@/lib/conversations/pending-first-message";
 import {
   useIsVoiceCallActive,
   useVoiceCallStore,

@@ -10,7 +10,7 @@ import {
 } from "@/components/voice/voice-call-keyboard-shortcuts";
 import { toast } from "@/components/nexus-ui/toaster";
 import { buildLoginHrefFromHere } from "@/lib/auth/return-url";
-import { openSettings } from "@/lib/settings-routes";
+import { openSettings } from "@/lib/settings/routes";
 import type { QuotaUsageSummary } from "@/lib/quotas/types";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useUsageQuery } from "@/lib/stores/usage-store";

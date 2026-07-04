@@ -34,13 +34,13 @@ import {
   isPlainEscape,
   isSettingsPanelOpen,
   enterLabel,
-} from "@/lib/keyboard-shortcuts";
+} from "@/lib/ui/keyboard-shortcuts";
 import {
   buildConversationSearch,
   formatConversationDate,
   useSearchChatsStore,
   type SearchableConversation,
-} from "@/lib/search-chats";
+} from "@/lib/conversations/search";
 import { useIsLoggedIn } from "@/lib/stores/auth-store";
 import { useSidebarConversations } from "@/lib/stores/conversations-store";
 

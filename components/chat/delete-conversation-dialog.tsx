@@ -16,14 +16,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/nexus-ui/toaster";
 import { removeConversationData } from "@/lib/stores/messages-store";
-import { getQueryClient } from "@/lib/query-client";
-import { queryKeys } from "@/lib/query-keys";
+import { getQueryClient } from "@/lib/query/client";
+import { queryKeys } from "@/lib/query/keys";
 import {
   broadcastConversationDelete,
   conversationDisplayTitle,
   deleteConversationById,
   undoConversationDelete,
-} from "@/lib/conversation-title";
+} from "@/lib/conversations/title";
 
 type DeleteConversationDialogProps = {
   conversationId: string;

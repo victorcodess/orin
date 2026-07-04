@@ -18,7 +18,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useKeyboardShortcutLabels } from "@/lib/hooks/use-keyboard-shortcut-labels";
-import { openSearchChatsDialog } from "@/lib/search-chats";
+import { openSearchChatsDialog } from "@/lib/conversations/search";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 function NavMenuShortcut({ keys }: { keys: string[] }) {
