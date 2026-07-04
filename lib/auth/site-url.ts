@@ -2,6 +2,20 @@ import "server-only";
 
 import { headers } from "next/headers";
 
+/** Canonical public origin for metadata, OAuth, and absolute URLs. */
+export function getSiteOrigin(): string {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (explicit) {
+    return explicit.replace(/\/$/, "");
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return "http://localhost:3000";
+}
+
 /** Origin used for OAuth redirectTo — must match Supabase redirect URL allow list exactly. */
 export async function getAuthSiteOrigin(): Promise<string> {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
@@ -25,7 +39,7 @@ export async function getAuthSiteOrigin(): Promise<string> {
     return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
   }
 
-  return "http://localhost:3000";
+  return getSiteOrigin();
 }
 
 export async function getAuthCallbackUrl(): Promise<string> {

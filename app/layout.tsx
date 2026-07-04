@@ -6,6 +6,7 @@ import { AppToaster } from "@/components/shell/app-toaster";
 import { QueryProvider } from "@/components/shell/query-provider";
 import { ThemeKeyboardShortcut } from "@/components/shell/theme-keyboard-shortcut";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { getSiteOrigin } from "@/lib/auth/site-url";
 import {
   getHeadingFontFamilyVariable,
   getHeadingFontStylesheetUrl,
@@ -13,16 +14,14 @@ import {
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+const siteOrigin = getSiteOrigin();
 
 const siteTitle = "Orin";
 const siteDescription =
   "A voice-enabled AI companion you can text and call. Warm, thoughtful, and yours to customize.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
+  metadataBase: new URL(siteOrigin),
   title: siteTitle,
   description: siteDescription,
   openGraph: {
