@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { AppSidebar } from "@/components/shell/app-sidebar";
 import { AppHeader } from "@/components/shell/app-header";
 import { AppKeyboardShortcuts } from "@/components/shell/app-keyboard-shortcuts";
+import { AppSearchChats } from "@/components/shell/search-chats-dialog";
 import { SettingsPanel } from "@/components/settings/settings-panel";
 import { StoreInit } from "@/components/shell/store-init";
 import { VoiceCallProvider } from "@/components/voice/voice-call-provider";
@@ -15,6 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <StoreInit />
         <AppSidebar />
         <AppKeyboardShortcuts />
+        <AppSearchChats />
         <SettingsPanel />
         <SidebarInset className="bg-background relative flex max-h-svh flex-col overflow-hidden">
           <Suspense

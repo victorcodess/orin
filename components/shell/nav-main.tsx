@@ -18,6 +18,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useKeyboardShortcutLabels } from "@/lib/hooks/use-keyboard-shortcut-labels";
+import { openSearchChatsDialog } from "@/lib/search-chats";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 function NavMenuShortcut({ keys }: { keys: string[] }) {
@@ -67,7 +68,13 @@ export function NavMain() {
           </SidebarMenuButton>
         </SidebarMenuItem>
         <SidebarMenuItem>
-          <SidebarMenuButton className="cursor-pointer">
+          <SidebarMenuButton
+            className="cursor-pointer"
+            onClick={() => {
+              openSearchChatsDialog();
+              closeMobileSidebar();
+            }}
+          >
             <HugeiconsIcon
               icon={Search01Icon}
               strokeWidth={2}

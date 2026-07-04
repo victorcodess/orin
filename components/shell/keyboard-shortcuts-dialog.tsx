@@ -71,6 +71,7 @@ export function KeyboardShortcutsDialog({
       title: "General",
       shortcuts: [
         { label: "New chat", keys: [shift, modifier, "O"] },
+        { label: "Search chats", keys: [modifier, "K"] },
         { label: "Toggle sidebar", keys: [modifier, "B"] },
         { label: "Toggle theme", keys: [shift, modifier, "L"] },
         { label: "Keyboard shortcuts", keys: [modifier, "/"] },

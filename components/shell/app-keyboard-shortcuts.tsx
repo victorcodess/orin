@@ -14,6 +14,7 @@ import {
   matchesShortcut,
   useKeyboardShortcutsStore,
 } from "@/lib/keyboard-shortcuts";
+import { isSearchChatsDialogOpen } from "@/lib/search-chats";
 import { closeSettings, openSettings } from "@/lib/settings-routes";
 import { useMessageStyleStore } from "@/lib/stores/message-style-store";
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
@@ -35,6 +36,7 @@ export function AppKeyboardShortcuts() {
     const handleKeyDown = (event: KeyboardEvent) => {
       const settingsOpen = isSettingsPanelOpen();
       const shortcutsDialogOpen = isKeyboardShortcutsDialogOpen();
+      const searchChatsOpen = isSearchChatsDialogOpen();
 
       if (isPlainEscape(event)) {
         if (settingsOpen) {
@@ -45,7 +47,7 @@ export function AppKeyboardShortcuts() {
         return;
       }
 
-      if (shortcutsDialogOpen) {
+      if (shortcutsDialogOpen || searchChatsOpen) {
         return;
       }
 
