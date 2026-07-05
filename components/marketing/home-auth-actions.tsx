@@ -57,7 +57,7 @@ export function HomeNavActionsSkeleton() {
   return (
     <div className="flex items-center gap-1.5">
       <ButtonSkeleton label="Log in" size="sm" variant="secondary" />
-      <ButtonSkeleton label="Sign up" size="sm" variant="default" />
+      <ButtonSkeleton label="Say hello" size="sm" variant="default" />
     </div>
   );
 }
@@ -130,7 +130,7 @@ export function HomeNavActions({
         <Link href={buildLoginHref({ intent: "login" })}>Log in</Link>
       </Button>
       <Button asChild size="sm" variant="default">
-        <Link href={buildLoginHref({ intent: "signup" })}>Sign up</Link>
+        <Link href="/new">Say hello</Link>
       </Button>
     </div>
   );
