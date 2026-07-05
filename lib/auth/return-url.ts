@@ -2,6 +2,39 @@ import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.
 
 import type { AuthIntent } from "@/lib/auth/login-intent";
 
+const DEFAULT_AUTH_RETURN = "/new";
+
+function isChatReturnPath(pathname: string): boolean {
+  return (
+    pathname === "/new" ||
+    pathname === "/c" ||
+    pathname.startsWith("/c/")
+  );
+}
+
+function pathnameFromReturnUrl(url: string): string {
+  const hashIndex = url.indexOf("#");
+  const withoutHash = hashIndex === -1 ? url : url.slice(0, hashIndex);
+  const queryIndex = withoutHash.indexOf("?");
+  return queryIndex === -1 ? withoutHash : withoutHash.slice(0, queryIndex);
+}
+
+/** Keep chat URLs; send everything else to new chat after login. */
+export function resolveAuthReturnUrl(
+  value: string | null | undefined,
+): string {
+  const safe = safeReturnUrl(value);
+  if (!safe) {
+    return DEFAULT_AUTH_RETURN;
+  }
+
+  if (isChatReturnPath(pathnameFromReturnUrl(safe))) {
+    return safe;
+  }
+
+  return DEFAULT_AUTH_RETURN;
+}
+
 /** Safe in-app return path (pathname, search, hash). */
 export function safeReturnUrl(value: string | null | undefined): string | null {
   if (!value) {
@@ -27,10 +60,10 @@ type BuildLoginHrefOptions = {
 
 export function buildLoginHref(options: BuildLoginHrefOptions = {}): string {
   const params = new URLSearchParams();
-  const safe = safeReturnUrl(options.returnUrl);
+  const resolved = resolveAuthReturnUrl(options.returnUrl);
 
-  if (safe) {
-    params.set("next", safe);
+  if (resolved !== DEFAULT_AUTH_RETURN) {
+    params.set("next", resolved);
   }
 
   if (options.intent) {
@@ -43,11 +76,11 @@ export function buildLoginHref(options: BuildLoginHrefOptions = {}): string {
 
 export function getCurrentReturnUrl(): string {
   if (typeof window === "undefined") {
-    return "/new";
+    return DEFAULT_AUTH_RETURN;
   }
 
   const { pathname, search, hash } = window.location;
-  return `${pathname}${search}${hash}`;
+  return resolveAuthReturnUrl(`${pathname}${search}${hash}`);
 }
 
 export function buildLoginHrefFromHere(intent: AuthIntent = "signup"): string {

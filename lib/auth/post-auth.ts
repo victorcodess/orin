@@ -4,6 +4,7 @@ import {
   clearAssistantConfigCookie,
   getAssistantConfigFromCookie,
 } from "@/lib/ai/assistant-config";
+import { resolveAuthReturnUrl } from "@/lib/auth/return-url";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
 import { getSessionId } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -120,9 +121,5 @@ export function postAuthRedirectPath({
     return "/onboarding";
   }
 
-  if (next && next.startsWith("/") && !next.startsWith("//")) {
-    return next;
-  }
-
-  return "/new";
+  return resolveAuthReturnUrl(next);
 }

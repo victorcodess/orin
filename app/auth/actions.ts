@@ -3,18 +3,14 @@
 import { redirect } from "next/navigation";
 
 import { getAuthCallbackUrl } from "@/lib/auth/site-url";
-import { safeReturnUrl } from "@/lib/auth/return-url";
+import { resolveAuthReturnUrl } from "@/lib/auth/return-url";
 import { setOnboardingCompleted } from "@/lib/auth/post-auth";
 import { createClient } from "@/lib/supabase/server";
 
 export async function signInWithGoogle(returnUrl?: string) {
   const supabase = await createClient();
   const callbackUrl = new URL(await getAuthCallbackUrl());
-  const safeNext = safeReturnUrl(returnUrl);
-
-  if (safeNext) {
-    callbackUrl.searchParams.set("next", safeNext);
-  }
+  callbackUrl.searchParams.set("next", resolveAuthReturnUrl(returnUrl));
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
