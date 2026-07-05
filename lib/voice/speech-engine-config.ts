@@ -29,6 +29,48 @@ export function buildSpeechEngineWsConfig(wsUrl: string) {
   return config;
 }
 
+export function publicSidecarHttpsUrl(
+  publicWsUrl = process.env.VOICE_SERVER_PUBLIC_URL,
+): string | null {
+  if (!publicWsUrl?.startsWith("wss://") || publicWsUrl.includes("your-")) {
+    return null;
+  }
+
+  return publicWsUrl.replace(/^wss:\/\//, "https://").replace(/\/ws$/, "/");
+}
+
+/** Preflight check before minting a voice token. */
+export async function isVoiceSidecarReachable(
+  publicWsUrl = process.env.VOICE_SERVER_PUBLIC_URL,
+): Promise<boolean> {
+  const httpsUrl = publicSidecarHttpsUrl(publicWsUrl);
+  if (!httpsUrl) {
+    return true;
+  }
+
+  try {
+    const response = await fetch(httpsUrl, {
+      signal: AbortSignal.timeout(4_000),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+export function voiceSidecarUnreachableMessage(
+  publicWsUrl = process.env.VOICE_SERVER_PUBLIC_URL,
+): string {
+  const host =
+    publicWsUrl?.replace(/^wss:\/\//, "").replace(/\/ws$/, "") ?? "sidecar";
+  const localHint =
+    host.includes("ngrok") || host.includes("localhost")
+      ? " For local dev, run `npm run dev:tunnel`."
+      : "";
+
+  return `Voice sidecar is not reachable at ${host}. Check VOICE_SERVER_PUBLIC_URL and run \`npm run update:engine\` if you changed it.${localHint}`;
+}
+
 /**
  * Client events the browser session should receive. `agent_chat_response_part`
  * is what streams Orin's reply into the chat token-by-token during a call, so

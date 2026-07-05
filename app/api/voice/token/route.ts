@@ -10,7 +10,11 @@ import {
   clearVoiceSession,
   markVoiceCallPending,
 } from "@/lib/voice/conversation-binding";
-import { syncSpeechEngineTts } from "@/lib/voice/speech-engine-config";
+import {
+  isVoiceSidecarReachable,
+  syncSpeechEngineTts,
+  voiceSidecarUnreachableMessage,
+} from "@/lib/voice/speech-engine-config";
 import { createClient } from "@/lib/supabase/server";
 
 type VoiceTokenRequest = {
@@ -95,6 +99,13 @@ export async function POST(req: Request) {
             "ELEVENLABS_SPEECH_ENGINE_ID is not configured. Create a Speech Engine resource and set the id in .env.local.",
         },
         { status: 500 },
+      );
+    }
+
+    if (!(await isVoiceSidecarReachable())) {
+      return Response.json(
+        { error: voiceSidecarUnreachableMessage() },
+        { status: 503 },
       );
     }
 

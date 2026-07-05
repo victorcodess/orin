@@ -3,6 +3,11 @@ import { resolve } from "node:path";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import { config } from "dotenv";
 
+import {
+  isVoiceSidecarReachable,
+  publicSidecarHttpsUrl,
+} from "../lib/voice/speech-engine-config";
+
 config({ path: resolve(process.cwd(), ".env.local") });
 
 const apiKey = process.env.ELEVENLABS_API_KEY;
@@ -55,19 +60,12 @@ async function main() {
     fail(`Sidecar not running on port ${port}. Start \`npm run dev\` or \`npm run dev:voice\`.`);
   }
 
-  if (publicWsUrl && publicWsUrl.startsWith("wss://")) {
-    const httpsUrl = publicWsUrl.replace(/^wss:\/\//, "https://");
-    try {
-      const tunnel = await fetch(httpsUrl.replace(/\/ws$/, "/"));
-      if (!tunnel.ok) {
-        fail(`Public tunnel returned HTTP ${tunnel.status} for ${httpsUrl.replace(/\/ws$/, "/")}`);
-      } else {
-        ok(`Public tunnel reachable at ${httpsUrl.replace(/\/ws$/, "/")}`);
-      }
-    } catch (error) {
-      fail(
-        `Public tunnel not reachable (${publicWsUrl}). Start ngrok/cloudflared and update .env.local + npm run update:engine. ${error instanceof Error ? error.message : ""}`,
-      );
+  const publicHttpsUrl = publicSidecarHttpsUrl(publicWsUrl);
+  if (publicHttpsUrl) {
+    if (!(await isVoiceSidecarReachable(publicWsUrl))) {
+      fail(`Public sidecar not reachable at ${publicHttpsUrl}`);
+    } else {
+      ok(`Public sidecar reachable at ${publicHttpsUrl}`);
     }
   }
 
@@ -98,7 +96,7 @@ async function main() {
     "\nDuring a call, the sidecar should log:\n  [SpeechEngine] upgrade request: GET /ws\n  [SpeechEngine] upgrading connection to WebSocket\n  [orin:voice] session init ...\n",
   );
   console.log(
-    "If those lines never appear, ElevenLabs cannot reach your tunnel. Run `npm run dev:tunnel`, then `npm run update:engine`.",
+    "If those lines never appear, ElevenLabs cannot reach your sidecar. Check VOICE_SERVER_PUBLIC_URL and run `npm run update:engine`.",
   );
 }
 
