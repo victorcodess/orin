@@ -7,19 +7,12 @@ import {
   HomeNavActions,
   HomeNavActionsSkeleton,
 } from "@/components/marketing/home-auth-actions";
-import {
-  MARKETING_LEGAL_LINKS,
-  MARKETING_SOCIAL_LINKS,
-} from "@/components/marketing/marketing-links";
+import { HomeNavLinks } from "@/components/marketing/home-nav-links";
 import { getRequestIsLoggedIn } from "@/lib/auth/request-session";
-import { cn } from "@/lib/utils";
 
 async function HomeNavActionsWithAuth() {
   return <HomeNavActions initialIsLoggedIn={await getRequestIsLoggedIn()} />;
 }
-
-const navLinkClass =
-  "hover:text-primary underline-offset-2 transition-colors hover:underline";
 
 export function HomeNav() {
   return (
@@ -35,32 +28,7 @@ export function HomeNav() {
           </span>
         </Link>
 
-        <div
-          className={cn(
-            "text-muted-foreground/80 absolute top-1/2 left-1/2 hidden w-fit -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-10 text-sm font-medium md:flex"
-          )}
-        >
-          {MARKETING_LEGAL_LINKS.map(({ href, label, page }) => (
-            <Link
-              key={page}
-              href={href}
-              className={cn(navLinkClass, "whitespace-nowrap")}
-            >
-              {label}
-            </Link>
-          ))}
-          {MARKETING_SOCIAL_LINKS.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              className={navLinkClass}
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
+        <HomeNavLinks />
 
         <div className="flex items-center gap-1">
           <Suspense fallback={<HomeNavActionsSkeleton />}>
