@@ -17,6 +17,9 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const engineId = process.env.ELEVENLABS_SPEECH_ENGINE_ID;
 const apiKey = process.env.ELEVENLABS_API_KEY;
 
+const VOICE_FALLBACK_REPLY =
+  "Sorry, I ran into a problem answering that. Please try again.";
+
 export async function attachSpeechEngine(httpServer: HttpServer, path = "/ws") {
   if (!apiKey || apiKey.includes("your-")) {
     throw new Error("ELEVENLABS_API_KEY is not configured");
@@ -106,6 +109,9 @@ export async function attachSpeechEngine(httpServer: HttpServer, path = "/ws") {
         }
 
         console.error("[orin:voice] transcript handler failed", error);
+        await session.sendResponse(VOICE_FALLBACK_REPLY).catch((fallbackError) => {
+          console.error("[orin:voice] fallback response failed", fallbackError);
+        });
       }
     },
     async onClose(session) {
