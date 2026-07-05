@@ -37,7 +37,10 @@ import {
 import { ORIN_NAME } from "@/lib/orin/defaults";
 import { useVoiceLiveMessagesStore } from "@/lib/stores/voice-live-messages-store";
 import { getVoiceDisconnectToast } from "@/lib/voice/disconnect-toast";
+import { patchElevenLabsErrorHandler } from "@/lib/voice/elevenlabs-error-handler";
 import { cn } from "@/lib/utils";
+
+patchElevenLabsErrorHandler();
 
 // A muted WebRTC mic still sends silence frames, which ElevenLabs occasionally
 // emits as an empty "..." user turn. Ignore turns with no letters/digits so a
