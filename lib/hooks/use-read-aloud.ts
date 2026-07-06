@@ -10,10 +10,12 @@ import {
 } from "@/lib/elevenlabs/read-aloud-cache";
 import { fetchReadAloudAudio } from "@/lib/elevenlabs/read-aloud-client";
 import { isFetchError } from "@/lib/quotas/client-errors";
-import { toastQuotaError } from "@/lib/quotas/toast";
+import { toastQuotaError, toastSignupForFeature } from "@/lib/quotas/toast";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import type { VoiceSpeed } from "@/lib/orin/voice/speed";
 
 export function useReadAloud(voiceId: string, voiceSpeed: VoiceSpeed) {
+  const userId = useAuthStore((state) => state.userId);
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -89,11 +91,17 @@ export function useReadAloud(voiceId: string, voiceSpeed: VoiceSpeed) {
         return;
       }
 
+      const cachedUrl = getReadAloudAudioCache(cacheKey);
+
+      if (!cachedUrl && userId === null) {
+        toastSignupForFeature("read aloud");
+        return;
+      }
+
       detachAudio();
       setActiveMessageId(messageId);
       setIsPaused(false);
 
-      const cachedUrl = getReadAloudAudioCache(cacheKey);
       const requestId = ++requestIdRef.current;
 
       if (cachedUrl) {
@@ -139,6 +147,7 @@ export function useReadAloud(voiceId: string, voiceSpeed: VoiceSpeed) {
       isPaused,
       playFromUrl,
       resetPlayback,
+      userId,
       voiceId,
       voiceSpeed,
     ]
