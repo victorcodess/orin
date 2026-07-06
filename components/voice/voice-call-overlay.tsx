@@ -30,6 +30,8 @@ import { toast } from "@/components/nexus-ui/toaster";
 import { isFetchError, readErrorResponse } from "@/lib/quotas/client-errors";
 import { toastQuotaError } from "@/lib/quotas/toast";
 import type { KeySource } from "@/lib/quotas/types";
+import { getVoiceOrbColors } from "@/lib/elevenlabs/voices";
+import { useAssistantConfig } from "@/lib/stores/assistant-config-store";
 import {
   useVoiceCallStore,
   type VoiceCallMode,
@@ -179,6 +181,7 @@ function VoiceCallPanel({
   onToggleMode: () => void;
   onEnd: () => void;
 }) {
+  const { voiceId } = useAssistantConfig();
   const isFullscreen = mode === "fullscreen";
 
   return (
@@ -201,7 +204,7 @@ function VoiceCallPanel({
           volumeMode={volumeMode}
           getInputVolume={getInputVolume}
           getOutputVolume={getOutputVolume}
-          colors={["#f97015", "#fcf8f3"]}
+          colors={getVoiceOrbColors(voiceId)}
         />
         <div className="flex flex-col items-center gap-2 text-center">
           <p className="text-foreground hidden text-base font-medium">

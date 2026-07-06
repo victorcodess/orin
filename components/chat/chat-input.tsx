@@ -38,6 +38,7 @@ import {
 } from "@/components/voice/voice-call-keyboard-shortcuts";
 import { VoiceActivityIndicator } from "@/components/voice/voice-activity-indicator";
 import { VoicePill } from "@/components/voice/voice-pill";
+import { getVoiceOrbColors } from "@/lib/elevenlabs/voices";
 import { CommitStrategy } from "@/lib/hooks/use-scribe";
 import {
   getScribeToken,
@@ -51,6 +52,7 @@ import {
   matchesShortcut,
 } from "@/lib/ui/keyboard-shortcuts";
 import { ORIN_NAME } from "@/lib/orin/defaults";
+import { useAssistantConfig } from "@/lib/stores/assistant-config-store";
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 import { cn } from "@/lib/utils";
 
@@ -84,6 +86,7 @@ export function ChatInput({
 
   const { isMuted, setMuted } = useConversationInput();
   const { activity, agentState, getInputVolume, getOutputVolume } = useVoiceOrb();
+  const { voiceId } = useAssistantConfig();
 
   useEffect(() => {
     prefetchDictationToken();
@@ -263,7 +266,7 @@ export function ChatInput({
               state={agentState}
               getInputVolume={getInputVolume}
               getOutputVolume={getOutputVolume}
-              colors={["#f97015", "#fcf8f3"]}
+              colors={getVoiceOrbColors(voiceId)}
               className="h-14 w-full"
             />
           </div>
