@@ -24,7 +24,7 @@ import {
   UnfoldMoreIcon,
 } from "@hugeicons/core-free-icons";
 
-import { navigateAfterLogout } from "@/lib/auth/return-url";
+import { completeLogout } from "@/lib/auth/return-url";
 import { useAuthStore, type SidebarUser } from "@/lib/stores/auth-store";
 import {
   openKeyboardShortcutsDialog,
@@ -302,8 +302,7 @@ export function NavUser() {
   );
 
   async function handleSignOut() {
-    await signOut();
-    navigateAfterLogout(router);
+    await completeLogout(router, signOut);
   }
 
   return (

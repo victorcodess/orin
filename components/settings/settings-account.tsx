@@ -39,7 +39,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { navigateAfterLogout } from "@/lib/auth/return-url";
+import { completeLogout } from "@/lib/auth/return-url";
 import { useSettingsRouteDirty } from "@/lib/hooks/use-settings-route-dirty";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import {
@@ -299,9 +299,8 @@ export function SettingsAccount() {
     setIsSigningOut(true);
 
     try {
-      await signOut();
+      await completeLogout(router, signOut);
       toast.success("Logged out", { position: "bottom-center" });
-      navigateAfterLogout(router);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't log out");
     } finally {

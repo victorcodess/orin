@@ -93,8 +93,17 @@ export function navigateAfterLogout(router: AppRouterInstance) {
       ? { pathname: "/", search: "", hash: "" }
       : window.location;
 
-  const target =
-    pathname === "/" ? "/" : `${pathname}${search}${hash}`;
+  if (pathname === "/") {
+    router.push("/");
+    return;
+  }
+
+  if (isChatReturnPath(pathname)) {
+    router.replace(DEFAULT_AUTH_RETURN);
+    return;
+  }
+
+  const target = `${pathname}${search}${hash}`;
   const hashIndex = target.indexOf("#");
 
   if (hashIndex === -1) {
@@ -103,6 +112,13 @@ export function navigateAfterLogout(router: AppRouterInstance) {
     router.push(target.slice(0, hashIndex));
     window.location.hash = target.slice(hashIndex + 1);
   }
+}
 
+export async function completeLogout(
+  router: AppRouterInstance,
+  signOut: () => Promise<void>,
+) {
+  navigateAfterLogout(router);
+  await signOut();
   router.refresh();
 }

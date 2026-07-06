@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useTransition } from "react";
 
-import { buildLoginHref, navigateAfterLogout } from "@/lib/auth/return-url";
+import { buildLoginHref, completeLogout } from "@/lib/auth/return-url";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -89,8 +89,7 @@ function LogOutButton({
       disabled={isPending}
       onClick={() => {
         startTransition(async () => {
-          await signOut();
-          navigateAfterLogout(router);
+          await completeLogout(router, signOut);
         });
       }}
       {...props}
