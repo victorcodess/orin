@@ -9,11 +9,12 @@ import {
   voiceCallStartKeys,
 } from "@/components/voice/voice-call-keyboard-shortcuts";
 import { toast } from "@/components/nexus-ui/toaster";
-import { buildLoginHrefFromHere } from "@/lib/auth/return-url";
-import { openSettings } from "@/lib/settings/routes";
+import { toastSignupForFeature } from "@/lib/quotas/toast";
 import type { QuotaUsageSummary } from "@/lib/quotas/types";
+import { openSettings } from "@/lib/settings/routes";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useUsageQuery } from "@/lib/stores/usage-store";
+
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 
 type VoiceCallButtonProps = {
@@ -79,15 +80,7 @@ export function VoiceCallButton({
 
   const handleClick = () => {
     if (userId === null) {
-      toast.error("Sign up for voice calls", {
-        description: "Voice calls are available after you create an account.",
-        action: {
-          label: "Sign up",
-          onClick: () => {
-            window.location.href = buildLoginHrefFromHere("signup");
-          },
-        },
-      });
+      toastSignupForFeature("voice calls");
       return;
     }
 
@@ -133,7 +126,7 @@ export function VoiceCallButton({
           variant={isActive ? "default" : "ghost"}
           size="icon-lg"
           className="hover:bg-accent hover:dark:bg-muted"
-          disabled={disabled || status === "connecting" || userId === undefined}
+          disabled={disabled || status !== "idle" || userId === undefined}
           aria-label={isActive ? "Voice call active" : "Start voice call"}
           onClick={handleClick}
         >
