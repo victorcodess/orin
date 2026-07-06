@@ -71,7 +71,7 @@ export function DeleteConversationDialog({
           <AlertDialogTitle>Delete chat?</AlertDialogTitle>
           <AlertDialogDescription className="w- [95%]">
             This will permanently delete{" "}
-            <span className="font-medium text-foreground">{displayTitle}</span>{" "}
+            <span className="font-medium text-foreground text-wrap wrap-anywhere">{displayTitle}</span>{" "}
             and all its messages. This can&apos;t be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
