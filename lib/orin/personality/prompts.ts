@@ -3,6 +3,10 @@ import "server-only";
 import fs from "fs";
 import path from "path";
 
+import {
+  buildRuntimeContext,
+  type RuntimeContextInput,
+} from "@/lib/orin/personality/runtime-context";
 import type { PersonalityId, PersonalitySettings } from "@/lib/orin/personality/types";
 
 const DOCS_DIR = path.join(process.cwd(), "lib/orin/personality/docs");
@@ -25,19 +29,21 @@ export const PERSONALITY_PROMPTS: Record<PersonalityId, string> = {
 export function buildPersonalityPrompt(
   settings: PersonalitySettings,
   mode: "text" | "voice" = "text",
+  runtime: RuntimeContextInput = {},
 ): string {
   const sections = [
     CORE_SYSTEM_PROMPT,
     PERSONALITY_PROMPTS[settings.personality],
+    buildRuntimeContext({
+      ...runtime,
+      mode,
+      customInstructions:
+        runtime.customInstructions ?? settings.customInstructions,
+    }),
   ];
 
   if (mode === "voice") {
     sections.push(VOICE_CONTEXT);
-  }
-
-  const custom = settings.customInstructions.trim();
-  if (custom) {
-    sections.push(`## Custom instructions\n\n${custom}`);
   }
 
   return sections.join("\n\n---\n\n");
