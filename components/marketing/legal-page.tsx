@@ -5,7 +5,9 @@ import type { MarketingLegalPage } from "@/components/marketing/marketing-links"
 import { MarketingInsetLayout } from "@/components/marketing/marketing-inset-layout";
 import { Badge } from "@/components/ui/badge";
 
-export const LEGAL_LAST_UPDATED = "July 1, 2026";
+export const LEGAL_LAST_UPDATED = "July 7, 2026";
+
+export const LEGAL_CONTACT_EMAIL = "victor.will.chuk@gmail.com";
 
 type LegalPageProps = {
   title: string;

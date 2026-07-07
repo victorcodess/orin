@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { LegalPage, LEGAL_LAST_UPDATED } from "@/components/marketing/legal-page";
+import {
+  LegalPage,
+  LEGAL_CONTACT_EMAIL,
+  LEGAL_LAST_UPDATED,
+} from "@/components/marketing/legal-page";
 
 export const metadata: Metadata = {
   title: "Terms of Service · Orin",
@@ -69,6 +73,14 @@ export default function TermsPage() {
         how you use generated content.
       </p>
 
+      <h2>Not for emergencies</h2>
+      <p>
+        Orin is not a mental health, medical, or emergency service. If you are in
+        crisis or may harm yourself or others, contact local emergency services
+        or a crisis helpline immediately. In the US, you can call or text{" "}
+        <strong>988</strong> for the Suicide &amp; Crisis Lifeline.
+      </p>
+
       <h2>Voice features</h2>
       <p>
         Voice calls and read-aloud features process audio through third-party
@@ -80,8 +92,8 @@ export default function TermsPage() {
       <h2>Usage limits and API keys</h2>
       <p>
         Orin may offer free usage allowances and optional bring-your-own-key
-        (BYOK) support for certain providers. We may change limits, pricing
-        models, or feature availability at any time. You are responsible for
+        (BYOK) support for certain providers. We may change usage allowances,
+        limits, or feature availability at any time. You are responsible for
         charges incurred through API keys you connect to your account.
       </p>
 
@@ -126,16 +138,14 @@ export default function TermsPage() {
 
       <h2>Contact</h2>
       <p>
-        Questions about these terms can be sent via{" "}
+        Questions about these terms can be sent to{" "}
+        <Link href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</Link>
+        . For product bugs, use{" "}
         <Link
           href="https://github.com/victorcodess/orin/issues"
           target="_blank"
         >
           GitHub Issues
-        </Link>{" "}
-        or through{" "}
-        <Link href="https://victorwilliams.me" target="_blank">
-          victorwilliams.me
         </Link>
         .
       </p>

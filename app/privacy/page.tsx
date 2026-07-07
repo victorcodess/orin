@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { LegalPage, LEGAL_LAST_UPDATED } from "@/components/marketing/legal-page";
+import {
+  LegalPage,
+  LEGAL_CONTACT_EMAIL,
+  LEGAL_LAST_UPDATED,
+} from "@/components/marketing/legal-page";
 
 export const metadata: Metadata = {
   title: "Privacy Policy · Orin",
@@ -43,14 +47,22 @@ export default function PrivacyPage() {
       <p>
         We store your chat conversations, message history, conversation titles,
         favorites, and related metadata in our database so you can continue
-        chats across sessions and devices.
+        chats across sessions and devices. To generate replies, your messages and
+        relevant conversation history are processed by third-party AI providers
+        such as OpenAI and ElevenLabs.
+      </p>
+      <p>
+        If you use Orin without signing in, we still store conversations tied to
+        a browser session identifier so you can continue chatting in that browser.
+        If you later sign in, those chats can be merged into your account.
       </p>
 
-      <h3>Voice data</h3>
+      <h3>Voice and audio data</h3>
       <p>
-        If you use voice calls or read-aloud features, audio and related session
-        data may be processed by ElevenLabs and our voice infrastructure to
-        generate speech and enable real-time conversation.
+        If you use voice calls, read-aloud, or composer dictation, audio and
+        related session data may be processed by ElevenLabs and our voice
+        infrastructure to transcribe speech, generate audio, and enable
+        real-time conversation.
       </p>
 
       <h3>Usage and technical data</h3>
@@ -90,14 +102,16 @@ export default function PrivacyPage() {
           <strong>Google</strong> — sign-in through OAuth
         </li>
         <li>
-          <strong>OpenAI</strong> — text generation for chat responses
+          <strong>OpenAI</strong> — processing your messages and conversation
+          history to generate chat responses
         </li>
         <li>
-          <strong>ElevenLabs</strong> — voice synthesis and conversational audio
-          features
+          <strong>ElevenLabs</strong> — voice synthesis, speech-to-text
+          dictation, and conversational audio features
         </li>
         <li>
-          <strong>Vercel</strong> — application hosting and delivery
+          <strong>Vercel</strong> — application hosting, delivery, and anonymous
+          usage analytics
         </li>
       </ul>
       <p>
@@ -131,9 +145,9 @@ export default function PrivacyPage() {
 
       <h2>Cookies and local storage</h2>
       <p>
-        Orin uses cookies and similar storage needed for authentication, session
-        management, and basic app functionality such as theme preferences. We do
-        not use third-party advertising cookies.
+        Orin uses cookies and similar storage needed for authentication, anonymous
+        session tracking, and basic app functionality such as theme preferences.
+        We do not use third-party advertising cookies.
       </p>
 
       <h2>Security</h2>
@@ -148,8 +162,9 @@ export default function PrivacyPage() {
       <p>
         Orin is not directed at children under 13, and we do not knowingly
         collect personal information from them. If you believe a child has
-        provided us information, contact us and we will take appropriate steps
-        to delete it.
+        provided us information, contact{" "}
+        <Link href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</Link>{" "}
+        and we will take appropriate steps to delete it.
       </p>
 
       <h2>International users</h2>
@@ -168,16 +183,16 @@ export default function PrivacyPage() {
 
       <h2>Contact</h2>
       <p>
-        Privacy questions or requests can be sent via{" "}
+        Privacy questions and requests (access, correction, or deletion) should be
+        sent to{" "}
+        <Link href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</Link>
+        . Please do not post personal data requests in public GitHub Issues. For
+        product bugs, use{" "}
         <Link
           href="https://github.com/victorcodess/orin/issues"
           target="_blank"
         >
           GitHub Issues
-        </Link>{" "}
-        or through{" "}
-        <Link href="https://victorwilliams.me" target="_blank">
-          victorwilliams.me
         </Link>
         .
       </p>
