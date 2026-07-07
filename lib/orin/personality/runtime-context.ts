@@ -33,11 +33,14 @@ const MODALITY_COPY: Record<"text" | "voice", string> = {
   voice: "Voice call — they're talking to you live.",
 };
 
-const voiceSessionRuntimeByConversation = new Map<string, VoiceSessionRuntime>();
+const voiceSessionRuntimeByConversation = new Map<
+  string,
+  VoiceSessionRuntime
+>();
 
 export function setVoiceSessionRuntime(
   conversationId: string,
-  runtime: VoiceSessionRuntime,
+  runtime: VoiceSessionRuntime
 ) {
   voiceSessionRuntimeByConversation.set(conversationId, {
     userName: runtime.userName ?? null,
@@ -46,7 +49,7 @@ export function setVoiceSessionRuntime(
 }
 
 export function getVoiceSessionRuntime(
-  conversationId: string,
+  conversationId: string
 ): VoiceSessionRuntime {
   return voiceSessionRuntimeByConversation.get(conversationId) ?? {};
 }
@@ -58,7 +61,7 @@ export function clearVoiceSessionRuntime(conversationId: string) {
 /** Cached per request — one profile read even if called multiple times. */
 export const getPromptUserName = cache(async function getPromptUserName(
   userId: string,
-  authUser: Parameters<typeof resolvedDisplayName>[1],
+  authUser: Parameters<typeof resolvedDisplayName>[1]
 ): Promise<string | null> {
   const supabase = createAdminClient();
   const { data } = await supabase
@@ -105,10 +108,12 @@ function formatDateTime(now: Date, timeZone: string) {
 export function buildRuntimeContext(input: RuntimeContextInput = {}): string {
   const now = input.now ?? new Date();
   const timeZone = input.timeZone ?? DEFAULT_TIME_ZONE;
-  const { dayOfWeek, date, time, timeZone: timeZoneLabel } = formatDateTime(
-    now,
-    timeZone,
-  );
+  const {
+    dayOfWeek,
+    date,
+    time,
+    timeZone: timeZoneLabel,
+  } = formatDateTime(now, timeZone);
 
   const userName = input.userName?.trim();
   const userNameLabel = userName ? promptFirstName(userName) : "not shared";

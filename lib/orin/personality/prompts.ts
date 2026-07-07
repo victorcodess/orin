@@ -7,7 +7,10 @@ import {
   buildRuntimeContext,
   type RuntimeContextInput,
 } from "@/lib/orin/personality/runtime-context";
-import type { PersonalityId, PersonalitySettings } from "@/lib/orin/personality/types";
+import type {
+  PersonalityId,
+  PersonalitySettings,
+} from "@/lib/orin/personality/types";
 
 const DOCS_DIR = path.join(process.cwd(), "lib/orin/personality/docs");
 
@@ -29,7 +32,7 @@ export const PERSONALITY_PROMPTS: Record<PersonalityId, string> = {
 export function buildPersonalityPrompt(
   settings: PersonalitySettings,
   mode: "text" | "voice" = "text",
-  runtime: RuntimeContextInput = {},
+  runtime: RuntimeContextInput = {}
 ): string {
   const sections = [
     CORE_SYSTEM_PROMPT,

@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     if (!conversationId || !messages?.length) {
       return Response.json(
         { error: "conversationId and messages are required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       if (!lastUserMessage) {
         return Response.json(
           { error: "conversationId and messages are required" },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
@@ -116,13 +116,13 @@ export async function POST(req: Request) {
     const openai = createOpenAI({ apiKey: openaiResolved.key });
 
     const modelMessages = await convertToModelMessages(
-      sanitizeUIMessagesForModel(messages),
+      sanitizeUIMessagesForModel(messages)
     );
 
     if (modelMessages.length === 0) {
       return Response.json(
         { error: "At least one non-empty message is required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -144,7 +144,7 @@ export async function POST(req: Request) {
           if (lastUserMessage) {
             await deleteMessagesAfterUserMessage(
               conversationId,
-              lastUserMessage.id,
+              lastUserMessage.id
             );
           }
 
@@ -160,7 +160,6 @@ export async function POST(req: Request) {
 
     return result.toUIMessageStreamResponse();
   } catch (error) {
-
     if (isQuotaBlockedError(error)) {
       return quotaBlockedResponse(error);
     }

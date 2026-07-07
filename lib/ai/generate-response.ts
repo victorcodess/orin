@@ -73,7 +73,7 @@ function ensurePriorHistory(conversationId: string): Promise<UIMessage[]> {
 
 function ensureAssistantConfig(
   conversationId: string,
-  userId?: string | null,
+  userId?: string | null
 ): Promise<AssistantConfig> {
   const existing = configByConversation.get(conversationId);
   if (existing) {
@@ -112,14 +112,15 @@ export async function clearVoiceHistorySnapshot(conversationId: string) {
 /** Run a DB write after all earlier writes for this call have settled. */
 function enqueueWrite(
   conversationId: string,
-  task: () => Promise<void>,
+  task: () => Promise<void>
 ): Promise<void> {
-  const prev = writeQueueByConversation.get(conversationId) ?? Promise.resolve();
+  const prev =
+    writeQueueByConversation.get(conversationId) ?? Promise.resolve();
   const next = prev.then(() => task());
   // Keep the chain alive even if one write rejects.
   writeQueueByConversation.set(
     conversationId,
-    next.catch(() => {}),
+    next.catch(() => {})
   );
   return next;
 }
@@ -213,7 +214,7 @@ export async function handleVoiceTranscript({
     ensurePriorHistory(conversationId),
     resolveOpenAIKeyForVoiceTurn(
       { userId: userId ?? null, sessionId: sessionId ?? null },
-      conversationId,
+      conversationId
     ),
   ]);
 
@@ -227,7 +228,7 @@ export async function handleVoiceTranscript({
   ].slice(-VOICE_PROMPT_MESSAGE_LIMIT);
 
   const modelMessages = await convertToModelMessages(
-    sanitizeUIMessagesForModel(promptMessages),
+    sanitizeUIMessagesForModel(promptMessages)
   );
 
   if (modelMessages.length === 0) {
