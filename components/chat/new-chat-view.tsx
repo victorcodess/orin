@@ -1,18 +1,18 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { ChatInput } from "@/components/chat/chat-input";
 import { NewChatSuggestions } from "@/components/chat/new-chat-suggestions";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useNewChatVoiceCall } from "@/lib/hooks/use-new-chat-voice-call";
 import { titleFromUserMessage } from "@/lib/conversations/title";
 import { prefetchDictationToken } from "@/lib/elevenlabs/scribe-token-client";
 import { setPendingFirstMessage } from "@/lib/conversations/pending-first-message";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { prependConversation } from "@/lib/stores/conversations-store";
+import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 import { cn } from "@/lib/utils";
 
 const EASE = [0.25, 0.1, 0.25, 1] as const;
@@ -38,8 +38,12 @@ export function signalNewChat() {
 
 export function NewChatView() {
   const router = useRouter();
+  const pathname = usePathname();
   const reduceMotion = useReducedMotion();
-  const { suppressChrome } = useNewChatVoiceCall();
+  const voiceOrigin = useVoiceCallStore((state) => state.origin);
+  const voiceStatus = useVoiceCallStore((state) => state.status);
+  const suppressChrome =
+    pathname === "/new" && voiceOrigin === "new-chat" && voiceStatus !== "idle";
   const user = useAuthStore((state) => state.user);
   const isUserLoading = user === undefined;
   const [input, setInput] = useState("");

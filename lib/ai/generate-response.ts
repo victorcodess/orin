@@ -9,6 +9,7 @@ import {
   sanitizeUIMessagesForModel,
   toUIMessages,
 } from "@/lib/ai/message-utils";
+import { maybeUpdateConversationTitle } from "@/lib/ai/conversations";
 import { loadHistory, saveMessage } from "@/lib/ai/messages";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
 import type { AssistantConfig } from "@/lib/orin/defaults";
@@ -296,6 +297,7 @@ export async function handleVoiceTranscript({
           content: assistantText,
           source: "voice",
         });
+        await maybeUpdateConversationTitle(conversationId, userText);
 
         lastUserByConversation.set(conversationId, userText);
         lastAssistantByConversation.set(conversationId, assistantText);

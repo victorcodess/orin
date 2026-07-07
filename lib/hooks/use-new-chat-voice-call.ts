@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { NEW_CHAT_EVENT } from "@/components/chat/new-chat-view";
-import { titleFromUserMessage } from "@/lib/conversations/title";
+import {
+  patchConversationTitle,
+  titleFromUserMessage,
+} from "@/lib/conversations/title";
 import {
   prependConversation,
   renameConversationOptimistic,
@@ -12,21 +15,13 @@ import {
 import { useVoiceCallStore } from "@/lib/stores/voice-call-store";
 import { useVoiceLiveMessagesStore } from "@/lib/stores/voice-live-messages-store";
 
-function hasSpeech(text: string) {
-  return /[\p{L}\p{N}]/u.test(text.trim());
-}
-
-export function useNewChatVoiceCall() {
+export function useNewChatVoiceCallRouting() {
   const router = useRouter();
   const origin = useVoiceCallStore((state) => state.origin);
-  const status = useVoiceCallStore((state) => state.status);
   const conversationId = useVoiceCallStore((state) => state.conversationId);
   const commitNewChatCall = useVoiceCallStore((state) => state.commitNewChatCall);
   const liveMessages = useVoiceLiveMessagesStore((state) => state.messages);
   const routedRef = useRef(false);
-  const titledRef = useRef(false);
-
-  const suppressChrome = origin === "new-chat" && status !== "idle";
 
   useEffect(() => {
     const onNewChat = () => {
@@ -35,7 +30,6 @@ export function useNewChatVoiceCall() {
         setDisconnecting();
       }
       routedRef.current = false;
-      titledRef.current = false;
     };
 
     window.addEventListener(NEW_CHAT_EVENT, onNewChat);
@@ -48,49 +42,33 @@ export function useNewChatVoiceCall() {
     }
 
     const firstUserMessage = liveMessages.find(
-      (message) => message.role === "user" && hasSpeech(message.text),
+      (message) => message.role === "user",
     );
 
-    if (routedRef.current) {
-      if (firstUserMessage && !titledRef.current) {
-        titledRef.current = true;
-        renameConversationOptimistic(
-            conversationId,
-            titleFromUserMessage(firstUserMessage.text),
-          );
-      }
+    if (!firstUserMessage) {
       return;
     }
 
-    // Open the chat thread once the call connects so live voice transcripts
-    // render in ChatView instead of the empty new-chat shell.
-    if (status !== "active" && !firstUserMessage) {
+    const title = titleFromUserMessage(firstUserMessage.text);
+
+    if (!routedRef.current) {
+      routedRef.current = true;
+      const now = new Date().toISOString();
+
+      prependConversation({
+        id: conversationId,
+        title,
+        is_favorited: false,
+        created_at: now,
+        updated_at: now,
+      });
+
+      commitNewChatCall();
+      void patchConversationTitle(conversationId, title).catch(() => {});
+      router.replace(`/c/${conversationId}?new=1`);
       return;
     }
 
-    routedRef.current = true;
-    const now = new Date().toISOString();
-
-    prependConversation({
-      id: conversationId,
-      title: firstUserMessage
-        ? titleFromUserMessage(firstUserMessage.text)
-        : "New chat",
-      is_favorited: false,
-      created_at: now,
-      updated_at: now,
-    });
-
-    commitNewChatCall();
-    router.push(`/c/${conversationId}?new=1`);
-  }, [
-    commitNewChatCall,
-    conversationId,
-    liveMessages,
-    origin,
-    router,
-    status,
-  ]);
-
-  return { suppressChrome };
+    renameConversationOptimistic(conversationId, title);
+  }, [commitNewChatCall, conversationId, liveMessages, origin, router]);
 }

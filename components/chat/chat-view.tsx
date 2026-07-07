@@ -344,15 +344,26 @@ export function ChatView({
   }, [editingMessageId, onCancelEditing]);
 
   useLayoutEffect(() => {
+    const stripNewSearchParam = () => {
+      if (new URLSearchParams(window.location.search).get("new") !== "1") {
+        return;
+      }
+
+      window.history.replaceState(null, "", `/c/${conversationId}`);
+    };
+
     const prompt = takePendingFirstMessage(conversationId);
-    if (!prompt || sentInitialPrompt.current) {
+    if (prompt && !sentInitialPrompt.current) {
+      sentInitialPrompt.current = true;
+      sendMessage({ text: prompt });
+      stripNewSearchParam();
       return;
     }
 
-    sentInitialPrompt.current = true;
-    sendMessage({ text: prompt });
-    window.history.replaceState(null, "", `/c/${conversationId}`);
-  }, [conversationId, sendMessage]);
+    if (voiceCallActive) {
+      stripNewSearchParam();
+    }
+  }, [conversationId, sendMessage, voiceCallActive]);
 
   useEffect(() => {
     const conversationKey = conversationId;
@@ -447,8 +458,7 @@ export function ChatView({
   // but before the agent's reply starts streaming. Without the voice case the
   // box only appears once the agent streams, delaying the scroll-to-top.
   const showPendingAssistant =
-    (isComposerBusy || voiceCallStatus === "active") &&
-    lastMessage?.role === "user";
+    (isComposerBusy || voiceCallActive) && lastMessage?.role === "user";
   const displayMessages = showPendingAssistant
     ? [
         ...mergedVisibleMessages,
@@ -516,7 +526,9 @@ export function ChatView({
         }
       >
         <ThreadContent className="mx-auto w-full max-w-3xl items-stretch gap-(--orin-thread-content-gap) pt-15 pb-30 md:pt-10 md:pb-(--orin-thread-content-bottom-padding)">
-          {mergedVisibleMessages.length === 0 && !isComposerBusy ? (
+          {mergedVisibleMessages.length === 0 &&
+          !isComposerBusy &&
+          !voiceCallActive ? (
             <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-24 text-center">
               <p className="text-foreground text-lg font-medium">{ORIN_NAME}</p>
             </div>
