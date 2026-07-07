@@ -18,6 +18,7 @@ import {
 import { sanitizeUIMessagesForModel } from "@/lib/ai/message-utils";
 import { TEXT_CHAT_MODEL } from "@/lib/ai/model";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
+import { getPromptUserName } from "@/lib/orin/personality/runtime-context";
 import { getErrorMessage } from "@/lib/errors";
 import { getQuotaContext } from "@/lib/quotas/context";
 import { isQuotaBlockedError, quotaBlockedResponse } from "@/lib/quotas/errors";
@@ -76,7 +77,15 @@ export async function POST(req: Request) {
 
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
-    const config = await getAssistantConfig(authData.user?.id);
+
+    const [config, userName] = await Promise.all([
+      getAssistantConfig(authData.user?.id),
+      authData.user
+        ? getPromptUserName(authData.user.id, authData.user)
+        : Promise.resolve(null),
+    ]);
+
+    const timeZone = req.headers.get("X-User-Timezone") ?? undefined;
 
     if (lastUserMessage) {
       const userText = textFromUIMessage(lastUserMessage);
@@ -117,7 +126,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const system = buildPersonalityPrompt(config.personalitySettings);
+    const system = buildPersonalityPrompt(config.personalitySettings, "text", {
+      userName,
+      timeZone,
+    });
 
     const result = streamText({
       model: openai(TEXT_CHAT_MODEL),

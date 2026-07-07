@@ -12,6 +12,10 @@ import {
 import { maybeUpdateConversationTitle } from "@/lib/ai/conversations";
 import { loadHistory, saveMessage } from "@/lib/ai/messages";
 import { buildPersonalityPrompt } from "@/lib/orin/personality/prompts";
+import {
+  clearVoiceSessionRuntime,
+  getVoiceSessionRuntime,
+} from "@/lib/orin/personality/runtime-context";
 import type { AssistantConfig } from "@/lib/orin/defaults";
 import { resolveOpenAIKeyForVoiceTurn } from "@/lib/quotas/resolve";
 
@@ -102,6 +106,7 @@ export async function clearVoiceHistorySnapshot(conversationId: string) {
   writeQueueByConversation.delete(conversationId);
   lastUserByConversation.delete(conversationId);
   lastAssistantByConversation.delete(conversationId);
+  clearVoiceSessionRuntime(conversationId);
 }
 
 /** Run a DB write after all earlier writes for this call have settled. */
@@ -212,6 +217,8 @@ export async function handleVoiceTranscript({
     ),
   ]);
 
+  const { userName, timeZone } = getVoiceSessionRuntime(conversationId);
+
   const openai = createOpenAI({ apiKey: openaiResolved.key });
 
   const promptMessages: UIMessage[] = [
@@ -232,7 +239,10 @@ export async function handleVoiceTranscript({
   async function* textStream() {
     const result = streamText({
       model: openai(VOICE_CHAT_MODEL),
-      system: buildPersonalityPrompt(config.personalitySettings, "voice"),
+      system: buildPersonalityPrompt(config.personalitySettings, "voice", {
+        userName,
+        timeZone,
+      }),
       messages: modelMessages,
       abortSignal: signal,
     });

@@ -1,5 +1,6 @@
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
+import { setVoiceSessionRuntime, getPromptUserName } from "@/lib/orin/personality/runtime-context";
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import { verifyConversationAccess } from "@/lib/ai/conversations";
 import { getErrorMessage } from "@/lib/errors";
@@ -19,6 +20,7 @@ import { createClient } from "@/lib/supabase/server";
 
 type VoiceTokenRequest = {
   conversationId?: string;
+  timeZone?: string;
 };
 
 function voiceTokenError(error: unknown): {
@@ -84,7 +86,7 @@ function voiceTokenError(error: unknown): {
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as VoiceTokenRequest;
-    const { conversationId } = body;
+    const { conversationId, timeZone } = body;
 
     if (!conversationId) {
       return Response.json({ error: "conversationId is required" }, { status: 400 });
@@ -119,7 +121,16 @@ export async function POST(req: Request) {
 
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
-    const assistantConfig = await getAssistantConfig(authData.user?.id);
+
+    const [assistantConfig, userName] = await Promise.all([
+      getAssistantConfig(authData.user?.id),
+      authData.user
+        ? getPromptUserName(authData.user.id, authData.user)
+        : Promise.resolve(null),
+    ]);
+
+    setVoiceSessionRuntime(conversationId, { userName, timeZone });
+
     await syncSpeechEngineTts(assistantConfig, elevenlabsResolved.key);
 
     const pendingToken = await markVoiceCallPending(conversationId);

@@ -42,6 +42,8 @@ import { getVoiceDisconnectToast } from "@/lib/voice/disconnect-toast";
 import { patchElevenLabsErrorHandler } from "@/lib/voice/elevenlabs-error-handler";
 import { cn } from "@/lib/utils";
 
+const CLIENT_TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 patchElevenLabsErrorHandler();
 
 // A muted WebRTC mic still sends silence frames, which ElevenLabs occasionally
@@ -485,7 +487,10 @@ export function VoiceCallOverlay() {
         const response = await fetch("/api/voice/token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ conversationId }),
+          body: JSON.stringify({
+            conversationId,
+            timeZone: CLIENT_TIME_ZONE,
+          }),
         });
 
         if (!response.ok) {
