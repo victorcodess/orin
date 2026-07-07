@@ -4,7 +4,7 @@ This doc explains how Orin is tested today, why we bother, and what you get out 
 
 ## The short version
 
-Orin has **56 unit tests** in **11 files**, all under `lib/`. They run in about a second with:
+Orin has **66 unit tests** in **14 files**, all under `lib/`. They run in about a second with:
 
 ```bash
 npm test
@@ -45,12 +45,13 @@ Each row is a real file (or group) in the repo.
 | Quota + BYOK resolution | `lib/quotas/resolve.test.ts`, `keys.test.ts` | Over limit → signup or “add keys”; under limit → platform key |
 | Quota API errors | `lib/quotas/errors.test.ts`, `client-errors.test.ts` | Stable error codes for the UI (`signup_required`, `keys_required`) |
 | BYOK crypto | `lib/crypto/secrets.test.ts` | Encrypt/decrypt round-trip; masked keys never show the full secret |
-| Auth redirects | `lib/safe-redirect.test.ts` | Only same-origin paths allowed after login |
+| Auth redirects | `lib/auth/safe-redirect.test.ts`, `return-url.test.ts`, `post-auth.test.ts` | Only same-origin paths allowed after login; anon session merge |
+| Rate limiting | `lib/security/rate-limit.test.ts` | API rate limits block abuse |
 | Chat input hygiene | `lib/ai/message-utils.test.ts` | Empty turns stripped before hitting the model |
 | Personality config | `lib/orin/personality/parse.test.ts`, `prompts.test.ts` | Bad cookie/DB input falls back safely; prompts assemble |
 | Voice disconnect UX | `lib/voice/disconnect-toast.test.ts` | ElevenLabs disconnect reasons map to the right toast |
 
-**Total: 56 assertions** across those modules.
+**Total: 66 tests** across those modules.
 
 ---
 
@@ -122,7 +123,7 @@ npm test
 npm run test:watch
 ```
 
-You should see **11 passed** test files, **56 passed** tests. No API keys or Supabase project required.
+You should see **14 passed** test files, **66 passed** tests. No API keys or Supabase project required.
 
 ---
 
@@ -140,7 +141,7 @@ Add or extend a test when you change logic that:
 
 1. **Enforces limits or billing-like rules** (`lib/quotas/`)
 2. **Handles secrets** (`lib/crypto/`)
-3. **Decides where users go after auth** (`lib/safe-redirect.ts`, `lib/auth/`)
+3. **Decides where users go after auth** (`lib/auth/safe-redirect.ts`, `lib/auth/return-url.ts`, `lib/auth/post-auth.ts`)
 4. **Shapes what the model sees** (`lib/ai/message-utils.ts`, personality parse/build)
 
 Skip tests for:

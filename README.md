@@ -11,7 +11,7 @@ Live at [orin.chat](https://orin.chat). Open source under the [MIT License](LICE
 - **One assistant, one brain, two surfaces** — text chat and voice calls share the same AI logic, personality config, and `messages` thread
 - **Try without signing in** — anonymous users get a small demo allowance in the browser
 - **Sign in with Google** — save history, sync across devices, unlock voice calls and read-aloud
-- **Make Orin yours** — tone, warmth, voice, and speaking speed in Settings; onboarding walks you through it after first sign-in
+- **Make Orin yours** — personality style, custom instructions, voice, and speaking speed in Settings; onboarding walks you through it after first sign-in
 - **Platform allowance + BYOK** — no Stripe or billing. Free tier runs on the deployer's API keys; signed-in users can add their own OpenAI and ElevenLabs keys when quota runs out (encrypted at rest)
 
 Voice runs on a separate Node sidecar because real-time audio needs a persistent WebSocket — a poor fit for serverless. The sidecar calls the same shared AI layer as `/api/chat`, so Orin never gets two personalities depending on how you talk to it.
@@ -94,16 +94,20 @@ Use a **separate ElevenLabs Speech Engine per environment**. Full production ste
 | `npm run dev` | Next.js + voice sidecar |
 | `npm run dev:web` | Next.js only |
 | `npm run dev:tunnel` | ngrok tunnel for voice sidecar (port 3001) |
+| `npm run create:engine` | Create a new ElevenLabs Speech Engine |
+| `npm run update:engine` | Point Speech Engine at `VOICE_SERVER_PUBLIC_URL` |
 | `npm run verify:voice` | Check sidecar + Speech Engine configuration |
 | `npm run build` | Production build |
-| `npm run start` | Run production server |
+| `npm run start` | Run Next.js only (voice sidecar: `npm run start:voice`) |
+| `npm run start:voice` | Run voice sidecar in production |
+| `npm run gen:types` | Regenerate Supabase TypeScript types |
 | `npm run lint` | Run ESLint |
 | `npm test` | Unit tests (Vitest) |
 | `npm run test:watch` | Unit tests in watch mode |
 
 ## Testing
 
-56 unit tests under `lib/**/*.test.ts` cover quotas, BYOK crypto, auth redirects, and message sanitization. See [docs/testing.md](docs/testing.md) for strategy and scope.
+66 unit tests under `lib/**/*.test.ts` cover quotas, BYOK crypto, auth redirects, and message sanitization. See [docs/testing.md](docs/testing.md) for strategy and scope.
 
 ```bash
 npm test
