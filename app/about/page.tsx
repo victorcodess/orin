@@ -76,7 +76,7 @@ export default function AboutPage() {
           <code>Escape</code> to stop a response midstream
         </li>
       </ul>
-      <p>Hover any message for actions:</p>
+      <p>Message actions appear on Orin&apos;s replies; hover your own messages for:</p>
       <ul>
         <li>
           <strong>Copy</strong> any message
@@ -92,8 +92,8 @@ export default function AboutPage() {
         </li>
       </ul>
       <p>
-        Your chats show up in the sidebar under <strong>Recent</strong>. Star a
-        conversation to pin it under <strong>Favorites</strong>. The title is
+        Your chats show up in the sidebar under <strong>Recent</strong>. Favorite
+        a conversation to pin it under <strong>Favorites</strong>. The title is
         generated from your first message, and you can rename it anytime from the
         chat header or sidebar menu.
       </p>
@@ -121,15 +121,17 @@ export default function AboutPage() {
 
       <h2>Make Orin yours</h2>
       <p>
-        After your first sign-in, onboarding walks you through the basics: how
-        Orin should sound, how warm or enthusiastic to be, and which voice to
-        use. You can skip it and adjust everything later in{" "}
-        <strong>Settings</strong>.
+        After your first sign-in, onboarding walks you through the basics:
+        personality style, custom instructions, voice, and speaking speed. You can
+        skip it and adjust everything later in <strong>Settings</strong>.
       </p>
       <p>From Settings you can change:</p>
       <ul>
         <li>Theme, language, and chat bubble layout</li>
-        <li>Personality style, warmth, enthusiasm, and custom instructions</li>
+        <li>
+          Personality style (Warm, Curious, Playful, Calm, or Direct) and custom
+          instructions
+        </li>
         <li>Voice and speaking speed</li>
       </ul>
       <p>
