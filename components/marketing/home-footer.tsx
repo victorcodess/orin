@@ -34,7 +34,7 @@ export function HomeFooter() {
       </div>
       <div className="flex w-full flex-col items-center justify-center gap-2 sm:flex-row sm:gap-4">
         <span className="text-muted-foreground text-sm">
-          © 2026 Victor Williams. All rights reserved
+          © 2026 All rights reserved
         </span>
         <span className="hidden sm:block">•</span>
         <span>

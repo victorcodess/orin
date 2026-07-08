@@ -56,7 +56,7 @@ export function LegalFooter({ activePage }: LegalFooterProps) {
       <div className="mt-8 flex flex-col items-center gap-6">
         <ThemeSwitcher className="shrink-0" />
         <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 text-sm font-[450] sm:flex-row sm:gap-4">
-          <span>© 2026 Victor Williams. All rights reserved</span>
+          <span>© 2026 All rights reserved</span>
           <span className="hidden sm:block">•</span>
           <span>
             Built by{" "}
