@@ -32,37 +32,38 @@ export function prependConversation(conversation: SidebarConversation) {
       if (!old) return [conversation];
       if (old.some((c) => c.id === conversation.id)) return old;
       return [conversation, ...old];
-    },
+    }
   );
 }
 
 /** Optimistically rename a conversation in the cached list. */
-export function renameConversationOptimistic(
-  id: string,
-  title: string | null,
-) {
+export function renameConversationOptimistic(id: string, title: string | null) {
   getQueryClient().setQueryData<SidebarConversation[]>(
     queryKeys.conversations(),
     (old) =>
       old?.map((c) =>
-        c.id === id ? { ...c, title, updated_at: new Date().toISOString() } : c,
-      ),
+        c.id === id ? { ...c, title, updated_at: new Date().toISOString() } : c
+      )
   );
 }
 
 /** Optimistically toggle a conversation's favorite state. */
 export function setConversationFavoriteOptimistic(
   id: string,
-  isFavorited: boolean,
+  isFavorited: boolean
 ) {
   getQueryClient().setQueryData<SidebarConversation[]>(
     queryKeys.conversations(),
     (old) =>
       old?.map((c) =>
         c.id === id
-          ? { ...c, is_favorited: isFavorited, updated_at: new Date().toISOString() }
-          : c,
-      ),
+          ? {
+              ...c,
+              is_favorited: isFavorited,
+              updated_at: new Date().toISOString(),
+            }
+          : c
+      )
   );
 }
 
@@ -70,7 +71,7 @@ export function setConversationFavoriteOptimistic(
 export function removeConversationOptimistic(id: string) {
   getQueryClient().setQueryData<SidebarConversation[]>(
     queryKeys.conversations(),
-    (old) => old?.filter((c) => c.id !== id),
+    (old) => old?.filter((c) => c.id !== id)
   );
 }
 
@@ -83,10 +84,10 @@ export function invalidateConversations() {
 
 /** Sync lookup — reads directly from the TQ cache without a network request. */
 export function getConversationFromCache(
-  id: string,
+  id: string
 ): SidebarConversation | undefined {
   const conversations = getQueryClient().getQueryData<SidebarConversation[]>(
-    queryKeys.conversations(),
+    queryKeys.conversations()
   );
   return conversations?.find((c) => c.id === id);
 }
@@ -108,13 +109,17 @@ function useConversationsQuery() {
 
 /** Drop-in replacement for the old Zustand-based hook. */
 export function useSidebarConversations() {
-  const { data: conversations = [], isLoading } = useConversationsQuery();
+  const userId = useAuthStore((state) => state.userId);
+  const { data, isPending } = useConversationsQuery();
+  const conversations = data ?? [];
+  const isLoading =
+    userId === undefined || (typeof userId === "string" && isPending);
   return { conversations, isLoading };
 }
 
 /** Returns the sidebar entry for a single conversation, or undefined. */
 export function useConversation(
-  conversationId: string,
+  conversationId: string
 ): SidebarConversation | undefined {
   const { data: conversations } = useConversationsQuery();
   return conversations?.find((c) => c.id === conversationId);
