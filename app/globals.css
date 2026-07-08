@@ -181,6 +181,9 @@
   body:has([data-chat-route]) {
     @apply md:bg-sidebar;
   }
+  body {
+    font-weight: 450;
+  }
   html {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
