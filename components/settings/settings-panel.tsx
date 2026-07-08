@@ -192,7 +192,7 @@ export function SettingsPanel() {
     <>
       <SettingsUnsavedDialog />
       <div
-        className="animate-in fade-in-0 fixed inset-0 z-50 bg-black/50 duration-150 supports-backdrop-filter:backdrop-blur-sm"
+        className="animate-in fade-in-0 fixed inset-0 z-50 bg-black/20 duration-150 supports-backdrop-filter:backdrop-blur-sm"
         onClick={handleClose}
         aria-hidden="true"
       />
@@ -204,7 +204,7 @@ export function SettingsPanel() {
         aria-labelledby="settings-panel-title"
         tabIndex={-1}
         className={cn(
-          "bg-popover text-popover-foreground ring-border/50 fixed z-50 flex overflow-hidden shadow-xl/10 ring-1 outline-none",
+          "bg-popover text-popover-foreground fixed z-50 flex overflow-hidden shadow-lg/1 ring-1 ring-foreground/5 outline-none",
           "animate-in fade-in-0 zoom-in-[0.98] duration-150",
           "inset-0 md:inset-auto md:top-1/2 md:left-1/2 md:h-[min(720px,85vh)] md:w-full md:max-w-4xl md:-translate-x-1/2 md:-translate-y-1/2",
           "md:rounded-3xl"

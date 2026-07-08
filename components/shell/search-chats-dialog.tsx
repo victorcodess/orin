@@ -179,7 +179,7 @@ export function SearchChatsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton
-        className="gap-0 overflow-hidden rounded-3xl border-0 p-0 shadow-lg/1 ring-1 ring-foreground/5 outline-none focus:outline-none focus-visible:ring-1 focus-visible:ring-foreground/5 sm:max-w-xl"
+        className="gap-0 overflow-hidden border-0 p-0 outline-none focus:outline-none focus-visible:ring-1 focus-visible:ring-foreground/5 sm:max-w-xl"
       >
         <DialogTitle className="sr-only">Search chats</DialogTitle>
         <DialogDescription className="sr-only">
