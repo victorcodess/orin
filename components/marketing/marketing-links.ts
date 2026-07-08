@@ -1,5 +1,5 @@
 export const MARKETING_SOCIAL_LINKS = [
-  { href: "https://x.com/orin__chat", label: "Twitter" },
+  { href: "https://x.com/victorwill__", label: "Twitter" },
   { href: "https://github.com/victorcodess/orin", label: "GitHub" },
 ] as const;
 
