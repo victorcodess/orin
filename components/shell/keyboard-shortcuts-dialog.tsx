@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import {
   enterLabel,
@@ -76,6 +84,14 @@ export function KeyboardShortcutsDialog({
         { label: "Toggle theme", keys: [shift, modifier, "L"] },
         { label: "Keyboard shortcuts", keys: [modifier, "/"] },
         { label: "Settings", keys: [shift, modifier, ","] },
+        ...(process.env.NODE_ENV === "development"
+          ? [
+              {
+                label: "Toggle message bubble layout",
+                keys: [shift, modifier, "M"],
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -100,66 +116,54 @@ export function KeyboardShortcutsDialog({
         { label: "End call", keys: [escapeLabel()] },
       ],
     },
-    ...(process.env.NODE_ENV === "development"
-      ? [
-          {
-            title: "Developer",
-            shortcuts: [
-              {
-                label: "Toggle message bubble layout",
-                keys: [shift, modifier, "M"],
-              },
-            ],
-          },
-        ]
-      : []),
   ];
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onOpenChange(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onOpenChange]);
-
-  if (!open) {
-    return null;
-  }
-
   return (
-    <>
-      <div
-        className="fixed inset-0 z-50 bg-black/50"
-        onClick={() => onOpenChange(false)}
-        aria-hidden="true"
-      />
-      <div
-        data-slot="keyboard-shortcuts-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="keyboard-shortcuts-title"
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        showCloseButton={false}
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2",
-          "rounded-xl border border-border bg-background p-6 shadow-lg",
+          "flex! h-[min(600px,85vh)] w-full max-w-md flex-col gap-0 overflow-hidden p-0 outline-none bg-background text-foreground",
         )}
       >
-        <h2
-          id="keyboard-shortcuts-title"
-          className="mb-6 text-lg font-semibold text-foreground"
-        >
-          Keyboard shortcuts
-        </h2>
-        <ShortcutSectionList sections={sections} />
-      </div>
-    </>
+        <div className="flex shrink-0 items-start justify-between gap-4 px-6 pt-6 pb-0.5">
+          <DialogTitle
+            id="keyboard-shortcuts-title"
+            className="font-sans text-lg font-semibold text-foreground"
+          >
+            Keyboard shortcuts
+          </DialogTitle>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => onOpenChange(false)}
+            aria-label="Close keyboard shortcuts"
+            className="hover:bg-accent hover:dark:bg-muted -mt-0.5 shrink-0"
+          >
+            <HugeiconsIcon
+              icon={Cancel01Icon}
+              strokeWidth={2}
+              className="size-4"
+            />
+          </Button>
+        </div>
+        <DialogDescription className="sr-only">
+          Keyboard shortcuts for Orin
+        </DialogDescription>
+        <div className="relative min-h-0 flex-1">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 z-10 h-8 bg-linear-to-b from-background to-transparent"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-8 bg-linear-to-t from-background to-transparent"
+          />
+          <div className="absolute inset-0 overflow-y-auto px-6 pb-6 pt-4">
+            <ShortcutSectionList sections={sections} />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
