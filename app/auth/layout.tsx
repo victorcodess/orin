@@ -1,6 +1,9 @@
 import { AuthFooter } from "@/components/auth/auth-footer";
 import { AuthNav } from "@/components/auth/auth-nav";
 import { MarketingInsetLayout } from "@/components/marketing/marketing-inset-layout";
+import { createNoIndexMetadata } from "@/lib/seo/metadata";
+
+export const metadata = createNoIndexMetadata();
 
 export default function AuthLayout({
   children,

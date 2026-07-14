@@ -2,6 +2,9 @@ import { AuthNav } from "@/components/auth/auth-nav";
 import { MarketingInsetLayout } from "@/components/marketing/marketing-inset-layout";
 import { ThemeFooter } from "@/components/marketing/theme-footer";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
+import { createNoIndexMetadata } from "@/lib/seo/metadata";
+
+export const metadata = createNoIndexMetadata("Onboarding");
 
 export default function OnboardingLayout({
   children,

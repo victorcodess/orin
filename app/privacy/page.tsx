@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
@@ -6,11 +5,13 @@ import {
   LEGAL_CONTACT_EMAIL,
   LEGAL_LAST_UPDATED,
 } from "@/components/marketing/legal-page";
+import { createPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy · Orin",
+export const metadata = createPageMetadata({
+  title: "Privacy Policy",
   description: "Privacy Policy for Orin, a voice-enabled AI companion.",
-};
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

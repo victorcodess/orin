@@ -11,29 +11,29 @@ import {
   getHeadingFontFamilyVariable,
   getHeadingFontStylesheetUrl,
 } from "@/lib/fonts/heading-font";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from "@/lib/seo/metadata";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
 const siteOrigin = getSiteOrigin();
 
-const siteTitle = "Orin";
-const siteDescription =
-  "A voice-enabled AI companion you can text and call. Warm, thoughtful, and yours to customize.";
-
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),
-  title: siteTitle,
-  description: siteDescription,
+  title: {
+    default: SITE_TITLE,
+    template: `%s · ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
   openGraph: {
-    title: siteTitle,
-    description: siteDescription,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     type: "website",
-    siteName: siteTitle,
+    siteName: SITE_NAME,
   },
   twitter: {
     card: "summary_large_image",
-    title: siteTitle,
-    description: siteDescription,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
   },
 };
 

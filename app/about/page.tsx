@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 
 import { LegalPage } from "@/components/marketing/legal-page";
+import { createPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "About · Orin",
+export const metadata = createPageMetadata({
+  title: "About",
   description:
     "Orin is a voice-enabled AI companion for text and voice conversations. Learn what it does, how to use it, and how it was built.",
-};
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (
